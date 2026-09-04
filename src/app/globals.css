@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/*
+  "Natural + magical" theme — bioluminescent forest at dusk.
+  Cool teal/emerald base, warm gold accents, soft bloom, deep vignette.
+*/
+:root {
+  --background: #04100f;
+  --foreground: #e8f6ef;
+
+  --teal-deep: #04100f;
+  --teal-mid: #0b3b39;
+  --teal-glow: #2ee6c9;
+  --emerald: #1f8f6f;
+  --gold: #ffd27a;
+  --gold-bright: #ffe9b8;
+  --wisp: #9df9e4;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-teal-deep: var(--teal-deep);
+  --color-teal-mid: var(--teal-mid);
+  --color-teal-glow: var(--teal-glow);
+  --color-emerald: var(--emerald);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-wisp: var(--wisp);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@keyframes float-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+.scroll-cue {
+  animation: float-cue 2.4s ease-in-out infinite;
+}
