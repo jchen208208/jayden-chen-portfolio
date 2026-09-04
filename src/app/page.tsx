@@ -1,26 +1,41 @@
-import Hero from "@/components/Hero";
-import WispCanvas from "@/components/WispCanvas";
+import ForestBackdrop from "@/components/site/ForestBackdrop";
+import Hero from "@/components/site/Hero";
+import Nav from "@/components/site/Nav";
+import ScrollRiver from "@/components/site/ScrollRiver";
+import {
+  About,
+  Awards,
+  Contact,
+  Footer,
+  Skills,
+  Work,
+} from "@/components/site/Sections";
 
 export default function Home() {
   return (
     <>
-      <WispCanvas />
+      <ForestBackdrop />
+      <ScrollRiver />
+      <Nav />
       <main className="relative z-10">
         <Hero />
 
-        {/* Placeholder next section so the scroll cue has somewhere to go. */}
-        <section
-          id="projects"
-          className="mx-auto flex min-h-[80svh] max-w-3xl flex-col justify-center px-6 py-32"
-        >
-          <h2 className="text-3xl font-semibold tracking-tight text-wisp sm:text-4xl">
-            Projects
-          </h2>
-          <p className="mt-4 max-w-prose text-foreground/60">
-            Coming soon — this is where the real content, generated art plates and
-            parallax foliage layers will live.
-          </p>
-        </section>
+        {/* Content zone — a soft paper wash so text stays readable over the
+            fixed forest, while the hero above stays fully scenic. */}
+        <div className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-40 h-40 bg-gradient-to-b from-transparent to-[color-mix(in_srgb,var(--paper)_86%,transparent)]"
+          />
+          <div className="relative bg-[color-mix(in_srgb,var(--paper)_86%,transparent)]">
+            <Work />
+            <Skills />
+            <Awards />
+            <About />
+            <Contact />
+            <Footer />
+          </div>
+        </div>
       </main>
     </>
   );

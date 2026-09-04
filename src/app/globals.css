@@ -1,52 +1,130 @@
 @import "tailwindcss";
 
 /*
-  "Natural + magical" theme — bioluminescent forest at dusk.
-  Cool teal/emerald base, warm gold accents, soft bloom, deep vignette.
+  "Nature — dawn / golden hour" theme.
+  Low warm sun through a birch forest, a river catching gold glints, cool mist
+  settling in the low ground. Light UI, deep-forest ink. No magic.
 */
 :root {
-  --background: #04100f;
-  --foreground: #e8f6ef;
+  /* Surfaces — warm haze at the top, cool mist below */
+  --paper: #f7ede0;
+  --haze: #f1e4d2;
+  --mist: #e4ece6;
+  --card: #fdf8ef;
+  --card-sunk: #f0e7d7;
 
-  --teal-deep: #04100f;
-  --teal-mid: #0b3b39;
-  --teal-glow: #2ee6c9;
-  --emerald: #1f8f6f;
-  --gold: #ffd27a;
-  --gold-bright: #ffe9b8;
-  --wisp: #9df9e4;
+  /* Forest */
+  --bark: #fbf7ee;
+  --bark-shadow: #d8cbb4;
+  --bark-tick: #4a4038;
+  --leaf-far: #c2cfaf;
+  --leaf: #8aa77e;
+  --pine: #3f6b57;
+  --pine-deep: #274b3d;
+
+  /* Water */
+  --river: #a9c7bd;
+  --river-deep: #6f9c93;
+  --glint: #f7dcac;
+
+  /* Light */
+  --sun: #f3b05a;
+  --sun-soft: #f9dcab;
+  --ember: #dd7a44;
+
+  /* Ink */
+  --ink: #2b3630;
+  --ink-soft: #57655c;
+  --ink-faint: #8b988d;
+  --line: rgba(43, 54, 48, 0.14);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-teal-deep: var(--teal-deep);
-  --color-teal-mid: var(--teal-mid);
-  --color-teal-glow: var(--teal-glow);
-  --color-emerald: var(--emerald);
-  --color-gold: var(--gold);
-  --color-gold-bright: var(--gold-bright);
-  --color-wisp: var(--wisp);
+  --color-paper: var(--paper);
+  --color-haze: var(--haze);
+  --color-mist: var(--mist);
+  --color-card: var(--card);
+  --color-card-sunk: var(--card-sunk);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bark: var(--bark);
+  --color-bark-shadow: var(--bark-shadow);
+  --color-leaf-far: var(--leaf-far);
+  --color-leaf: var(--leaf);
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
+
+  --color-river: var(--river);
+  --color-river-deep: var(--river-deep);
+  --color-glint: var(--glint);
+
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-ember: var(--ember);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
 }
 
 html {
   scroll-behavior: smooth;
+  /* Fallback canvas colour. Painted on the canvas, behind everything —
+     including the fixed -z-10 <ForestBackdrop>. */
+  background: var(--paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Must stay transparent: <ForestBackdrop> is a -z-10 child of <body>, and a
+     non-positioned body paints its own background *after* negative-z children,
+     which would hide the forest. The backdrop paints its own --paper base. */
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Respect users who ask for less motion. */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+::selection {
+  background: var(--sun-soft);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Keyframes
+   --------------------------------------------------------------------------- */
+@keyframes drift {
+  from {
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: translate3d(3%, 0, 0);
+  }
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-0.6deg);
+  }
+  50% {
+    transform: rotate(0.6deg);
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateX(-6px);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(6px);
   }
 }
 
@@ -54,14 +132,59 @@ body {
   0%,
   100% {
     transform: translateY(0);
-    opacity: 0.5;
+    opacity: 0.45;
   }
   50% {
-    transform: translateY(8px);
+    transform: translateY(7px);
     opacity: 1;
   }
 }
 
 .scroll-cue {
-  animation: float-cue 2.4s ease-in-out infinite;
+  animation: float-cue 2.6s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Utilities
+   --------------------------------------------------------------------------- */
+
+/* Oversized faint word set behind a section title (prmntr-style). */
+.watermark {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  opacity: 0.06;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Frosted panel used by the nav once the page has scrolled. */
+.frost {
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.grain {
+  background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(43, 54, 48, 0.03) 0.5px,
+      transparent 0.5px
+    );
+  background-size: 4px 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .scroll-cue,
+  [data-drift],
+  [data-sway],
+  [data-shimmer] {
+    animation: none !important;
+  }
 }

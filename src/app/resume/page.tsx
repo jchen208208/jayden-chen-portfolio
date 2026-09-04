@@ -11,12 +11,14 @@ export default function ResumePage() {
     <main className="relative z-10 mx-auto flex min-h-[100svh] max-w-2xl flex-col justify-center px-6 py-24">
       <Link
         href="/#top"
-        className="mb-10 font-mono text-xs uppercase tracking-[0.3em] text-foreground/50 transition-colors hover:text-gold"
+        className="mb-10 font-mono text-xs uppercase tracking-[0.3em] text-ink-faint transition-colors hover:text-ember"
       >
         ← Back
       </Link>
-      <h1 className="text-4xl font-semibold tracking-tight text-wisp">Résumé</h1>
-      <p className="mt-4 text-foreground/60">
+      <h1 className="font-display text-4xl font-normal tracking-tight text-ink sm:text-5xl">
+        Résumé
+      </h1>
+      <p className="mt-4 text-ink-soft">
         Placeholder — the real résumé (and a PDF download) will live here.
       </p>
     </main>
