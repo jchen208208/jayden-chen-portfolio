@@ -104,11 +104,15 @@ const SPLASH = {
   mask:
     "linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%)," +
     // fade in from its top (falls column) to meet WATERFALL's tail ~156vw,
-    // hold through the falls-hits-pool churn + the INNERMOST ripple rings only,
-    // then fade out hard by ~212vw so the rings stay a tight circle and never
-    // reach piece2's painted canopy tops (the pool + canopy sit close together
-    // in the painting, so there isn't much room)
-    "linear-gradient(180deg,transparent 0,#000 6%,#000 58%,transparent 68%)",
+    // then hold ALL the way through the falls-hits-pool impact, the churning
+    // plunge basin AND the concentric ripple rings (clip frac ~.69–.86 ≈
+    // 211–224vw — the old 58%/68% cut-off killed all of this, leaving the
+    // pool painted-static). Fade out 79%→89% (≈219–227vw): the ripple rings
+    // in the clip stay a tight centred circle (~60% of the clip width, well
+    // inside the h-mask) so they never spread onto piece2's side foliage, and
+    // the fade completes just as the clip's own canopy corners + piece2's
+    // painted canopy tops (~223–230vw) would come into frame.
+    "linear-gradient(180deg,transparent 0,#000 6%,#000 79%,transparent 89%)",
   subloop: 4.8,
   xfade: 0.5,
   grade: 1, // sits on piece2 — use its colour grade
