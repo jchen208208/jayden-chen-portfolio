@@ -56,66 +56,53 @@ const PLATES: Plate[] = [
   },
 ];
 
-/* Two generated water clips composited over the painted falls:
+/* Two clips again — but the falls one now flows the WHOLE column.
 
-   FALLS  — falls-loop.mp4 over piece1's crevice (left 30% / width 40%),
-            stretched the length of piece1. Its top mask hard-cuts the clip's
-            own painted sky + crest + rock-nose (which ghosted a second
-            clifftop) so piece1's lip is the only crest; motion fades in below
-            the crown where the clip's water is one clean column.
+   WATERFALL — falls-full.mp4, seeded from a crest→pool strip (piece1 y43.3–100%
+   stacked on piece2 y0–39.8%, full width). Only its top ~55% is used here (the
+   piece1 part): the water flows from the crest — past the rock-nose (piece1's
+   own, which the clip matches: one rock) — all the way down, no static stretch.
+   Below ~55% the stacked seed has a visible piece1↔piece2 tone seam, so we fade
+   the clip out there and let SPLASH take over.
 
-   SPLASH — splash-loop.mp4 over piece2's plunge pool. Seeded from piece2's
-            own top 46% (falls column → spray cloud → churning pool → drifting
-            mist), so its walls line up with piece2's painting. Overlaps the
-            bottom of FALLS by ~20vw; the two fade through that band so the
-            water reads as continuous across the seam (the clips share no
-            timeline — this is a crossfade in the misty zone, not a frame
-            sync).
+   SPLASH — splash-loop.mp4 over piece2's plunge pool (churn + spray + drifting
+   mist). Overlaps WATERFALL's fade-out band so the water reads continuous.
 
-   Both clips grow faint edge mist over their length that snaps back on loop,
-   so we never play them straight through: sub-loop the clean head and run two
-   offset copies that crossfade through each wrap for a seamless short loop. */
-/* The clip was seeded from piece1 x30–70%, y40–78.2%, so at left:30 / width:40
-   / top:(187.75*0.40) / height:(187.75*0.382) its frame maps 1:1 back onto
-   piece1 — the clip's crest, rock-nose and wall plants land exactly on piece1's
-   painted ones. We don't want the clip's own crest/rock-nose at all (they never
-   line up cleanly enough → a doubled rock), so the vertical mask hides the clip
-   entirely down to ~43% — just below the rock-nose, where its water is one
-   clean moving column. Above that the ONLY rock is piece1's painted one; the
-   moving water picks up exactly at its tip. */
-const FALLS = {
-  left: 30, // %
-  width: 40, // %
-  top: 187.75 * 0.4, // vw ≈ 75.1
-  height: 187.75 * 0.382, // vw ≈ 71.7 (matches the seed crop 1:1)
+   Both clips' spray swells over their length and snaps back on loop, so we
+   sub-loop the clean head and crossfade two offset copies through each wrap.
+   The horizontal mask keeps only the water column (outcrops stay painted). */
+const WATERFALL = {
+  left: 0, // %
+  width: 100, // %
+  top: 187.75 * 0.433, // vw ≈ 81.3  (piece1 y43.3% = seed top)
+  height: 143.7, // vw  (full seed span 81.3 → 225vw; only ~55% is shown)
   mask:
-    // horizontal: show only the clip's water band (~x41–68%); crop the rock
-    // outcrops it carries down each side (they ghosted a faint second outcrop
-    // over piece1's painted ones)
-    "linear-gradient(90deg,transparent 0,transparent 28%,#000 38%,#000 72%,transparent 82%,transparent 100%)," +
-    // vertical: hide the clip's sky + crest + rock-nose (top ~43%); the moving
-    // water fades in at piece1's rock-nose tip and runs down from there
-    "linear-gradient(180deg,transparent 0,transparent 40%,#000 47%,#000 90%,transparent 100%)",
-  subloop: 2.15, // s of clip that stays mist-free
-  xfade: 0.4, // s crossfade across each wrap
+    // horizontal: the clip is full-width off piece1, so its walls/outcrops
+    // line up 1:1 — show almost the whole width (soft edge feathers), motion
+    // only shows where there's water, everything else overlays invisibly
+    "linear-gradient(90deg,transparent 3%,#000 16%,#000 84%,transparent 97%)," +
+    // vertical: let piece1's crisp painted crest show (fade in by ~14%), then
+    // fade out over 42–53% (≈141–157vw) — before the seed's piece1↔piece2 tone
+    // seam (~167vw) — where SPLASH takes over
+    "linear-gradient(180deg,transparent 0,transparent 6%,#000 14%,#000 42%,transparent 53%)",
+  subloop: 2.4, // s before the spray cloud swells
+  xfade: 0.4,
 };
 
-/* piece2 top edge sits at 187.75 − 34(overlap) = 153.75vw; piece2 is
-   179.19vw tall at 100vw wide. The seed was piece2 x26.6–73.4%, y0–46.4%. */
 const SPLASH = {
   left: 26.6, // %
   width: 46.75, // %
-  top: 153.75, // vw
+  top: 153.75, // vw = piece2 top edge (keeps its walls/pool aligned to piece2)
   height: 0.464 * 179.19, // vw ≈ 83.1
   mask:
     "linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%)," +
-    // fade in fast to pick up where FALLS leaves off (~147vw); keep the near
-    // ripple rings but fade the pool out by ~221vw, before piece2's painted
-    // canopy tops (~225vw), so the rings don't read as sitting on the treetops
-    "linear-gradient(180deg,transparent 0,#000 8%,#000 64%,transparent 80%)",
-  subloop: 4.8, // s (clip is 5.04s; last ~0.2s carries the heaviest mist)
+    // fade in from its top (falls column) to meet WATERFALL's tail ~156vw,
+    // hold through the pool churn + near ripple rings, fade the pool out by
+    // ~221vw before piece2's painted canopy tops
+    "linear-gradient(180deg,transparent 0,#000 6%,#000 62%,transparent 78%)",
+  subloop: 4.8,
   xfade: 0.5,
-  grade: 1, // use PLATES[1] (piece2) colour grade — it sits on piece2
+  grade: 1, // sits on piece2 — use its colour grade
 };
 
 type LoopSpec = {
@@ -215,9 +202,9 @@ export default function WaterfallScene() {
         />
       ))}
 
-      {/* living water — two crossfaded sub-loops: the falls down piece1, the
-          plunge-pool splash + drifting mist on piece2, overlapping at the seam */}
-      <LoopVideo src="/plates/master/falls-loop.mp4" spec={FALLS} />
+      {/* living water — full-column falls clip (crest → down piece1), handed
+          off to the piece2 pool splash clip through an overlapping fade */}
+      <LoopVideo src="/plates/master/falls-full.mp4" spec={WATERFALL} />
       <LoopVideo src="/plates/master/splash-loop.mp4" spec={SPLASH} />
     </section>
   );

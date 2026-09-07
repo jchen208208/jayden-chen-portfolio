@@ -38,6 +38,15 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# local scratch — verification screenshots & throwaway scripts
+/_*.mjs
+/_*.png
+/_*.jpg
+/s-[0-9]*.png
+/piece1-only-*.png
+/public/plates/master/_*
+
 next-env.d.ts
 
 # local handoff notes / AI agent instructions
