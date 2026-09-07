@@ -24,7 +24,7 @@ export default function ScrollRiver() {
           className="h-full w-full"
           style={{
             background:
-              "linear-gradient(180deg, var(--sun) 0%, var(--river-deep) 100%)",
+              "linear-gradient(180deg, var(--sun) 0%, var(--water-deep) 100%)",
           }}
         />
       </motion.div>

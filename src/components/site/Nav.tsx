@@ -47,7 +47,9 @@ export default function Nav() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: EASE_OUT }}
       className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
-        scrolled ? "frost border-b border-line" : ""
+        scrolled
+          ? "frost border-b border-line"
+          : "[&_a]:[text-shadow:0_1px_14px_rgba(0,0,0,0.55)]"
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">

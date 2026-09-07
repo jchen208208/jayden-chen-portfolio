@@ -1,5 +1,3 @@
-import ForestBackdrop from "@/components/site/ForestBackdrop";
-import Hero from "@/components/site/Hero";
 import Nav from "@/components/site/Nav";
 import ScrollRiver from "@/components/site/ScrollRiver";
 import {
@@ -10,31 +8,28 @@ import {
   Skills,
   Work,
 } from "@/components/site/Sections";
+import WaterfallScene from "@/components/journey/WaterfallScene";
+// CanopyScene (video-scrub) parked — scene 2+ being rebuilt as the stitched
+// still-painting + code sprites. See CONTEXT.md session 5b.
 
 export default function Home() {
   return (
     <>
-      <ForestBackdrop />
       <ScrollRiver />
       <Nav />
       <main className="relative z-10">
-        <Hero />
+        {/* Scene 1 — stitched waterfall + canopy painting, living water */}
+        <WaterfallScene />
 
-        {/* Content zone — a soft paper wash so text stays readable over the
-            fixed forest, while the hero above stays fully scenic. */}
-        <div className="relative">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-40 h-40 bg-gradient-to-b from-transparent to-[color-mix(in_srgb,var(--paper)_86%,transparent)]"
-          />
-          <div className="relative bg-[color-mix(in_srgb,var(--paper)_86%,transparent)]">
-            <Work />
-            <Skills />
-            <Awards />
-            <About />
-            <Contact />
-            <Footer />
-          </div>
+        {/* Below the falls — sections live here for now; they'll be re-homed
+            into the canopy / branches / roots scenes as the journey is built. */}
+        <div className="relative bg-paper">
+          <Work />
+          <Skills />
+          <Awards />
+          <About />
+          <Contact />
+          <Footer />
         </div>
       </main>
     </>

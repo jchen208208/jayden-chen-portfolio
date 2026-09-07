@@ -88,12 +88,12 @@ export const SKILL_GROUPS = [
   },
   {
     label: "Frameworks",
-    accent: "var(--pine)",
+    accent: "var(--leaf)",
     items: ["React", "Next.js", "Remix", "Svelte", "Node.js", "React Native"],
   },
   {
     label: "Tools & Platforms",
-    accent: "var(--river-deep)",
+    accent: "var(--water-deep)",
     items: ["Postgres / PostGIS", "Mapbox", "Vercel", "Docker", "Figma", "Git"],
   },
 ] as const;

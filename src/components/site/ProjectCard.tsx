@@ -49,7 +49,7 @@ export default function ProjectCard({ project }: { project: Project }) {
         className="relative aspect-[16/10] w-full overflow-hidden"
         style={{
           background:
-            "linear-gradient(140deg, var(--sun-soft) 0%, var(--river) 55%, var(--pine) 130%)",
+            "linear-gradient(140deg, var(--ember) 0%, var(--water-deep) 55%, var(--violet-deep) 130%)",
         }}
       >
         <div className="absolute inset-0 grain opacity-60" />
