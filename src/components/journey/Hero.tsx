@@ -24,7 +24,7 @@ export default function Hero() {
       {/* legibility scrim */}
       <div
         aria-hidden
-        className="absolute left-1/2 top-1/2 h-[80vh] w-[130vw] -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2 h-[95vh] w-[130vw] -translate-x-1/2 -translate-y-1/2"
         style={{
           background:
             "radial-gradient(closest-side, rgba(10,7,20,0.62), rgba(10,7,20,0.28) 55%, transparent 78%)",
