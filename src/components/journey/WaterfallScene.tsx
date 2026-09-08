@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Hero from "./Hero";
 import { MASTER } from "./plates";
 
 /**
@@ -241,6 +242,8 @@ function LoopVideo({ src, spec }: { src: string; spec: LoopSpec }) {
 export default function WaterfallScene() {
   return (
     <section id="top" className="relative bg-dusk">
+      <Hero />
+
       {PLATES.map((pl, i) => (
         <img
           key={i}

@@ -3,6 +3,14 @@
  * Swap these values for real copy — structure is what matters here.
  */
 
+export const PROFILE = {
+  name: "Jayden Chen",
+  tagline: "Computer Engineering · University of Waterloo '31",
+  email: "jaydenccan11@gmail.com",
+  github: "https://github.com/jchen208208",
+  linkedin: "https://www.linkedin.com/in/jayden-chen-81b50a39b",
+} as const;
+
 export const NAV = [
   { label: "Work", href: "#work" },
   { label: "Skills", href: "#skills" },
@@ -128,7 +136,7 @@ export const AWARDS: Award[] = [
 ];
 
 export const SOCIALS = [
-  { label: "Email", href: "mailto:jaydenccan11@gmail.com" },
-  { label: "GitHub", href: "https://github.com/" },
-  { label: "LinkedIn", href: "https://linkedin.com/" },
+  { label: "Email", href: `mailto:${PROFILE.email}` },
+  { label: "GitHub", href: PROFILE.github },
+  { label: "LinkedIn", href: PROFILE.linkedin },
 ] as const;
