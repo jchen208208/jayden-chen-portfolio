@@ -70,50 +70,121 @@ function smooth(pts: [number, number][]) {
   return d;
 }
 
-/* One outcrop layer. `topInset` pushes the flat top DOWN, `bottomInset` pulls
-   the underside UP, `tipPull` shortens the reach — so each layer nests inside
-   the one below; `topInset > bottomInset` skews it toward the bottom edge.
-   The cascading underside (gentle facet → bend → steeper → bend → steepest,
-   traced off piece1's painted rocks) is the same for every layer. */
-function layerBody(topInset: number, bottomInset: number, tipPull: number) {
-  const yTop = TIP.y + topInset;
-  const tipX = TIP.x - tipPull;
-  const k = tipX / TIP.x; // squeeze x so the tip lands at tipX (left edge stays 0)
-  const dropTotal = DROP - topInset - bottomInset;
-  const rnd = mulberry32(0x0c2d19); // same seed ⇒ the hand-drawn wobble matches
-  const anchors: [number, number][] = [
-    [TIP.x - 34, 0], // end of the flat top (tip is rounded past it)
-    [TIP.x + 4, 0.05], // rounded tip bulges out a touch
-    [TIP.x - 46, 0.12],
-    [820, 0.17], // gentle facet
-    [672, 0.26],
-    [628, 0.33], // — bend 1 —
-    [520, 0.45], // steeper facet
-    [372, 0.58],
-    [330, 0.66], // — bend 2 —
-    [214, 0.82], // steepest facet
-    [86, 0.95],
-    [0, 1], // into the left screen edge
-  ];
-  const pts: [number, number][] = anchors.map(([x, f], i) => {
-    const wob = i === 0 || i >= anchors.length - 1 ? 0 : (rnd() - 0.5) * 11;
-    return [x * k, yTop + dropTotal * f + wob];
+/* The base underside as a dense polyline, tip → left wall, wobble baked in
+   (gentle facet → bend → steeper → bend → steepest, traced off piece1's
+   painted rocks). Every layer is built from THIS one curve. */
+const UNDERSIDE: [number, number][] = (() => {
+  const rnd = mulberry32(0x0c2d19); // same seed ⇒ the hand-drawn wobble is fixed
+  const anchors: [number, number][] = (
+    [
+      [TIP.x - 34, 0], // end of the flat top (tip is rounded past it)
+      [TIP.x + 4, 0.05], // rounded tip bulges out a touch
+      [TIP.x - 46, 0.12],
+      [820, 0.17], // gentle facet
+      [672, 0.26],
+      [628, 0.33], // — bend 1 —
+      [520, 0.45], // steeper facet
+      [372, 0.58],
+      [330, 0.66], // — bend 2 —
+      [214, 0.82], // steepest facet
+      [86, 0.95],
+      [0, 1], // into the left screen edge
+    ] as [number, number][]
+  ).map(([x, f], i): [number, number] => {
+    const wob = i === 0 || i === 11 ? 0 : (rnd() - 0.5) * 11;
+    return [x, TIP.y + DROP * f + wob];
   });
+
+  const SEG = 14; // Catmull-Rom samples per anchor span
+  const out: [number, number][] = [];
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const p0 = anchors[i - 1] ?? anchors[i];
+    const p1 = anchors[i];
+    const p2 = anchors[i + 1];
+    const p3 = anchors[i + 2] ?? p2;
+    const end = i === anchors.length - 2 ? SEG : SEG - 1;
+    for (let s = 0; s <= end; s++) {
+      const t = s / SEG;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      out.push([
+        0.5 *
+          (2 * p1[0] +
+            (p2[0] - p0[0]) * t +
+            (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+            (3 * p1[0] - p0[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 *
+          (2 * p1[1] +
+            (p2[1] - p0[1]) * t +
+            (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+            (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * t3),
+      ]);
+    }
+  }
+  return out;
+})();
+
+/* base outline: flat top at y=30 → the underside samples → down the wall. */
+const BODY =
+  `M0,${TIP.y} L${UNDERSIDE[0][0].toFixed(1)},${TIP.y} ` +
+  smooth(UNDERSIDE) +
+  `L0,${UNDERSIDE[UNDERSIDE.length - 1][1].toFixed(1)} Z`;
+
+/* An inner layer traces the base outline offset inward by a CONSTANT distance:
+   `botGap` all along the underside — so the three bottom edges stay an equal,
+   small distance apart — and a larger `topGap` for the flat top, so the three
+   top edges stay an equal, wider distance apart. Where the dropped flat top
+   runs into the offset underside near the tip, a quadratic fillet rounds the
+   corner back to the base's rounded-tip shape. */
+function layerBody(topGap: number, botGap: number) {
+  const topY = TIP.y + topGap;
+  const n = UNDERSIDE.length;
+
+  // underside pushed in along its local normal by botGap (small ⇒ never folds)
+  const off = UNDERSIDE.map(([px, py], i): [number, number] => {
+    const a = UNDERSIDE[Math.max(0, i - 1)];
+    const b = UNDERSIDE[Math.min(n - 1, i + 1)];
+    const tx = b[0] - a[0];
+    const ty = b[1] - a[1];
+    const len = Math.hypot(tx, ty) || 1;
+    return [px - (ty / len) * botGap, py + (tx / len) * botGap];
+  });
+
+  // x where the offset underside has dropped to the new flat top
+  let k = 1;
+  while (k < n - 1 && off[k][1] < topY) k++;
+  const [x1, y1] = off[k - 1];
+  const [x2, y2] = off[k];
+  const cx = x1 + ((topY - y1) / (y2 - y1 || 1)) * (x2 - x1);
+
+  // fillet: (cx − R, topY) → control (cx, topY) → R along the underside tangent
+  const R = 11;
+  const j = Math.min(n - 1, k + 3);
+  const dx = off[j][0] - cx;
+  const dy = off[j][1] - topY;
+  const dl = Math.hypot(dx, dy) || 1;
+  const ex = cx + (dx / dl) * R;
+  const ey = topY + (dy / dl) * R;
+  let m = k;
+  while (m < n - 1 && off[m][1] < ey) m++;
+
+  const tail: [number, number][] = [[ex, ey], ...off.slice(m)];
+  const lastY = tail[tail.length - 1][1];
   return (
-    `M0,${yTop} L${((TIP.x - 34) * k).toFixed(1)},${yTop} ` +
-    smooth(pts) +
-    `L0,${(yTop + dropTotal).toFixed(1)} Z`
+    `M0,${topY.toFixed(1)} L${(cx - R).toFixed(1)},${topY.toFixed(1)} ` +
+    `Q${cx.toFixed(1)},${topY.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)} ` +
+    smooth(tail) +
+    `L0,${lastY.toFixed(1)} Z`
   );
 }
 
-const BODY = layerBody(0, 0, 0); // base outline (also the clip path)
-
 /* Three nested layers for a layered-depth look, drawn back→front /
-   darkest→lightest. */
+   darkest→lightest — each traces the base's edges, its bottom edge a hair off,
+   its top edge further off. */
 const LAYERS = [
   { fill: CYAN, d: BODY },
-  { fill: CYAN_TILE, d: layerBody(22, 7, 46) },
-  { fill: CYAN_LIGHT, d: layerBody(46, 15, 96) },
+  { fill: CYAN_TILE, d: layerBody(25, 6) },
+  { fill: CYAN_LIGHT, d: layerBody(50, 12) },
 ];
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
@@ -322,13 +393,13 @@ export default function LeftLedge() {
             filter="url(#ledge-grain)"
           />
         </motion.g>
+        {/* offset inward from the base, so they sit within it by construction —
+            no stroke, the fill colour is the only edge */}
         {LAYERS.slice(1).map((layer, idx) => (
           <motion.path
             key={layer.fill}
             d={layer.d}
             fill={layer.fill}
-            stroke="rgba(4,18,24,0.45)"
-            strokeWidth="1.5"
             {...slideIn(idx + 1)}
           />
         ))}
