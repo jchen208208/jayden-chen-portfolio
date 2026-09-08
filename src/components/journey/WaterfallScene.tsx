@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react";
 import Hero from "./Hero";
+import LeftLedge from "./LeftLedge";
 import { MASTER } from "./plates";
 
 /**
@@ -267,6 +268,9 @@ export default function WaterfallScene() {
           }}
         />
       ))}
+
+      {/* skill ledge 1 — flat cyan outcrop from the left edge, parallax */}
+      <LeftLedge />
 
       {/* living water — the tight piece1 falls clip (crest → down), handed off
           to the piece2 pool splash clip through an overlapping fade */}
