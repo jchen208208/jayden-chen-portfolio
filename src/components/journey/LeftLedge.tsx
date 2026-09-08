@@ -92,14 +92,21 @@ const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML / CSS"];
 function LanguagesPanel() {
   return (
     <div id="skills" className="pointer-events-auto">
-      <h3 className="font-display text-[2.6rem] leading-[0.95] tracking-tight text-ink [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[3.4rem]">
-        Languages
-      </h3>
-      <ul className="mt-8 grid grid-cols-3 gap-[clamp(1rem,3.4vw,2.75rem)]">
+      <div className="flex items-center gap-4">
+        <span
+          aria-hidden
+          className="h-[2.35rem] w-[14px] shrink-0 rounded-[2px] sm:h-[3rem]"
+          style={{ backgroundColor: CYAN }}
+        />
+        <h3 className="font-display text-[3rem] leading-[0.95] tracking-tight text-ink [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]">
+          Languages
+        </h3>
+      </div>
+      <ul className="mt-11 grid grid-cols-3 gap-[clamp(0.9rem,2.6vw,2.3rem)]">
         {LANGUAGES.map((lang) => (
           <li
             key={lang}
-            className="flex aspect-square items-center justify-center rounded-xl border border-line bg-card/70 p-2 text-center font-mono text-[12px] uppercase leading-tight tracking-wide text-ink-soft shadow-[0_8px_24px_rgba(10,7,20,0.4)] backdrop-blur-sm transition-colors hover:border-ember hover:text-ink sm:text-[13px]"
+            className="flex aspect-[9/5] items-center justify-center rounded-xl border border-line bg-card/70 px-3 text-center font-title text-lg tracking-wide text-ink-soft shadow-[0_8px_24px_rgba(10,7,20,0.4)] backdrop-blur-sm transition-colors hover:border-ember hover:text-ink sm:text-2xl"
           >
             {lang}
           </li>
@@ -221,9 +228,9 @@ export default function LeftLedge() {
       <div
         className="absolute"
         style={{
-          left: "1vw",
+          left: "3vw", // small margin in from the outcrop's left edge
           bottom: "calc(98.93% + 12px)",
-          width: "48vw", // matches the ledge (~50vw) so the tiles span it at any width
+          width: "39vw", // leaves a margin before the outcrop's tip too
         }}
       >
         <LanguagesPanel />
