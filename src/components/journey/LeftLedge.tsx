@@ -17,7 +17,11 @@ const TOP_VW = 112; // down the scene section
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
 const STRENGTH = 0.3; // screen travel ≈ (1 + STRENGTH) × page scroll
 
-const CYAN = "#0c3742"; // flat fill — darker + more saturated than the cliff
+const CYAN = "#0c3742"; // outcrop flat fill — darker + more saturated than the cliff
+const CYAN_TILE = "#0e5c6c"; // language tiles — a saturated cyan that reads clearly
+//                              against BOTH the dark outcrop and the grey-teal cliff
+const CYAN_LIGHT = "#7fdcea"; // heading bar + tile hover border — light cyan accent
+// hover border = light cyan #6fd3df (hard-coded in the tile className)
 
 const TIP = { x: 986, y: 30 };
 const DROP = 344; // underside drop from tip to the left screen edge
@@ -84,7 +88,7 @@ const BODY =
   smooth(buildUnderside()) +
   `L0,${TIP.y + DROP} Z`;
 
-const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML / CSS"];
+const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
 
 /* Draft 1 — bare "Languages" label + a rounded-square tile per language,
    floating just above the ledge's top surface. Text only (no brand logos):
@@ -95,18 +99,19 @@ function LanguagesPanel() {
       <div className="flex items-center gap-4">
         <span
           aria-hidden
-          className="h-[2.35rem] w-[14px] shrink-0 rounded-[2px] sm:h-[3rem]"
-          style={{ backgroundColor: CYAN }}
+          className="h-[3rem] w-[14px] shrink-0 rounded-[2px] sm:h-[4rem]"
+          style={{ backgroundColor: CYAN_LIGHT }}
         />
-        <h3 className="font-display text-[3rem] leading-[0.95] tracking-tight text-ink [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]">
+        <h3 className="font-display text-[3rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]">
           Languages
         </h3>
       </div>
-      <ul className="mt-11 grid grid-cols-3 gap-[clamp(0.9rem,2.6vw,2.3rem)]">
+      <ul className="mt-11 grid grid-cols-3 gap-[clamp(1.15rem,3.2vw,3rem)]">
         {LANGUAGES.map((lang) => (
           <li
             key={lang}
-            className="flex aspect-[9/5] items-center justify-center rounded-xl border border-line bg-card/70 px-3 text-center font-title text-lg tracking-wide text-ink-soft shadow-[0_8px_24px_rgba(10,7,20,0.4)] backdrop-blur-sm transition-colors hover:border-ember hover:text-ink sm:text-2xl"
+            className="flex aspect-[9/5] items-center justify-center rounded-xl border border-line px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] transition-colors hover:border-[#7fdcea] sm:text-3xl"
+            style={{ backgroundColor: CYAN_TILE }}
           >
             {lang}
           </li>
