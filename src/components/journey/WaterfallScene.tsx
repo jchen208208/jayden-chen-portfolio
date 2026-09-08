@@ -94,9 +94,13 @@ const WATERFALL = {
   height: 187.75 * 0.42, // vw ≈ 78.9 (seed span y40–78.2% ≈ 0.382, +~1.1× to
   //                                    close the gap down to SPLASH ~154vw)
   mask:
-    // horizontal: clip is 1:1 off piece1 x30–70%, so its walls line up —
-    // show near the full width with soft edge feathers
-    "linear-gradient(90deg,transparent 4%,#000 14%,#000 86%,transparent 96%)," +
+    // horizontal: clip is 1:1 off piece1 x30–70%, so its walls line up.
+    // LEFT edge pulled in to 35% (≈ the painted column's own left edge): the
+    // seed's bottom-left corner clipped the left outcrop, so the video carries
+    // a faint, ~7vw-low, crossfading GHOST of that outcrop — hiding the clip's
+    // left third (painted cliff, no real falling water there) drops the ghost
+    // and its flickering tip. Right edge unchanged.
+    "linear-gradient(90deg,transparent 8%,#000 35%,#000 86%,transparent 96%)," +
     // vertical: keep piece1's crisp painted crest + upper rock-nose (video
     // hidden to ~24%), then fade the moving water in over the lower rock-nose
     // (~95–103vw) where the two streams merge into the column, down to ~154vw
