@@ -20,8 +20,7 @@ const STRENGTH = 0.3; // screen travel ≈ (1 + STRENGTH) × page scroll
 const CYAN = "#0c3742"; // outcrop flat fill — darker + more saturated than the cliff
 const CYAN_TILE = "#0e5c6c"; // language tiles — a saturated cyan that reads clearly
 //                              against BOTH the dark outcrop and the grey-teal cliff
-const CYAN_LIGHT = "#7fdcea"; // heading bar + tile hover border — light cyan accent
-// hover border = light cyan #6fd3df (hard-coded in the tile className)
+const CYAN_LIGHT = "#8ce6f2"; // heading bar + front layer + permanent tile border — light cyan
 
 const TIP = { x: 986, y: 30 };
 const DROP = 344; // underside drop from tip to the left screen edge
@@ -54,16 +53,20 @@ function smooth(pts: [number, number][]) {
   return d;
 }
 
-/* Underside, traced off piece1's painted outcrops: a rounded blunt tip, then
-   the contour CASCADES down the cliff — a gentle facet, a defined bend into a
-   steeper one, another bend into the steepest — each step a little lower and
-   sharper, like the painted rocks. Only a light hand-drawn wobble on top. */
-function buildUnderside(): [number, number][] {
-  const rnd = mulberry32(0x0c2d19);
-  const TOP_END = TIP.x - 34; // flat top stops here; tip is rounded past it
-  // [x, drop as a fraction of DROP] — few, deliberate anchors
+/* One outcrop layer. `topInset` pushes the flat top DOWN, `bottomInset` pulls
+   the underside UP, `tipPull` shortens the reach — so a layer is genuinely
+   nested INSIDE the one below (following its outline), not a scaled copy that
+   pokes through. topInset > bottomInset makes it skew toward the bottom edge.
+   The cascading underside (a gentle facet → bend → steeper → bend → steepest,
+   traced off piece1's painted rocks) is the same for every layer. */
+function layerBody(topInset: number, bottomInset: number, tipPull: number) {
+  const yTop = TIP.y + topInset;
+  const tipX = TIP.x - tipPull;
+  const k = tipX / TIP.x; // squeeze x so the tip lands at tipX (left edge stays 0)
+  const dropTotal = DROP - topInset - bottomInset;
+  const rnd = mulberry32(0x0c2d19); // same seed ⇒ the hand-drawn wobble matches
   const anchors: [number, number][] = [
-    [TOP_END, 0], // end of the flat top
+    [TIP.x - 34, 0], // end of the flat top (tip is rounded past it)
     [TIP.x + 4, 0.05], // rounded tip bulges out a touch
     [TIP.x - 46, 0.12],
     [820, 0.17], // gentle facet
@@ -76,30 +79,28 @@ function buildUnderside(): [number, number][] {
     [86, 0.95],
     [0, 1], // into the left screen edge
   ];
-  return anchors.map(([x, f], i) => {
+  const pts: [number, number][] = anchors.map(([x, f], i) => {
     const wob = i === 0 || i >= anchors.length - 1 ? 0 : (rnd() - 0.5) * 11;
-    return [x, TIP.y + DROP * f + wob];
+    return [x * k, yTop + dropTotal * f + wob];
   });
+  return (
+    `M0,${yTop} L${((TIP.x - 34) * k).toFixed(1)},${yTop} ` +
+    smooth(pts) +
+    `L0,${(yTop + dropTotal).toFixed(1)} Z`
+  );
 }
 
-/* flat top left→(end), then the cascading textured underside back to the edge */
-const BODY =
-  `M0,${TIP.y} L${TIP.x - 34},${TIP.y} ` +
-  smooth(buildUnderside()) +
-  `L0,${TIP.y + DROP} Z`;
+const BODY = layerBody(0, 0, 0); // base outline (also the clip path)
 
-/* Three stacked copies of the same shape for a layered-depth look. Each is a
-   little smaller and a shade lighter, and skewed DOWN (bigger translate than
-   the scale would need) so the layers nearly touch along the bottom edge while
-   their top edges fan out. Drawn back→front. Used later by the scroll effect. */
+/* Three nested layers for a layered-depth look — each inset (more at the top
+   than the bottom, so it skews toward the bottom edge) so it fits cleanly
+   inside the one below. Drawn back→front, darkest→lightest. The scroll effect
+   will pull these apart later. */
 const LAYERS = [
-  { fill: CYAN, transform: undefined as string | undefined }, // base (== the old single ledge)
-  { fill: CYAN_TILE, transform: "translate(0 18) scale(0.942)" },
-  { fill: CYAN_LIGHT, transform: "translate(0 36) scale(0.884)" },
+  { fill: CYAN, d: BODY },
+  { fill: CYAN_TILE, d: layerBody(22, 7, 46) },
+  { fill: CYAN_LIGHT, d: layerBody(46, 15, 96) },
 ];
-/* top edge of the frontmost (layer 3): y = TIP.y*0.884 + 36 ≈ 62.5 in the
-   "0 26 1010 374" box ⇒ (62.5-26)/374 ≈ 9.8% down it */
-const FRONT_TOP_PCT = 90.2;
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
 
@@ -123,8 +124,8 @@ function LanguagesPanel() {
         {LANGUAGES.map((lang) => (
           <li
             key={lang}
-            className="flex aspect-[9/5] items-center justify-center rounded-xl border border-line px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] transition-colors hover:border-[#7fdcea] sm:text-3xl"
-            style={{ backgroundColor: CYAN_TILE }}
+            className="flex aspect-[9/5] items-center justify-center rounded-xl border px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-2 hover:shadow-[0_18px_36px_rgba(10,7,20,0.55)] sm:text-3xl"
+            style={{ backgroundColor: CYAN_TILE, borderColor: CYAN_LIGHT }}
           >
             {lang}
           </li>
@@ -226,8 +227,8 @@ export default function LeftLedge() {
           </clipPath>
         </defs>
 
-        {/* base layer + its grain */}
-        <path d={BODY} fill={LAYERS[0].fill} stroke="#06222a" strokeWidth="2.5" />
+        {/* base (darkest) layer + its grain */}
+        <path d={LAYERS[0].d} fill={LAYERS[0].fill} stroke="#06222a" strokeWidth="2.5" />
         <g clipPath="url(#ledge-clip)">
           <rect
             x="-40"
@@ -238,27 +239,27 @@ export default function LeftLedge() {
             opacity="0.4"
           />
         </g>
-        {/* the two lighter, smaller, downward-skewed layers on top */}
+        {/* the two lighter, nested layers on top */}
         {LAYERS.slice(1).map((layer) => (
           <path
             key={layer.fill}
-            d={BODY}
+            d={layer.d}
             fill={layer.fill}
-            stroke="rgba(4,18,24,0.5)"
+            stroke="rgba(4,18,24,0.45)"
             strokeWidth="1.5"
-            transform={layer.transform}
           />
         ))}
       </svg>
 
-      {/* content anchored to the FRONT layer's top edge (see FRONT_TOP_PCT).
-          Anchoring the panel's BOTTOM by % of the box height keeps the gap
-          fixed on any viewport width. */}
+      {/* content anchored to the BASE (darkest, highest) layer's top edge — its
+          top is at BODY's y=30 in the "0 26 1010 374" box ⇒ (30-26)/374 ≈
+          1.07% down ⇒ 98.93% up. Anchoring by % keeps the gap fixed at any
+          viewport width. */}
       <div
         className="absolute"
         style={{
           left: "3vw", // small margin in from the outcrop's left edge
-          bottom: `calc(${FRONT_TOP_PCT}% + 12px)`,
+          bottom: "calc(98.93% + 12px)",
           width: "39vw", // leaves a margin before the outcrop's tip too
         }}
       >
