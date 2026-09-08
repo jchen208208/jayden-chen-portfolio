@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { motion, useInView, useMotionValue, useReducedMotion } from "motion/react";
 
 /**
  * First skill ledge ("Languages") — a stacked dark-cyan outcrop from the left
@@ -15,13 +15,29 @@ import { motion, useInView, useReducedMotion } from "motion/react";
  *   2. the 3 outcrop layers slide in from the left, a hair apart
  *   3. the 6 tiles pop out of the centre, 3 at a time
  *
- * Parallax: a plain rAF scroll listener translates the whole thing ≈1.3× the
- * page so it slides past the cliff on scroll.
+ * Parallax: several planes, each translated by its own rAF loop at its own
+ * rate and with its own lag, so the outcrop layers and the floating panel
+ * drift apart a little as you scroll — depth, not one flat slab.
  */
 
 const TOP_VW = 112; // down the scene section
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
-const STRENGTH = 0.3; // screen travel ≈ (1 + STRENGTH) × page scroll
+
+/* ── parallax planes ─────────────────────────────────────────────────────────
+   `K` = extra screen travel as a fraction of scroll (bigger ⇒ more foreground,
+   rushes past faster); `LAG` = how quickly a plane chases its target each frame
+   (smaller ⇒ drifts longer after you stop). The rock layers diverge only a
+   hair — they have to stay nested — while the panel floats well in front. */
+const PANEL_K = 0.3; // the floating panel — the landing math tracks this
+const PANEL_LAG = 0.2;
+const ROCK_K = 0.14; // the outcrop as a whole (base layer + grain)
+const ROCK_LAG = 0.14;
+const MID_K = 0.022; // middle layer, extra travel over the base
+const MID_LAG = 0.115;
+const MID_CAP = 8; // viewBox units — never let it unstack past the gap
+const INNER_K = 0.045; // inner layer, extra over the base
+const INNER_LAG = 0.095;
+const INNER_CAP = 16; // viewBox units
 
 /* The 3 outcrop layers, back→front — evenly spaced in lightness
    (HSL L ≈ 15% / 34% / 54%). CYAN_TILE is also the language-tile fill;
@@ -124,18 +140,13 @@ const UNDERSIDE: [number, number][] = (() => {
   return out;
 })();
 
-/* base outline: flat top at y=30 → the underside samples → down the wall. */
-const BODY =
-  `M0,${TIP.y} L${UNDERSIDE[0][0].toFixed(1)},${TIP.y} ` +
-  smooth(UNDERSIDE) +
-  `L0,${UNDERSIDE[UNDERSIDE.length - 1][1].toFixed(1)} Z`;
-
-/* An inner layer traces the base outline offset inward by a CONSTANT distance:
-   `botGap` all along the underside — so the three bottom edges stay an equal,
-   small distance apart — and a larger `topGap` for the flat top, so the three
-   top edges stay an equal, wider distance apart. The tip is capped with a
-   rounded nub where the layer gets too thin to hold both edges. */
-function layerBody(topGap: number, botGap: number) {
+/* Every layer traces the base underside offset inward by a CONSTANT distance:
+   `botGap` all along the underside — so the bottom edges stay an equal, small
+   distance apart — with the flat top dropped by a larger `topGap`, so the top
+   edges stay an equal, wider distance apart. `rho` is the radius of the rounded
+   tip nub, where the offset flat top and underside are eased together. The base
+   layer is layerBody(0, 0). */
+function layerBody(topGap: number, botGap: number, rho = 11) {
   const topY = TIP.y + topGap;
   const n = UNDERSIDE.length;
 
@@ -149,23 +160,27 @@ function layerBody(topGap: number, botGap: number) {
     return [px - (ty / len) * botGap, py + (tx / len) * botGap];
   });
 
-  // round the tip: cap the layer where it is 2·RHO thick, so the messy
-  // tip samples (bulge and all) fall inside the nub
-  const RHO = 11;
-  const capYB = topY + 2 * RHO;
+  // cap the tip where the layer is 2·rho thick (its messy bulge samples fall
+  // inside the nub); the four points ease the nub into the underside, no kink
+  const capYB = topY + 2 * rho;
   let k = 1;
   while (k < n - 1 && off[k][1] < capYB) k++;
   const [x1, y1] = off[k - 1];
   const [x2, y2] = off[k];
   const capX = x1 + ((capYB - y1) / (y2 - y1 || 1)) * (x2 - x1);
 
-  // flat top → semicircular nub (RHO) → the offset underside → down the wall
-  const tail: [number, number][] = [[capX, capYB], ...off.slice(k)];
-  const lastY = tail[tail.length - 1][1];
+  const edge: [number, number][] = [
+    [capX, topY],
+    [capX + rho * 0.7, topY + rho * 0.3],
+    [capX + rho, topY + rho],
+    [capX + rho * 0.7, capYB - rho * 0.3],
+    [capX, capYB],
+    ...off.slice(k),
+  ];
+  const lastY = edge[edge.length - 1][1];
   return (
     `M0,${topY.toFixed(1)} L${capX.toFixed(1)},${topY.toFixed(1)} ` +
-    `A${RHO},${RHO} 0 0 1 ${capX.toFixed(1)},${capYB.toFixed(1)} ` +
-    smooth(tail) +
+    smooth(edge) +
     `L0,${lastY.toFixed(1)} Z`
   );
 }
@@ -173,6 +188,7 @@ function layerBody(topGap: number, botGap: number) {
 /* Three nested layers for a layered-depth look, drawn back→front /
    darkest→lightest — each traces the base's edges, its bottom edge a hair off,
    its top edge further off. */
+const BODY = layerBody(0, 0, 16); // also the clip path
 const LAYERS = [
   { fill: CYAN, d: BODY },
   { fill: CYAN_TILE, d: layerBody(25, 9) },
@@ -185,7 +201,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   const T = (config: object) => (reduce ? { duration: 0 } : config);
 
   return (
-    <div id="skills" className="pointer-events-auto">
+    <div>
       <div className="flex items-center gap-4">
         {/* bar — drops in and bounces */}
         <motion.span
@@ -260,32 +276,47 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
 /* px the landed panel sits BELOW the exact viewport centre (positive = lower) */
 const LAND_OFFSET = 64;
 
+/* ── hold the reader on the section while the entrance plays ──────────────────
+   A fast scroll could blow straight past the pop-in. Once the scroll reaches
+   the point where the Languages panel is ~centred, freeze the page for LOCK_MS,
+   then let go. */
+const LOCK_MS = 780;
+let navScrollAt = 0; // set by scrollToLanguages so a "Skills" click isn't pinned
+
+/** scrollY at which the Languages panel lands ~centred in the viewport (nudged
+    down by LAND_OFFSET), accounting for the parallax. */
+function languagesLandingY(ledge: HTMLElement, panel: HTMLElement) {
+  const lt = ledge.style.transform;
+  const pt = panel.style.transform;
+  ledge.style.transform = "none"; // read untransformed (pre-parallax) geometry
+  panel.style.transform = "none";
+  const lr = ledge.getBoundingClientRect();
+  const pr = panel.getBoundingClientRect();
+  ledge.style.transform = lt;
+  panel.style.transform = pt;
+
+  const sy = window.scrollY;
+  const baseCentre = lr.top + sy + lr.height / 2;
+  const panelCentre = pr.top + sy + pr.height / 2;
+  const delta = panelCentre - baseCentre;
+  return Math.max(
+    0,
+    baseCentre - window.innerHeight / 2 + (delta - LAND_OFFSET) / (1 + PANEL_K),
+  );
+}
+
 /**
- * Scroll so the Languages panel lands near the viewport's vertical centre
- * (nudged down by LAND_OFFSET), accounting for the parallax. The entrance
- * plays on its own once the section scrolls into view. Wired to "Skills".
+ * Scroll so the Languages panel lands near the viewport's vertical centre.
+ * The entrance plays on its own once the section scrolls into view. Wired to
+ * "Skills".
  */
 export function scrollToLanguages() {
   const ledge = document.getElementById("ledge-languages");
   const panel = document.getElementById("skills");
   if (!ledge || !panel) return;
 
-  const prev = ledge.style.transform;
-  ledge.style.transform = "none"; // read untransformed geometry
-  const lr = ledge.getBoundingClientRect();
-  const pr = panel.getBoundingClientRect();
-  ledge.style.transform = prev;
-
-  const sy = window.scrollY;
-  const baseCentre = lr.top + sy + lr.height / 2;
-  const panelCentre = pr.top + sy + pr.height / 2;
-  const delta = panelCentre - baseCentre;
-  const target =
-    baseCentre -
-    window.innerHeight / 2 +
-    (delta - LAND_OFFSET) / (1 + STRENGTH);
-
-  window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+  navScrollAt = Date.now();
+  window.scrollTo({ top: languagesLandingY(ledge, panel), behavior: "smooth" });
 }
 
 export default function LeftLedge() {
@@ -294,36 +325,160 @@ export default function LeftLedge() {
 
   const show = useInView(ref, { once: true, amount: 0.15 });
 
-  /* parallax */
+  const rockY = useMotionValue(0); // px — the outcrop plane (HTML wrapper)
+  const midY = useMotionValue(0); //  viewBox units — middle layer, extra drift
+  const innerY = useMotionValue(0); // viewBox units — inner layer, extra drift
+  const panelY = useMotionValue(0); // px — the floating panel plane
+
+  /* multi-plane parallax: each plane eases toward its own scroll-linked target
+     at its own rate, so they separate a little while moving and re-settle when
+     the scroll stops */
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || reduce) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
-    el.style.transform = ""; // clear any leftover (StrictMode re-run / HMR)
-    const r = el.getBoundingClientRect();
-    const baseCentre = r.top + window.scrollY + r.height / 2;
+    let centre = 0;
+    let uPerPx = 1; // viewBox units per screen px, for the SVG-child planes
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      centre = r.top + window.scrollY + r.height / 2;
+      uPerPx = r.width > 0 ? 1010 / r.width : 1;
+    };
+
+    const planes = [
+      { mv: rockY, k: ROCK_K, lag: ROCK_LAG, unit: false, cap: 0, cur: 0 },
+      { mv: midY, k: MID_K, lag: MID_LAG, unit: true, cap: MID_CAP, cur: 0 },
+      { mv: innerY, k: INNER_K, lag: INNER_LAG, unit: true, cap: INNER_CAP, cur: 0 },
+      { mv: panelY, k: PANEL_K, lag: PANEL_LAG, unit: false, cap: 0, cur: 0 },
+    ];
+    type Plane = (typeof planes)[number];
+    const targetOf = (p: Plane, rel: number) => {
+      let t = rel * p.k;
+      if (p.unit) t *= uPerPx;
+      if (p.cap) t = p.cap * Math.tanh(t / p.cap); // soft-clamp so it never unstacks
+      return t;
+    };
 
     let raf = 0;
-    const apply = () => {
-      raf = 0;
-      const px = (baseCentre - (window.scrollY + window.innerHeight / 2)) * STRENGTH;
-      el.style.transform = `translate3d(0, ${px.toFixed(1)}px, 0)`;
+    const tick = () => {
+      const rel = centre - (window.scrollY + window.innerHeight / 2);
+      let live = false;
+      for (const p of planes) {
+        const target = targetOf(p, rel);
+        const next = p.cur + (target - p.cur) * p.lag;
+        if (Math.abs(target - next) > 0.02) live = true;
+        p.cur = next;
+        p.mv.set(next);
+      }
+      raf = live ? requestAnimationFrame(tick) : 0;
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(apply);
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    const snap = () => {
+      const rel = centre - (window.scrollY + window.innerHeight / 2);
+      for (const p of planes) {
+        p.cur = targetOf(p, rel);
+        p.mv.set(p.cur);
+      }
+    };
+    const onResize = () => {
+      measure();
+      snap();
     };
 
-    apply();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    measure();
+    snap();
+    window.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
-      el.style.transform = "";
     };
-  }, []);
+  }, [reduce, rockY, midY, innerY, panelY]);
+
+  /* Hold the reader on the section until the entrance animation finishes.
+     When the scroll reaches the point where the Languages panel is ~centred,
+     freeze the page hard — overflow:hidden plus swallowed wheel/touch/key
+     input, no scroll-position tweaking so there's nothing to rubber-band
+     against — then release once the animation's had its ~LOCK_MS. */
+  useEffect(() => {
+    if (!show || reduce) return;
+    if (Date.now() - navScrollAt < 1600) return; // a nav click drives its own scroll
+    const el = ref.current;
+    const panel = document.getElementById("skills");
+    if (!el || !panel) return;
+    if (panel.getBoundingClientRect().bottom < window.innerHeight * 0.3) return; // section already gone
+
+    const root = document.documentElement;
+    const body = document.body;
+    const pinY = languagesLandingY(el, panel); // panel ~centred
+    const releaseAt = Date.now() + LOCK_MS;
+
+    let raf = 0;
+    let holdTimer = 0;
+    let frozen = false;
+
+    const swallow = (e: Event) => e.preventDefault();
+    const SCROLL_KEYS = new Set([
+      " ", "Spacebar", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End",
+    ]);
+    const onKey = (e: KeyboardEvent) => {
+      if (SCROLL_KEYS.has(e.key)) e.preventDefault();
+    };
+
+    const thaw = () => {
+      if (!frozen) return;
+      frozen = false;
+      root.style.overflow = "";
+      body.style.overflow = "";
+      root.style.paddingRight = "";
+      window.removeEventListener("wheel", swallow);
+      window.removeEventListener("touchmove", swallow);
+      window.removeEventListener("keydown", onKey, true);
+    };
+    const freeze = () => {
+      frozen = true;
+      // reserve the scrollbar's width so hiding it doesn't reflow the page
+      const sbw = window.innerWidth - root.clientWidth;
+      root.style.overflow = "hidden";
+      body.style.overflow = "hidden";
+      if (sbw > 0) root.style.paddingRight = `${sbw}px`;
+      window.addEventListener("wheel", swallow, { passive: false });
+      window.addEventListener("touchmove", swallow, { passive: false });
+      window.addEventListener("keydown", onKey, true);
+      holdTimer = window.setTimeout(thaw, Math.max(150, releaseAt - Date.now()));
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      clearTimeout(holdTimer);
+      thaw();
+    };
+    const check = () => {
+      raf = 0;
+      if (frozen) return;
+      if (Date.now() >= releaseAt) return cleanup();
+      if (window.scrollY >= pinY) freeze();
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+
+    if (window.scrollY >= pinY) freeze(); // already there — hold in place
+    else window.addEventListener("scroll", onScroll, { passive: true });
+    // safety: drop the listener if the pin line is never reached in time
+    const guard = window.setTimeout(() => {
+      if (!frozen) cleanup();
+    }, LOCK_MS + 400);
+    return () => {
+      clearTimeout(guard);
+      cleanup();
+    };
+  }, [show, reduce]);
 
   const T = (config: object) => (reduce ? { duration: 0 } : config);
   const slideIn = (i: number) => ({
@@ -340,75 +495,84 @@ export default function LeftLedge() {
     <div
       ref={ref}
       id="ledge-languages"
-      className="pointer-events-none absolute left-0 z-[6] will-change-transform"
+      className="pointer-events-none absolute left-0 z-[6]"
       style={{ top: `${TOP_VW}vw`, width: `${WIDTH_VW}vw` }}
     >
-      {/* viewBox starts just above the flat top so the element box ≈ the
-          painted surface (keeps the panel's gap math honest) */}
-      <svg viewBox="0 26 1010 374" className="block w-full" aria-hidden>
-        <defs>
-          <filter id="ledge-grain">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.9"
-              numOctaves="2"
-              seed="5"
-            />
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 0.03  0 0 0 0 0.13  0 0 0 0 0.16  0 0 0 0.7 0"
-            />
-          </filter>
-          <clipPath id="ledge-clip">
-            <path d={BODY} />
-          </clipPath>
-        </defs>
+      {/* outcrop plane — base layer + grain move as one */}
+      <motion.div style={{ y: rockY }} className="will-change-transform">
+        {/* viewBox starts just above the flat top so the element box ≈ the
+            painted surface (keeps the panel's gap math honest) */}
+        <svg viewBox="0 26 1010 374" className="block w-full" aria-hidden>
+          <defs>
+            <filter id="ledge-grain">
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.9"
+                numOctaves="2"
+                seed="5"
+              />
+              <feColorMatrix
+                type="matrix"
+                values="0 0 0 0 0.03  0 0 0 0 0.13  0 0 0 0 0.16  0 0 0 0.7 0"
+              />
+            </filter>
+            <clipPath id="ledge-clip">
+              <path d={BODY} />
+            </clipPath>
+          </defs>
 
-        <motion.path
-          d={LAYERS[0].d}
-          fill={LAYERS[0].fill}
-          stroke="#06222a"
-          strokeWidth="2.5"
-          {...slideIn(0)}
-        />
-        <motion.g
-          clipPath="url(#ledge-clip)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: show ? 0.4 : 0 }}
-          transition={T({ delay: LAYERS_AT + 0.15, duration: 0.45 })}
-        >
-          <rect
-            x="-40"
-            y="-40"
-            width="1120"
-            height="400"
-            filter="url(#ledge-grain)"
-          />
-        </motion.g>
-        {/* offset inward from the base, so they sit within it by construction —
-            no stroke, the fill colour is the only edge */}
-        {LAYERS.slice(1).map((layer, idx) => (
           <motion.path
-            key={layer.fill}
-            d={layer.d}
-            fill={layer.fill}
-            {...slideIn(idx + 1)}
+            d={LAYERS[0].d}
+            fill={LAYERS[0].fill}
+            stroke="#06222a"
+            strokeWidth="2.5"
+            {...slideIn(0)}
           />
-        ))}
-      </svg>
+          <motion.g
+            clipPath="url(#ledge-clip)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: show ? 0.4 : 0 }}
+            transition={T({ delay: LAYERS_AT + 0.15, duration: 0.45 })}
+          >
+            <rect
+              x="-40"
+              y="-40"
+              width="1120"
+              height="400"
+              filter="url(#ledge-grain)"
+            />
+          </motion.g>
+          {/* middle + inner layers: no stroke (fill is the only edge), and each
+              drifts a touch further than the base for depth */}
+          <motion.path
+            d={LAYERS[1].d}
+            fill={LAYERS[1].fill}
+            style={{ y: midY }}
+            {...slideIn(1)}
+          />
+          <motion.path
+            d={LAYERS[2].d}
+            fill={LAYERS[2].fill}
+            style={{ y: innerY }}
+            {...slideIn(2)}
+          />
+        </svg>
+      </motion.div>
 
-      {/* content anchored to the BASE (darkest, highest) layer's top edge —
-          BODY's y=30 in the "0 26 1010 374" box ⇒ ≈ 98.93% up. */}
-      <div
-        className="absolute"
+      {/* panel plane — floats in front of the outcrop, travels fastest.
+          anchored to the BASE layer's top edge (BODY y=30 ⇒ ≈ 98.93% up). */}
+      <motion.div
+        id="skills"
+        className="pointer-events-auto absolute will-change-transform"
         style={{
+          y: panelY,
           left: "3vw",
           bottom: "calc(98.93% + 12px)",
           width: "39vw",
         }}
       >
         <LanguagesPanel show={show} reduce={reduce} />
-      </div>
+      </motion.div>
     </div>
   );
 }
