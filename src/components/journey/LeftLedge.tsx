@@ -8,10 +8,11 @@ import { motion, useInView, useReducedMotion } from "motion/react";
  * screen edge with a floating panel of language tiles.
  *
  * Reveal: hidden until the section scrolls into view (clicking the "Skills"
- * nav link scrolls it in, which triggers the same thing). Then a choreographed
- * entrance:
+ * nav link scrolls it in, which triggers the same thing). Then a fast,
+ * near-simultaneous entrance — the three steps overlap rather than wait on
+ * each other:
  *   1. the "Languages" letters wave in + the bar drops and bounces (together)
- *   2. the 3 outcrop layers slide in from the left, one after another
+ *   2. the 3 outcrop layers slide in from the left, a hair apart
  *   3. the 6 tiles pop out of the centre, 3 at a time
  *
  * Parallax: a plain rAF scroll listener translates the whole thing ≈1.3× the
@@ -32,11 +33,14 @@ const CYAN_LIGHT = "#48b4cc"; // most-inner layer + bar + tile border
 const TIP = { x: 986, y: 30 };
 const DROP = 344; // underside drop from tip to the left screen edge
 
-/* ── entrance choreography (seconds) ──────────────────────────────────────── */
-const LAYERS_AT = 0.72; // step 2 starts after step 1
-const LAYER_GAP = 0.11; // between the 3 layers
-const TILES_AT = 1.42; // step 3 starts after step 2
-const ROW_GAP = 0.16; // between the 2 tile rows
+/* ── entrance choreography (seconds) ──────────────────────────────────────────
+   All three steps kick off almost together; the small offsets just keep the
+   motion from landing in one flat thud. */
+const LAYERS_AT = 0.12; // step 2 — almost immediate
+const LAYER_GAP = 0.07; // between the 3 layers
+const LAYER_DUR = 0.42; // each layer's slide-in
+const TILES_AT = 0.28; // step 3 — close on the layers' heels
+const ROW_GAP = 0.09; // between the 2 tile rows
 
 /* seeded PRNG so the (random-looking) outline is identical every render */
 function mulberry32(seed: number) {
@@ -127,7 +131,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
           style={{ backgroundColor: CYAN_LIGHT }}
           initial={{ opacity: 0, y: -78 }}
           animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: -78 }}
-          transition={T({ type: "spring", stiffness: 500, damping: 10, mass: 0.85 })}
+          transition={T({ type: "spring", stiffness: 620, damping: 11, mass: 0.7 })}
         />
         {/* heading — letters wave in */}
         <h3
@@ -147,9 +151,9 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
               }
               transition={T({
                 type: "spring",
-                stiffness: 360,
-                damping: 13,
-                delay: i * 0.045,
+                stiffness: 520,
+                damping: 15,
+                delay: i * 0.02,
               })}
             >
               {ch}
@@ -172,7 +176,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
               animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
               transition={T({
                 type: "spring",
-                stiffness: 440,
+                stiffness: 520,
                 damping: 16,
                 delay: TILES_AT + row * ROW_GAP,
               })}
@@ -264,7 +268,7 @@ export default function LeftLedge() {
     animate: { x: show ? 0 : -1200 },
     transition: T({
       delay: LAYERS_AT + i * LAYER_GAP,
-      duration: 0.5,
+      duration: LAYER_DUR,
       ease: [0.22, 1, 0.36, 1] as const,
     }),
   });
@@ -308,7 +312,7 @@ export default function LeftLedge() {
           clipPath="url(#ledge-clip)"
           initial={{ opacity: 0 }}
           animate={{ opacity: show ? 0.4 : 0 }}
-          transition={T({ delay: LAYERS_AT + 0.25, duration: 0.5 })}
+          transition={T({ delay: LAYERS_AT + 0.15, duration: 0.45 })}
         >
           <rect
             x="-40"
