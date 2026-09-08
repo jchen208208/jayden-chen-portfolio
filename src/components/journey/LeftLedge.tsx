@@ -88,6 +88,19 @@ const BODY =
   smooth(buildUnderside()) +
   `L0,${TIP.y + DROP} Z`;
 
+/* Three stacked copies of the same shape for a layered-depth look. Each is a
+   little smaller and a shade lighter, and skewed DOWN (bigger translate than
+   the scale would need) so the layers nearly touch along the bottom edge while
+   their top edges fan out. Drawn back→front. Used later by the scroll effect. */
+const LAYERS = [
+  { fill: CYAN, transform: undefined as string | undefined }, // base (== the old single ledge)
+  { fill: CYAN_TILE, transform: "translate(0 18) scale(0.942)" },
+  { fill: CYAN_LIGHT, transform: "translate(0 36) scale(0.884)" },
+];
+/* top edge of the frontmost (layer 3): y = TIP.y*0.884 + 36 ≈ 62.5 in the
+   "0 26 1010 374" box ⇒ (62.5-26)/374 ≈ 9.8% down it */
+const FRONT_TOP_PCT = 90.2;
+
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
 
 /* Draft 1 — bare "Languages" label + a rounded-square tile per language,
@@ -213,7 +226,8 @@ export default function LeftLedge() {
           </clipPath>
         </defs>
 
-        <path d={BODY} fill={CYAN} stroke="#06222a" strokeWidth="2.5" />
+        {/* base layer + its grain */}
+        <path d={BODY} fill={LAYERS[0].fill} stroke="#06222a" strokeWidth="2.5" />
         <g clipPath="url(#ledge-clip)">
           <rect
             x="-40"
@@ -224,17 +238,27 @@ export default function LeftLedge() {
             opacity="0.4"
           />
         </g>
+        {/* the two lighter, smaller, downward-skewed layers on top */}
+        {LAYERS.slice(1).map((layer) => (
+          <path
+            key={layer.fill}
+            d={BODY}
+            fill={layer.fill}
+            stroke="rgba(4,18,24,0.5)"
+            strokeWidth="1.5"
+            transform={layer.transform}
+          />
+        ))}
       </svg>
 
-      {/* content anchored to the ledge's painted top surface (viewBox y=30 of
-          "0 26 …374" ⇒ 4/374 ≈ 1.07% down the box). Anchoring the panel's
-          BOTTOM here keeps the gap fixed at ~4px on any viewport width — a
-          vw-based `top` drifted badly once the panel width hit its px cap. */}
+      {/* content anchored to the FRONT layer's top edge (see FRONT_TOP_PCT).
+          Anchoring the panel's BOTTOM by % of the box height keeps the gap
+          fixed on any viewport width. */}
       <div
         className="absolute"
         style={{
           left: "3vw", // small margin in from the outcrop's left edge
-          bottom: "calc(98.93% + 12px)",
+          bottom: `calc(${FRONT_TOP_PCT}% + 12px)`,
           width: "39vw", // leaves a margin before the outcrop's tip too
         }}
       >
