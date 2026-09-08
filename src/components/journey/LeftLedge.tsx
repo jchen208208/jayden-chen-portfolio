@@ -133,9 +133,8 @@ const BODY =
 /* An inner layer traces the base outline offset inward by a CONSTANT distance:
    `botGap` all along the underside — so the three bottom edges stay an equal,
    small distance apart — and a larger `topGap` for the flat top, so the three
-   top edges stay an equal, wider distance apart. Where the dropped flat top
-   runs into the offset underside near the tip, a quadratic fillet rounds the
-   corner back to the base's rounded-tip shape. */
+   top edges stay an equal, wider distance apart. The tip is capped with a
+   rounded nub where the layer gets too thin to hold both edges. */
 function layerBody(topGap: number, botGap: number) {
   const topY = TIP.y + topGap;
   const n = UNDERSIDE.length;
@@ -150,29 +149,22 @@ function layerBody(topGap: number, botGap: number) {
     return [px - (ty / len) * botGap, py + (tx / len) * botGap];
   });
 
-  // x where the offset underside has dropped to the new flat top
+  // round the tip: cap the layer where it is 2·RHO thick, so the messy
+  // tip samples (bulge and all) fall inside the nub
+  const RHO = 11;
+  const capYB = topY + 2 * RHO;
   let k = 1;
-  while (k < n - 1 && off[k][1] < topY) k++;
+  while (k < n - 1 && off[k][1] < capYB) k++;
   const [x1, y1] = off[k - 1];
   const [x2, y2] = off[k];
-  const cx = x1 + ((topY - y1) / (y2 - y1 || 1)) * (x2 - x1);
+  const capX = x1 + ((capYB - y1) / (y2 - y1 || 1)) * (x2 - x1);
 
-  // fillet: (cx − R, topY) → control (cx, topY) → R along the underside tangent
-  const R = 11;
-  const j = Math.min(n - 1, k + 3);
-  const dx = off[j][0] - cx;
-  const dy = off[j][1] - topY;
-  const dl = Math.hypot(dx, dy) || 1;
-  const ex = cx + (dx / dl) * R;
-  const ey = topY + (dy / dl) * R;
-  let m = k;
-  while (m < n - 1 && off[m][1] < ey) m++;
-
-  const tail: [number, number][] = [[ex, ey], ...off.slice(m)];
+  // flat top → semicircular nub (RHO) → the offset underside → down the wall
+  const tail: [number, number][] = [[capX, capYB], ...off.slice(k)];
   const lastY = tail[tail.length - 1][1];
   return (
-    `M0,${topY.toFixed(1)} L${(cx - R).toFixed(1)},${topY.toFixed(1)} ` +
-    `Q${cx.toFixed(1)},${topY.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)} ` +
+    `M0,${topY.toFixed(1)} L${capX.toFixed(1)},${topY.toFixed(1)} ` +
+    `A${RHO},${RHO} 0 0 1 ${capX.toFixed(1)},${capYB.toFixed(1)} ` +
     smooth(tail) +
     `L0,${lastY.toFixed(1)} Z`
   );
@@ -183,8 +175,8 @@ function layerBody(topGap: number, botGap: number) {
    its top edge further off. */
 const LAYERS = [
   { fill: CYAN, d: BODY },
-  { fill: CYAN_TILE, d: layerBody(25, 6) },
-  { fill: CYAN_LIGHT, d: layerBody(50, 12) },
+  { fill: CYAN_TILE, d: layerBody(25, 9) },
+  { fill: CYAN_LIGHT, d: layerBody(50, 18) },
 ];
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
@@ -237,7 +229,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
         {LANGUAGES.map((lang, i) => {
           const col = i % 3;
           const row = Math.floor(i / 3);
-          const hidden = { opacity: 0, scale: 0.12, x: (1 - col) * 90, y: 14 };
+          const hidden = { opacity: 0, scale: 0.55, x: (1 - col) * 46, y: 8 };
           return (
             <motion.li
               key={lang}
@@ -247,8 +239,8 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
               animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
               transition={T({
                 type: "spring",
-                stiffness: 520,
-                damping: 16,
+                stiffness: 460,
+                damping: 19,
                 delay: TILES_AT + row * ROW_GAP,
               })}
               whileHover={{
