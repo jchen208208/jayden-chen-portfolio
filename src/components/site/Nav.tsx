@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { NAV, PROFILE } from "@/lib/site";
+import { scrollToLanguages } from "@/components/journey/LeftLedge";
 import { EASE_OUT } from "./motion";
 
 const ICON = {
@@ -105,6 +106,14 @@ export default function Nav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={
+                item.href === "#skills"
+                  ? (e) => {
+                      e.preventDefault();
+                      scrollToLanguages();
+                    }
+                  : undefined
+              }
               className={`relative py-1 transition-colors ${
                 active === item.href
                   ? "text-ink"

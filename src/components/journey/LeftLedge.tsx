@@ -13,7 +13,7 @@ import { useEffect, useRef } from "react";
  * the page (≈1.3×), so it clearly slides past the cliff on scroll.
  */
 
-const TOP_VW = 104; // down the scene section
+const TOP_VW = 112; // down the scene section
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
 const STRENGTH = 0.3; // screen travel ≈ (1 + STRENGTH) × page scroll
 
@@ -86,20 +86,20 @@ const BODY =
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML / CSS"];
 
-/* Draft 1 — bare "Languages" label + a rounded-square tile per language.
-   Text only (no brand logos): reads instantly, stays on-theme, no colour
-   clash, no ambiguous glyphs. */
+/* Draft 1 — bare "Languages" label + a rounded-square tile per language,
+   floating just above the ledge's top surface. Text only (no brand logos):
+   reads instantly, stays on-theme, no colour clash, no ambiguous glyphs. */
 function LanguagesPanel() {
   return (
-    <div className="pointer-events-auto">
-      <h3 className="font-display text-[1.6rem] leading-none tracking-tight text-ink [text-shadow:0_2px_16px_rgba(10,7,20,0.85)] sm:text-[1.9rem]">
-        Languages<span className="text-ember">.</span>
+    <div id="skills" className="pointer-events-auto">
+      <h3 className="font-display text-[2.6rem] leading-[0.95] tracking-tight text-ink [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[3.4rem]">
+        Languages
       </h3>
-      <ul className="mt-3.5 grid grid-cols-3 gap-2.5">
+      <ul className="mt-8 grid grid-cols-3 gap-[clamp(1rem,3.4vw,2.75rem)]">
         {LANGUAGES.map((lang) => (
           <li
             key={lang}
-            className="flex aspect-square items-center justify-center rounded-xl border border-line bg-card/70 p-2 text-center font-mono text-[11px] uppercase leading-tight tracking-wide text-ink-soft shadow-[0_6px_20px_rgba(10,7,20,0.35)] backdrop-blur-sm transition-colors hover:border-ember hover:text-ink"
+            className="flex aspect-square items-center justify-center rounded-xl border border-line bg-card/70 p-2 text-center font-mono text-[12px] uppercase leading-tight tracking-wide text-ink-soft shadow-[0_8px_24px_rgba(10,7,20,0.4)] backdrop-blur-sm transition-colors hover:border-ember hover:text-ink sm:text-[13px]"
           >
             {lang}
           </li>
@@ -107,6 +107,37 @@ function LanguagesPanel() {
       </ul>
     </div>
   );
+}
+
+/* px the landed panel sits BELOW the exact viewport centre (positive = lower) */
+const LAND_OFFSET = 64;
+
+/**
+ * Scroll so the Languages panel lands near the viewport's vertical centre
+ * (nudged down by LAND_OFFSET) — accounting for the parallax (the panel
+ * travels at 1+STRENGTH× the page). Wired to the "Skills" nav link.
+ */
+export function scrollToLanguages() {
+  const ledge = document.getElementById("ledge-languages");
+  const panel = document.getElementById("skills");
+  if (!ledge || !panel) return;
+
+  const prev = ledge.style.transform;
+  ledge.style.transform = "none"; // read untransformed geometry
+  const lr = ledge.getBoundingClientRect();
+  const pr = panel.getBoundingClientRect();
+  ledge.style.transform = prev;
+
+  const sy = window.scrollY;
+  const baseCentre = lr.top + sy + lr.height / 2;
+  const panelCentre = pr.top + sy + pr.height / 2;
+  const delta = panelCentre - baseCentre;
+  const target =
+    baseCentre -
+    window.innerHeight / 2 +
+    (delta - LAND_OFFSET) / (1 + STRENGTH);
+
+  window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
 }
 
 export default function LeftLedge() {
@@ -117,6 +148,7 @@ export default function LeftLedge() {
     if (!el) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
+    el.style.transform = ""; // clear any leftover (StrictMode re-run / HMR)
     const r = el.getBoundingClientRect();
     const baseCentre = r.top + window.scrollY + r.height / 2;
 
@@ -137,16 +169,20 @@ export default function LeftLedge() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(raf);
+      el.style.transform = "";
     };
   }, []);
 
   return (
     <div
       ref={ref}
+      id="ledge-languages"
       className="pointer-events-none absolute left-0 z-[6] will-change-transform"
       style={{ top: `${TOP_VW}vw`, width: `${WIDTH_VW}vw` }}
     >
-      <svg viewBox="0 0 1010 400" className="block w-full" aria-hidden>
+      {/* viewBox starts just above the flat top so the element box ≈ the
+          painted surface (keeps the panel's gap math honest) */}
+      <svg viewBox="0 26 1010 374" className="block w-full" aria-hidden>
         <defs>
           <filter id="ledge-grain">
             <feTurbulence
@@ -178,13 +214,16 @@ export default function LeftLedge() {
         </g>
       </svg>
 
-      {/* content resting on the ledge surface */}
+      {/* content anchored to the ledge's painted top surface (viewBox y=30 of
+          "0 26 …374" ⇒ 4/374 ≈ 1.07% down the box). Anchoring the panel's
+          BOTTOM here keeps the gap fixed at ~4px on any viewport width — a
+          vw-based `top` drifted badly once the panel width hit its px cap. */}
       <div
         className="absolute"
         style={{
-          left: "3vw",
-          top: "-1vw",
-          width: "min(28vw, 372px)",
+          left: "1vw",
+          bottom: "calc(98.93% + 12px)",
+          width: "48vw", // matches the ledge (~50vw) so the tiles span it at any width
         }}
       >
         <LanguagesPanel />
