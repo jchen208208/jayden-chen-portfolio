@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
+
+// Mileast — display face for the hero name + primary buttons. Local .otf, see /font.
+const mileast = localFont({
+  variable: "--font-mileast",
+  display: "swap",
+  src: [
+    { path: "./fonts/Mileast.otf", weight: "400", style: "normal" },
+    { path: "./fonts/Mileast-Italic.otf", weight: "400", style: "italic" },
+  ],
+});
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -32,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} h-full bg-paper antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} h-full bg-paper antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration.

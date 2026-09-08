@@ -74,6 +74,7 @@
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
+  --font-title: var(--font-mileast); /* hero name + primary buttons */
 }
 
 html {
