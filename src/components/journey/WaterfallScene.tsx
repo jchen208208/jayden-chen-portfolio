@@ -40,19 +40,33 @@ const PLATES: Plate[] = [
   {
     src: MASTER.jungle,
     filter: "brightness(0.9) saturate(0.84) contrast(1.02)",
-    overlap: 9,
-    feather: 20,
+    // piece2's bottom canopy and piece3's top canopy are the SAME painted
+    // trees (piece3 was generated i2i off piece2's bottom edge) and register
+    // tightly. Two things went wrong before: (1) overlap 9 < feather 20 left
+    // piece2's HARD bottom edge showing at ~45% opacity — a tonal line;
+    // (2) bumping the feather to 20+ to hide that then held piece3 semi-
+    // transparent across piece2's dark central tree for ~15vw, so its dark
+    // crown + trunk ghosted through piece3's lit leaves ("see-through
+    // leaves"). Fix: deep overlap (26) buries the edge, and a SHORT feather
+    // (5) — safe *because* the content matches — snaps piece3 opaque before
+    // its leaves cross piece2's dark tree. The cool→warm grade shift over
+    // those 5vw reads as light catching the same tree, not a border.
+    overlap: 26,
+    feather: 5,
   },
   {
     src: MASTER.roots,
     filter: "brightness(1.05) saturate(0.94)",
-    // piece3 & piece4 now share the same vertical tree-trunks across the join
-    // (piece4's top was generated straight off piece3's new bottom edge), so
-    // the seam is buried under a deep overlap: piece4 is fully opaque by 22vw,
-    // well past piece3's hard bottom edge at 24vw, and the 22vw feather
-    // cross-dissolves the aligned trunks.
+    // piece4's top ~10% is a raster-composited copy of piece3's bottom edge
+    // (scripts/piece4-seam-fix.mjs step 3) — but squashed into a shorter strip,
+    // so its trunks sit ~1–2px off piece3's real trunks. The old 22vw feather
+    // held both visible across that whole span → doubled trunk outlines. Same
+    // fix as the piece2→3 seam: deep overlap (24) buries piece3's hard edge,
+    // a SHORT feather (10) snaps piece4 opaque before the offset can register
+    // as a ghost, while still being long enough to ease the cool→warm grade
+    // step. piece4's baked-in top strip carries piece3's linework on down.
     overlap: 24,
-    feather: 22,
+    feather: 10,
   },
 ];
 
@@ -113,9 +127,19 @@ const SPLASH = {
     // the fade completes just as the clip's own canopy corners + piece2's
     // painted canopy tops (~223–230vw) would come into frame.
     "linear-gradient(180deg,transparent 0,#000 6%,#000 79%,transparent 89%)",
-  subloop: 4.8,
-  xfade: 0.5,
+  // splash-loop.mp4 is 5.0417s. subloop ≥ that = "no manual seek" — the two
+  // offset copies just run on the native <video loop> and cross-dissolve
+  // through each wrap (see LoopVideo). The old 4.8 sub-loop trimmed only 0.24s
+  // of mist but paid for it with a currentTime seek every cycle, which at
+  // rate 1.5 hitched hard enough to read as a jump-cut on the loop.
+  subloop: 5.05,
+  xfade: 0.7, // slower dissolve so the wrap is imperceptible
   grade: 1, // sits on piece2 — use its colour grade
+  // the clip's ripple/churn motion is very gentle — it read slow + laggy once
+  // the pool was un-masked. Speed playback up to match WATERFALL (also tightens
+  // the shared falls-column handoff at ~154–159vw). Can't raise the source fps
+  // without a re-encode; this is the lever we have.
+  rate: 1.5,
 };
 
 type LoopSpec = {
