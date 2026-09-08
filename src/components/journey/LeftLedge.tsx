@@ -1,29 +1,42 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 
 /**
- * First skill ledge — a flat, dark-cyan wedge that juts from the very left
- * screen edge out to a point near screen-centre. Deliberately plain so a 2D
- * card sits on it: a perfectly FLAT top edge, and a textured / kinked diagonal
- * for the underside (hand-placed kinks, no lighting). Sits roughly where the
- * first code-built ledge was (~104vw) and may overlap the waterfall.
+ * First skill ledge ("Languages") — a stacked dark-cyan outcrop from the left
+ * screen edge with a floating panel of language tiles.
  *
- * Parallax: a plain rAF-throttled scroll listener translates it FASTER than
- * the page (≈1.3×), so it clearly slides past the cliff on scroll.
+ * Reveal: hidden until the section scrolls into view (clicking the "Skills"
+ * nav link scrolls it in, which triggers the same thing). Then a choreographed
+ * entrance:
+ *   1. the "Languages" letters wave in + the bar drops and bounces (together)
+ *   2. the 3 outcrop layers slide in from the left, one after another
+ *   3. the 6 tiles pop out of the centre, 3 at a time
+ *
+ * Parallax: a plain rAF scroll listener translates the whole thing ≈1.3× the
+ * page so it slides past the cliff on scroll.
  */
 
 const TOP_VW = 112; // down the scene section
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
 const STRENGTH = 0.3; // screen travel ≈ (1 + STRENGTH) × page scroll
 
-const CYAN = "#0c3742"; // outcrop flat fill — darker + more saturated than the cliff
-const CYAN_TILE = "#0e5c6c"; // language tiles — a saturated cyan that reads clearly
-//                              against BOTH the dark outcrop and the grey-teal cliff
-const CYAN_LIGHT = "#8ce6f2"; // heading bar + front layer + permanent tile border — light cyan
+/* The 3 outcrop layers, back→front — evenly spaced in lightness
+   (HSL L ≈ 15% / 34% / 54%). CYAN_TILE is also the language-tile fill;
+   CYAN_LIGHT is also the heading bar + the permanent tile border. */
+const CYAN = "#0c3742"; // furthest / darkest layer
+const CYAN_TILE = "#1c7e93"; // middle layer + language tiles
+const CYAN_LIGHT = "#48b4cc"; // most-inner layer + bar + tile border
 
 const TIP = { x: 986, y: 30 };
 const DROP = 344; // underside drop from tip to the left screen edge
+
+/* ── entrance choreography (seconds) ──────────────────────────────────────── */
+const LAYERS_AT = 0.72; // step 2 starts after step 1
+const LAYER_GAP = 0.11; // between the 3 layers
+const TILES_AT = 1.42; // step 3 starts after step 2
+const ROW_GAP = 0.16; // between the 2 tile rows
 
 /* seeded PRNG so the (random-looking) outline is identical every render */
 function mulberry32(seed: number) {
@@ -54,10 +67,9 @@ function smooth(pts: [number, number][]) {
 }
 
 /* One outcrop layer. `topInset` pushes the flat top DOWN, `bottomInset` pulls
-   the underside UP, `tipPull` shortens the reach — so a layer is genuinely
-   nested INSIDE the one below (following its outline), not a scaled copy that
-   pokes through. topInset > bottomInset makes it skew toward the bottom edge.
-   The cascading underside (a gentle facet → bend → steeper → bend → steepest,
+   the underside UP, `tipPull` shortens the reach — so each layer nests inside
+   the one below; `topInset > bottomInset` skews it toward the bottom edge.
+   The cascading underside (gentle facet → bend → steeper → bend → steepest,
    traced off piece1's painted rocks) is the same for every layer. */
 function layerBody(topInset: number, bottomInset: number, tipPull: number) {
   const yTop = TIP.y + topInset;
@@ -92,10 +104,8 @@ function layerBody(topInset: number, bottomInset: number, tipPull: number) {
 
 const BODY = layerBody(0, 0, 0); // base outline (also the clip path)
 
-/* Three nested layers for a layered-depth look — each inset (more at the top
-   than the bottom, so it skews toward the bottom edge) so it fits cleanly
-   inside the one below. Drawn back→front, darkest→lightest. The scroll effect
-   will pull these apart later. */
+/* Three nested layers for a layered-depth look, drawn back→front /
+   darkest→lightest. */
 const LAYERS = [
   { fill: CYAN, d: BODY },
   { fill: CYAN_TILE, d: layerBody(22, 7, 46) },
@@ -104,32 +114,77 @@ const LAYERS = [
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
 
-/* Draft 1 — bare "Languages" label + a rounded-square tile per language,
-   floating just above the ledge's top surface. Text only (no brand logos):
-   reads instantly, stays on-theme, no colour clash, no ambiguous glyphs. */
-function LanguagesPanel() {
+function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
+  const T = (config: object) => (reduce ? { duration: 0 } : config);
+
   return (
     <div id="skills" className="pointer-events-auto">
       <div className="flex items-center gap-4">
-        <span
+        {/* bar — drops in and bounces */}
+        <motion.span
           aria-hidden
           className="h-[3rem] w-[14px] shrink-0 rounded-[2px] sm:h-[4rem]"
           style={{ backgroundColor: CYAN_LIGHT }}
+          initial={{ opacity: 0, y: -78 }}
+          animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: -78 }}
+          transition={T({ type: "spring", stiffness: 500, damping: 10, mass: 0.85 })}
         />
-        <h3 className="font-display text-[3rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]">
-          Languages
+        {/* heading — letters wave in */}
+        <h3
+          className="font-display text-[3rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]"
+          aria-label="Languages"
+        >
+          {"Languages".split("").map((ch, i) => (
+            <motion.span
+              key={i}
+              aria-hidden
+              className="inline-block"
+              initial={{ opacity: 0, y: 34, rotate: -7 }}
+              animate={
+                show
+                  ? { opacity: 1, y: 0, rotate: 0 }
+                  : { opacity: 0, y: 34, rotate: -7 }
+              }
+              transition={T({
+                type: "spring",
+                stiffness: 360,
+                damping: 13,
+                delay: i * 0.045,
+              })}
+            >
+              {ch}
+            </motion.span>
+          ))}
         </h3>
       </div>
+
       <ul className="mt-11 grid grid-cols-3 gap-[clamp(1.15rem,3.2vw,3rem)]">
-        {LANGUAGES.map((lang) => (
-          <li
-            key={lang}
-            className="flex aspect-[9/5] items-center justify-center rounded-xl border px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-2 hover:shadow-[0_18px_36px_rgba(10,7,20,0.55)] sm:text-3xl"
-            style={{ backgroundColor: CYAN_TILE, borderColor: CYAN_LIGHT }}
-          >
-            {lang}
-          </li>
-        ))}
+        {LANGUAGES.map((lang, i) => {
+          const col = i % 3;
+          const row = Math.floor(i / 3);
+          const hidden = { opacity: 0, scale: 0.12, x: (1 - col) * 90, y: 14 };
+          return (
+            <motion.li
+              key={lang}
+              className="flex aspect-[9/5] items-center justify-center rounded-xl border px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] hover:shadow-[0_18px_36px_rgba(10,7,20,0.55)] sm:text-3xl"
+              style={{ backgroundColor: CYAN_TILE, borderColor: CYAN_LIGHT }}
+              initial={hidden}
+              animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
+              transition={T({
+                type: "spring",
+                stiffness: 440,
+                damping: 16,
+                delay: TILES_AT + row * ROW_GAP,
+              })}
+              whileHover={{
+                y: -8,
+                transition: { type: "spring", stiffness: 400, damping: 22 },
+              }}
+            >
+              {lang}
+            </motion.li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -140,8 +195,8 @@ const LAND_OFFSET = 64;
 
 /**
  * Scroll so the Languages panel lands near the viewport's vertical centre
- * (nudged down by LAND_OFFSET) — accounting for the parallax (the panel
- * travels at 1+STRENGTH× the page). Wired to the "Skills" nav link.
+ * (nudged down by LAND_OFFSET), accounting for the parallax. The entrance
+ * plays on its own once the section scrolls into view. Wired to "Skills".
  */
 export function scrollToLanguages() {
   const ledge = document.getElementById("ledge-languages");
@@ -168,7 +223,11 @@ export function scrollToLanguages() {
 
 export default function LeftLedge() {
   const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion() ?? false;
 
+  const show = useInView(ref, { once: true, amount: 0.15 });
+
+  /* parallax */
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -199,6 +258,17 @@ export default function LeftLedge() {
     };
   }, []);
 
+  const T = (config: object) => (reduce ? { duration: 0 } : config);
+  const slideIn = (i: number) => ({
+    initial: { x: -1200 },
+    animate: { x: show ? 0 : -1200 },
+    transition: T({
+      delay: LAYERS_AT + i * LAYER_GAP,
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1] as const,
+    }),
+  });
+
   return (
     <div
       ref={ref}
@@ -227,43 +297,50 @@ export default function LeftLedge() {
           </clipPath>
         </defs>
 
-        {/* base (darkest) layer + its grain */}
-        <path d={LAYERS[0].d} fill={LAYERS[0].fill} stroke="#06222a" strokeWidth="2.5" />
-        <g clipPath="url(#ledge-clip)">
+        <motion.path
+          d={LAYERS[0].d}
+          fill={LAYERS[0].fill}
+          stroke="#06222a"
+          strokeWidth="2.5"
+          {...slideIn(0)}
+        />
+        <motion.g
+          clipPath="url(#ledge-clip)"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: show ? 0.4 : 0 }}
+          transition={T({ delay: LAYERS_AT + 0.25, duration: 0.5 })}
+        >
           <rect
             x="-40"
             y="-40"
             width="1120"
             height="400"
             filter="url(#ledge-grain)"
-            opacity="0.4"
           />
-        </g>
-        {/* the two lighter, nested layers on top */}
-        {LAYERS.slice(1).map((layer) => (
-          <path
+        </motion.g>
+        {LAYERS.slice(1).map((layer, idx) => (
+          <motion.path
             key={layer.fill}
             d={layer.d}
             fill={layer.fill}
             stroke="rgba(4,18,24,0.45)"
             strokeWidth="1.5"
+            {...slideIn(idx + 1)}
           />
         ))}
       </svg>
 
-      {/* content anchored to the BASE (darkest, highest) layer's top edge — its
-          top is at BODY's y=30 in the "0 26 1010 374" box ⇒ (30-26)/374 ≈
-          1.07% down ⇒ 98.93% up. Anchoring by % keeps the gap fixed at any
-          viewport width. */}
+      {/* content anchored to the BASE (darkest, highest) layer's top edge —
+          BODY's y=30 in the "0 26 1010 374" box ⇒ ≈ 98.93% up. */}
       <div
         className="absolute"
         style={{
-          left: "3vw", // small margin in from the outcrop's left edge
+          left: "3vw",
           bottom: "calc(98.93% + 12px)",
-          width: "39vw", // leaves a margin before the outcrop's tip too
+          width: "39vw",
         }}
       >
-        <LanguagesPanel />
+        <LanguagesPanel show={show} reduce={reduce} />
       </div>
     </div>
   );
