@@ -12,40 +12,42 @@ import {
 } from "./outcrop";
 
 /**
- * First skill ledge ("Languages") — a stacked dark-cyan outcrop from the left
- * screen edge with a floating panel of language tiles.
+ * Third skill ledge ("Hardware") — same family as LeftLedge, from the LEFT edge
+ * again but a third distinct outline: a steep drop off the tip onto a wide flat
+ * plateau, which breaks over one bend into a steep face down to the foot.
+ * Same 3 nested layers, colours, and parallax rules (all in ./outcrop).
  *
- * Reveal: hidden until the section scrolls into view (clicking the "Skills"
- * nav link scrolls it in, which triggers the same thing). Then a fast,
- * near-simultaneous entrance — the three steps overlap:
- *   1. the "Languages" letters wave in + the bar drops and bounces (together)
- *   2. the 3 outcrop layers slide in from the left, a hair apart
- *   3. the 6 tiles pop out of the centre, 3 at a time
- *
- * Shape + parallax live in ./outcrop (shared with the other skill ledges).
+ * PLACEHOLDER — title + tile labels are stand-ins.
  */
 
-const TOP_VW = 112; // down the scene section
+const TOP_VW = 188; // as far below RightLedge (150) as it is below LeftLedge (112)
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
 
-/* the outcrop — a smooth talus slope: gentle facet → bend → steeper → bend →
-   steepest, traced off piece1's painted rocks */
+const DROP = 300;
+const VB_H = DROP + 30; // svg viewBox height (4u above the tip + drop + ~26u foot)
+const TOP_PCT = ((1 - 4 / VB_H) * 100).toFixed(2); // flat-top's % up from box bottom
+
 const { body: BODY, layers: LAYER_D } = buildOutcrop({
   tip: { x: 986, y: 30 },
-  drop: 344,
-  seed: 0x0c2d19,
+  drop: DROP,
+  seed: 0x5c1e88,
+  wobble: 12,
   anchors: [
-    [952, 0], // end of the flat top (tip is rounded past it)
-    [990, 0.05], // rounded tip bulges out a touch
-    [940, 0.12],
-    [820, 0.17], // gentle facet
-    [672, 0.26],
-    [628, 0.33], // — bend 1 —
-    [520, 0.45], // steeper facet
-    [372, 0.58],
-    [330, 0.66], // — bend 2 —
-    [214, 0.82], // steepest facet
-    [86, 0.95],
+    [952, 0], // end of the flat top
+    [988, 0.06], // rounded tip
+    [930, 0.22], // steep drop straight off the tip
+    [878, 0.33],
+    [836, 0.4],
+    [770, 0.44], // wide flat plateau …
+    [660, 0.46],
+    [560, 0.47],
+    [510, 0.49], // — bend: the plateau breaks —
+    [484, 0.58], // steep face
+    [458, 0.68],
+    [434, 0.76],
+    [400, 0.83], // rounds out …
+    [320, 0.89],
+    [180, 0.95], // … to the foot
     [0, 1], // into the left screen edge
   ],
   layerGaps: [
@@ -59,23 +61,21 @@ const LAYERS = [
   { fill: CYAN_LIGHT, d: LAYER_D[2] },
 ];
 
-/* ── entrance choreography (seconds) — the three steps kick off almost together,
-   the small offsets just keep the motion from landing in one flat thud ── */
+/* entrance choreography (seconds) — mirrors LeftLedge */
 const LAYERS_AT = 0.12;
-const LAYER_GAP = 0.07; // between the 3 layers
-const LAYER_DUR = 0.42; // each layer's slide-in
+const LAYER_GAP = 0.07;
+const LAYER_DUR = 0.42;
 const TILES_AT = 0.28;
-const ROW_GAP = 0.09; // between the 2 tile rows
+const ROW_GAP = 0.09;
 
-const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
+const HARDWARE = ["Verilog", "FPGA", "KiCad", "STM32", "RTL", "SPICE"];
 
-function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
+function HardwarePanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   const T = (config: object) => (reduce ? { duration: 0 } : config);
 
   return (
     <div>
       <div className="flex items-center gap-4">
-        {/* bar — drops in and bounces */}
         <motion.span
           aria-hidden
           className="h-[3rem] w-[14px] shrink-0 rounded-[2px] sm:h-[4rem]"
@@ -84,12 +84,11 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
           animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: -78 }}
           transition={T({ type: "spring", stiffness: 620, damping: 11, mass: 0.7 })}
         />
-        {/* heading — letters wave in */}
         <h3
           className="font-display text-[3rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]"
-          aria-label="Languages"
+          aria-label="Hardware"
         >
-          {"Languages".split("").map((ch, i) => (
+          {"Hardware".split("").map((ch, i) => (
             <motion.span
               key={i}
               aria-hidden
@@ -114,15 +113,13 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
       </div>
 
       <ul className="mt-11 grid grid-cols-3 gap-[clamp(1.15rem,3.2vw,3rem)]">
-        {LANGUAGES.map((lang, i) => {
+        {HARDWARE.map((item, i) => {
           const col = i % 3;
           const row = Math.floor(i / 3);
           const hidden = { opacity: 0, scale: 0.55, x: (1 - col) * 46, y: 8 };
           return (
-            // outer <li> owns the staggered entrance; inner div owns the hover
-            // lift — a delay-free transition so it drops straight back down
             <motion.li
-              key={lang}
+              key={item}
               className="aspect-[9/5]"
               initial={hidden}
               animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
@@ -139,7 +136,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
                 whileHover={{ y: -8 }}
                 transition={{ type: "spring", stiffness: 400, damping: 26 }}
               >
-                {lang}
+                {item}
               </motion.div>
             </motion.li>
           );
@@ -149,22 +146,19 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   );
 }
 
-/**
- * Scroll so the Languages composition sits framed in the viewport. The entrance
- * plays on its own once the section scrolls into view. Wired to "Skills".
- */
-export function scrollToLanguages() {
-  const ledge = document.getElementById("ledge-languages");
-  const panel = document.getElementById("skills");
+/** Scroll so the Hardware composition sits framed in the viewport. */
+export function scrollToHardware() {
+  const ledge = document.getElementById("ledge-hardware");
+  const panel = document.getElementById("hardware");
   if (!ledge || !panel) return;
   window.scrollTo({ top: ledgeLandingY(ledge, panel), behavior: "smooth" });
 }
 
-export default function LeftLedge() {
+export default function HardwareLedge() {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion() ?? false;
   const show = useInView(ref, { once: true, amount: 0.15 });
-  const { rockY, midY, innerY, panelY } = useLedgeParallax(ref, "skills");
+  const { rockY, midY, innerY, panelY } = useLedgeParallax(ref, "hardware");
 
   const T = (config: object) => (reduce ? { duration: 0 } : config);
   const slideIn = (i: number) => ({
@@ -180,29 +174,26 @@ export default function LeftLedge() {
   return (
     <div
       ref={ref}
-      id="ledge-languages"
+      id="ledge-hardware"
       className="pointer-events-none absolute left-0 z-[6]"
       style={{ top: `${TOP_VW}vw`, width: `${WIDTH_VW}vw` }}
     >
-      {/* outcrop plane — base layer + grain move as one */}
       <motion.div style={{ y: rockY }} className="will-change-transform">
-        {/* viewBox starts just above the flat top so the element box ≈ the
-            painted surface (keeps the panel's gap math honest) */}
-        <svg viewBox="0 26 1010 374" className="block w-full" aria-hidden>
+        <svg viewBox={`0 26 1010 ${VB_H}`} className="block w-full" aria-hidden>
           <defs>
-            <filter id="ledge-grain">
+            <filter id="hw-grain">
               <feTurbulence
                 type="fractalNoise"
                 baseFrequency="0.9"
                 numOctaves="2"
-                seed="5"
+                seed="11"
               />
               <feColorMatrix
                 type="matrix"
                 values="0 0 0 0 0.03  0 0 0 0 0.13  0 0 0 0 0.16  0 0 0 0.7 0"
               />
             </filter>
-            <clipPath id="ledge-clip">
+            <clipPath id="hw-clip">
               <path d={BODY} />
             </clipPath>
           </defs>
@@ -215,7 +206,7 @@ export default function LeftLedge() {
             {...slideIn(0)}
           />
           <motion.g
-            clipPath="url(#ledge-clip)"
+            clipPath="url(#hw-clip)"
             initial={{ opacity: 0 }}
             animate={{ opacity: show ? 0.4 : 0 }}
             transition={T({ delay: LAYERS_AT + 0.15, duration: 0.45 })}
@@ -225,11 +216,9 @@ export default function LeftLedge() {
               y="-40"
               width="1120"
               height="400"
-              filter="url(#ledge-grain)"
+              filter="url(#hw-grain)"
             />
           </motion.g>
-          {/* middle + inner layers: no stroke (fill is the only edge), each
-              drifts a touch further than the base for depth */}
           <motion.path
             d={LAYERS[1].d}
             fill={LAYERS[1].fill}
@@ -245,20 +234,18 @@ export default function LeftLedge() {
         </svg>
       </motion.div>
 
-      {/* panel plane — floats in front of the outcrop, travels fastest.
-          anchored above the BASE layer's top edge (BODY y=30 ⇒ ≈ 98.93% up),
-          with clearance so the bottom tile row hovers over the rock at rest. */}
+      {/* panel plane — anchored just above the BASE layer's top edge */}
       <motion.div
-        id="skills"
+        id="hardware"
         className="pointer-events-auto absolute will-change-transform"
         style={{
           y: panelY,
           left: "3vw",
-          bottom: "calc(98.93% + 0.75rem)",
+          bottom: `calc(${TOP_PCT}% + 0.75rem)`,
           width: "39vw",
         }}
       >
-        <LanguagesPanel show={show} reduce={reduce} />
+        <HardwarePanel show={show} reduce={reduce} />
       </motion.div>
     </div>
   );

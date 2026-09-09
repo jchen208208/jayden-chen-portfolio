@@ -3,7 +3,10 @@
 
 import { useEffect, useRef } from "react";
 import Hero from "./Hero";
+import HardwareLedge from "./HardwareLedge";
 import LeftLedge from "./LeftLedge";
+import RightLedge from "./RightLedge";
+import PixelScene from "./pixel/PixelScene";
 import { MASTER } from "./plates";
 
 /**
@@ -72,51 +75,13 @@ const PLATES: Plate[] = [
   },
 ];
 
-/* Two clips: WATERFALL (piece1) + SPLASH (piece2 pool).
+/* SPLASH — splash-loop.mp4 over piece2's plunge pool (churn + spray + drifting
+   mist). Fades in from its own top (falls column). piece1's own falls are now
+   the animated Minecraft water blocks in <PixelScene>, so the old WATERFALL clip
+   is gone; this clip just adds churn where piece2's painted pool begins.
 
-   WATERFALL — falls-loop.mp4, the tight clip seeded 1:1 from piece1 x30–70%,
-   y40–78.2%. Placed back at exactly that rectangle so the clip's crest,
-   rock-nose and cliff walls land on their painted twins — one rock, no ghost,
-   and the clip downscales into a 40vw box (native 716px → ~480px) so it stays
-   sharp (falls-full.mp4 was full-width upscaled → blurry, and glitchy). height
-   is stretched ~1.1× so the moving water reaches SPLASH with no static gap.
-   The clip's own painted SKY (top ~19%) is masked off; everything from the
-   crest down is shown.
-
-   SPLASH — splash-loop.mp4 over piece2's plunge pool (churn + spray + drifting
-   mist). Fades in from its own top (falls column) to meet WATERFALL's tail.
-
-   Both clips' spray swells over their length and snaps back on loop, so we
-   sub-loop the clean head and crossfade two offset copies through each wrap. */
-const WATERFALL = {
-  left: 30, // %
-  width: 40, // %
-  top: 187.75 * 0.4, // vw ≈ 75.1  (seed = piece1 y40%)
-  height: 187.75 * 0.42, // vw ≈ 78.9 (seed span y40–78.2% ≈ 0.382, +~1.1× to
-  //                                    close the gap down to SPLASH ~154vw)
-  mask:
-    // horizontal: clip is 1:1 off piece1 x30–70%. The clip's own frames carry a
-    // painted outcrop in their bottom-left corner (native x≈4–29%) — a faint,
-    // slightly-low, crossfading GHOST of piece1's left outcrop, and it also
-    // dimmed piece1's real outcrop tip (≈33% across the clip). LEFT edge is now
-    // fully transparent through 33% and ramps in by 40% — clears the ghost and
-    // the tip, at the cost of the painted column's leftmost ~40px going static
-    // (it's the water/cliff boundary, reads as a soft edge). Right edge as before.
-    "linear-gradient(90deg,transparent 33%,#000 40%,#000 86%,transparent 96%)," +
-    // vertical: keep piece1's crisp painted crest + upper rock-nose (video
-    // hidden to ~24%), then fade the moving water in over the lower rock-nose
-    // (~95–103vw) where the two streams merge into the column, down to ~154vw
-    "linear-gradient(180deg,transparent 0,transparent 24%,#000 34%,#000 84%,transparent 100%)",
-  rate: 1.5, // the clip's water motion is gentle — speed it up so it reads as
-  //           actually falling
-  // crossfade near the FULL clip length (not a short sub-loop): two offset
-  // copies dissolve through the wrap so the native loop seam never shows, and
-  // the dip is infrequent enough not to read as a pulse. The clip's edge mist
-  // is already cropped by the mask.
-  subloop: 5.6,
-  xfade: 0.5,
-};
-
+   The clip's spray swells over its length and snaps back on loop, so we sub-loop
+   the clean head and crossfade two offset copies through each wrap. */
 const SPLASH = {
   left: 26.6, // %
   width: 46.75, // %
@@ -250,7 +215,10 @@ export default function WaterfallScene() {
     <section id="top" className="relative bg-dusk">
       <Hero />
 
-      {PLATES.map((pl, i) => (
+      {/* piece1 — Minecraft-block scene (sunset sky, falls, mossy cliffs) */}
+      <PixelScene />
+
+      {PLATES.slice(1).map((pl, i) => (
         <img
           key={i}
           src={pl.src}
@@ -269,13 +237,17 @@ export default function WaterfallScene() {
         />
       ))}
 
-      {/* skill ledge 1 — flat cyan outcrop from the left edge, parallax */}
+      {/* skill ledge 1 — cyan outcrop from the left edge, parallax */}
       <LeftLedge />
 
-      {/* living water — the tight piece1 falls clip (crest → down), handed off
-          to the piece2 pool splash clip through an overlapping fade */}
-      <LoopVideo src="/plates/master/falls-loop.mp4" spec={WATERFALL} />
+      {/* churn where piece2's painted plunge pool begins */}
       <LoopVideo src="/plates/master/splash-loop.mp4" spec={SPLASH} />
+
+      {/* skill ledge 2 — mirrored outcrop from the right edge */}
+      <RightLedge />
+
+      {/* skill ledge 3 — from the left edge again, further down */}
+      <HardwareLedge />
     </section>
   );
 }

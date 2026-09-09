@@ -12,41 +12,48 @@ import {
 } from "./outcrop";
 
 /**
- * First skill ledge ("Languages") — a stacked dark-cyan outcrop from the left
- * screen edge with a floating panel of language tiles.
+ * Second skill ledge ("Tools/Frameworks") — same family as LeftLedge, mirrored
+ * to jut from the RIGHT screen edge with a different outline: a broad shallow
+ * shelf that breaks over a hard knee into a steep face, then flares to a foot.
+ * Same 3 nested layers, same colours, same parallax rules (all in ./outcrop).
  *
- * Reveal: hidden until the section scrolls into view (clicking the "Skills"
- * nav link scrolls it in, which triggers the same thing). Then a fast,
- * near-simultaneous entrance — the three steps overlap:
- *   1. the "Languages" letters wave in + the bar drops and bounces (together)
- *   2. the 3 outcrop layers slide in from the left, a hair apart
- *   3. the 6 tiles pop out of the centre, 3 at a time
- *
- * Shape + parallax live in ./outcrop (shared with the other skill ledges).
+ * PLACEHOLDER — title + tile labels are stand-ins.
  */
 
-const TOP_VW = 112; // down the scene section
-const WIDTH_VW = 50; // left edge → tip ≈ screen centre
+const TOP_VW = 150; // up-ish from LeftLedge (112) — nudge freely
+const WIDTH_VW = 50; // right edge → tip ≈ screen centre
 
-/* the outcrop — a smooth talus slope: gentle facet → bend → steeper → bend →
-   steepest, traced off piece1's painted rocks */
+/* shorter than LeftLedge (drop 344): a steep drop right off the tip into a
+   shallow shelf, which breaks over one slightly-sharp bend into a steep
+   diagonal, then a short low ledge notches the way down to the foot */
+const DROP = 285;
+const VB_H = DROP + 30; // svg viewBox height (4u above the tip + drop + ~26u foot)
+const TOP_PCT = ((1 - 4 / VB_H) * 100).toFixed(2); // flat-top's % up from box bottom
+
 const { body: BODY, layers: LAYER_D } = buildOutcrop({
   tip: { x: 986, y: 30 },
-  drop: 344,
-  seed: 0x0c2d19,
+  drop: DROP,
+  seed: 0x3d9a71,
+  wobble: 12,
   anchors: [
-    [952, 0], // end of the flat top (tip is rounded past it)
-    [990, 0.05], // rounded tip bulges out a touch
-    [940, 0.12],
-    [820, 0.17], // gentle facet
-    [672, 0.26],
-    [628, 0.33], // — bend 1 —
-    [520, 0.45], // steeper facet
-    [372, 0.58],
-    [330, 0.66], // — bend 2 —
-    [214, 0.82], // steepest facet
-    [86, 0.95],
-    [0, 1], // into the left screen edge
+    [956, 0], // end of the flat top
+    [982, 0.07], // rounded tip
+    [912, 0.2], // steep descent straight off the tip (so it isn't a thin spit)
+    [842, 0.3],
+    [776, 0.36],
+    [712, 0.4], // shallow shelf
+    [650, 0.42],
+    [620, 0.5], // — bend: the shelf breaks over here —
+    [586, 0.63], // steep diagonal
+    [556, 0.75],
+    [530, 0.78], // — kink onto a short low ledge …
+    [494, 0.795],
+    [470, 0.8],
+    [452, 0.88], // — … and kink off it —
+    [418, 0.91],
+    [300, 0.95], // the foot
+    [150, 0.98],
+    [0, 1], // into the right screen edge
   ],
   layerGaps: [
     [25, 11],
@@ -59,22 +66,22 @@ const LAYERS = [
   { fill: CYAN_LIGHT, d: LAYER_D[2] },
 ];
 
-/* ── entrance choreography (seconds) — the three steps kick off almost together,
-   the small offsets just keep the motion from landing in one flat thud ── */
+/* entrance choreography (seconds) — mirrors LeftLedge */
 const LAYERS_AT = 0.12;
-const LAYER_GAP = 0.07; // between the 3 layers
-const LAYER_DUR = 0.42; // each layer's slide-in
+const LAYER_GAP = 0.07;
+const LAYER_DUR = 0.42;
 const TILES_AT = 0.28;
-const ROW_GAP = 0.09; // between the 2 tile rows
+const ROW_GAP = 0.09;
 
-const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
+const TOOLS = ["React", "Next.js", "Tailwind", "Node.js", "Docker", "Git"];
 
-function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
+function ToolsPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   const T = (config: object) => (reduce ? { duration: 0 } : config);
+  const title = "Tools/Frameworks";
 
   return (
-    <div>
-      <div className="flex items-center gap-4">
+    <div className="text-right">
+      <div className="flex flex-row-reverse items-center gap-4">
         {/* bar — drops in and bounces */}
         <motion.span
           aria-hidden
@@ -86,10 +93,10 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
         />
         {/* heading — letters wave in */}
         <h3
-          className="font-display text-[3rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[4rem]"
-          aria-label="Languages"
+          className="whitespace-nowrap font-display text-[2.4rem] leading-[0.95] tracking-tight text-white [text-shadow:0_3px_20px_rgba(10,7,20,0.85)] sm:text-[3.25rem]"
+          aria-label={title}
         >
-          {"Languages".split("").map((ch, i) => (
+          {title.split("").map((ch, i) => (
             <motion.span
               key={i}
               aria-hidden
@@ -114,15 +121,14 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
       </div>
 
       <ul className="mt-11 grid grid-cols-3 gap-[clamp(1.15rem,3.2vw,3rem)]">
-        {LANGUAGES.map((lang, i) => {
+        {TOOLS.map((tool, i) => {
           const col = i % 3;
           const row = Math.floor(i / 3);
-          const hidden = { opacity: 0, scale: 0.55, x: (1 - col) * 46, y: 8 };
+          // mirror the pop-out origin: tiles fan from the right-hand column
+          const hidden = { opacity: 0, scale: 0.55, x: (col - 1) * 46, y: 8 };
           return (
-            // outer <li> owns the staggered entrance; inner div owns the hover
-            // lift — a delay-free transition so it drops straight back down
             <motion.li
-              key={lang}
+              key={tool}
               className="aspect-[9/5]"
               initial={hidden}
               animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
@@ -139,7 +145,7 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
                 whileHover={{ y: -8 }}
                 transition={{ type: "spring", stiffness: 400, damping: 26 }}
               >
-                {lang}
+                {tool}
               </motion.div>
             </motion.li>
           );
@@ -149,24 +155,23 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   );
 }
 
-/**
- * Scroll so the Languages composition sits framed in the viewport. The entrance
- * plays on its own once the section scrolls into view. Wired to "Skills".
- */
-export function scrollToLanguages() {
-  const ledge = document.getElementById("ledge-languages");
-  const panel = document.getElementById("skills");
+/** Scroll so the Tools/Frameworks composition sits framed in the viewport. */
+export function scrollToTools() {
+  const ledge = document.getElementById("ledge-tools");
+  const panel = document.getElementById("tools");
   if (!ledge || !panel) return;
   window.scrollTo({ top: ledgeLandingY(ledge, panel), behavior: "smooth" });
 }
 
-export default function LeftLedge() {
+export default function RightLedge() {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion() ?? false;
   const show = useInView(ref, { once: true, amount: 0.15 });
-  const { rockY, midY, innerY, panelY } = useLedgeParallax(ref, "skills");
+  const { rockY, midY, innerY, panelY } = useLedgeParallax(ref, "tools");
 
   const T = (config: object) => (reduce ? { duration: 0 } : config);
+  // paths translate -1200 in pre-mirror space ⇒ the SVG's scaleX(-1) flips it,
+  // so the layers slide in from the RIGHT
   const slideIn = (i: number) => ({
     initial: { x: -1200 },
     animate: { x: show ? 0 : -1200 },
@@ -180,29 +185,33 @@ export default function LeftLedge() {
   return (
     <div
       ref={ref}
-      id="ledge-languages"
-      className="pointer-events-none absolute left-0 z-[6]"
+      id="ledge-tools"
+      className="pointer-events-none absolute right-0 z-[6]"
       style={{ top: `${TOP_VW}vw`, width: `${WIDTH_VW}vw` }}
     >
-      {/* outcrop plane — base layer + grain move as one */}
+      {/* outcrop plane — base layer + grain move as one; the SVG is mirrored so
+          the outline juts from the right edge toward centre */}
       <motion.div style={{ y: rockY }} className="will-change-transform">
-        {/* viewBox starts just above the flat top so the element box ≈ the
-            painted surface (keeps the panel's gap math honest) */}
-        <svg viewBox="0 26 1010 374" className="block w-full" aria-hidden>
+        <svg
+          viewBox={`0 26 1010 ${VB_H}`}
+          className="block w-full"
+          style={{ transform: "scaleX(-1)" }}
+          aria-hidden
+        >
           <defs>
-            <filter id="ledge-grain">
+            <filter id="tools-grain">
               <feTurbulence
                 type="fractalNoise"
                 baseFrequency="0.9"
                 numOctaves="2"
-                seed="5"
+                seed="7"
               />
               <feColorMatrix
                 type="matrix"
                 values="0 0 0 0 0.03  0 0 0 0 0.13  0 0 0 0 0.16  0 0 0 0.7 0"
               />
             </filter>
-            <clipPath id="ledge-clip">
+            <clipPath id="tools-clip">
               <path d={BODY} />
             </clipPath>
           </defs>
@@ -215,7 +224,7 @@ export default function LeftLedge() {
             {...slideIn(0)}
           />
           <motion.g
-            clipPath="url(#ledge-clip)"
+            clipPath="url(#tools-clip)"
             initial={{ opacity: 0 }}
             animate={{ opacity: show ? 0.4 : 0 }}
             transition={T({ delay: LAYERS_AT + 0.15, duration: 0.45 })}
@@ -225,11 +234,9 @@ export default function LeftLedge() {
               y="-40"
               width="1120"
               height="400"
-              filter="url(#ledge-grain)"
+              filter="url(#tools-grain)"
             />
           </motion.g>
-          {/* middle + inner layers: no stroke (fill is the only edge), each
-              drifts a touch further than the base for depth */}
           <motion.path
             d={LAYERS[1].d}
             fill={LAYERS[1].fill}
@@ -245,20 +252,19 @@ export default function LeftLedge() {
         </svg>
       </motion.div>
 
-      {/* panel plane — floats in front of the outcrop, travels fastest.
-          anchored above the BASE layer's top edge (BODY y=30 ⇒ ≈ 98.93% up),
-          with clearance so the bottom tile row hovers over the rock at rest. */}
+      {/* panel plane — floats in front, anchored just above the BASE layer's
+          top edge (BODY y=30 ⇒ TOP_PCT% up the box), hovering over the rock */}
       <motion.div
-        id="skills"
+        id="tools"
         className="pointer-events-auto absolute will-change-transform"
         style={{
           y: panelY,
-          left: "3vw",
-          bottom: "calc(98.93% + 0.75rem)",
+          right: "3vw",
+          bottom: `calc(${TOP_PCT}% + 0.75rem)`,
           width: "39vw",
         }}
       >
-        <LanguagesPanel show={show} reduce={reduce} />
+        <ToolsPanel show={show} reduce={reduce} />
       </motion.div>
     </div>
   );
