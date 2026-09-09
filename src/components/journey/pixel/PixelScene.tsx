@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { buildScene, COLS, ROWS, type Scene } from "./scene";
+import { buildScene, COLS, POOL_TOP, ROWS, type Scene } from "./scene";
 import { loadTextures, TILE, WATER_FRAMES, type TexSet } from "./textures";
 
 /**
@@ -16,7 +16,6 @@ import { loadTextures, TILE, WATER_FRAMES, type TexSet } from "./textures";
 
 const W = COLS * TILE;
 const H = ROWS * TILE;
-const POOL_TOP = 112;
 
 function drawCell(
   g: CanvasRenderingContext2D,
@@ -102,16 +101,17 @@ function paintWater(
 
 function paintSpray(g: CanvasRenderingContext2D, scene: Scene, t: number) {
   // rising mist band over the pool
-  const mg = g.createLinearGradient(0, (POOL_TOP - 9) * TILE, 0, H);
+  const mistTop = (POOL_TOP - 4) * TILE;
+  const mg = g.createLinearGradient(0, mistTop, 0, H);
   mg.addColorStop(0, "rgba(233,243,255,0)");
   mg.addColorStop(0.55, "rgba(233,243,255,0.16)");
   mg.addColorStop(1, "rgba(233,243,255,0.32)");
   g.fillStyle = mg;
-  g.fillRect(0, (POOL_TOP - 9) * TILE, W, H - (POOL_TOP - 9) * TILE);
+  g.fillRect(0, mistTop, W, H - mistTop);
 
   for (const p of scene.spray) {
     const a = 0.2 + 0.55 * (0.5 + 0.5 * Math.sin(t * 0.004 * p.rate + p.phase));
-    const y = p.y - ((t * 0.018 * p.rate) % 44);
+    const y = p.y - ((t * 0.018 * p.rate) % 40);
     g.fillStyle = `rgba(240,248,255,${a.toFixed(3)})`;
     g.fillRect(Math.round(p.x / 2) * 2, Math.round(y / 2) * 2, p.s, p.s);
   }
