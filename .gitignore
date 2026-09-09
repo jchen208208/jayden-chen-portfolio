@@ -54,9 +54,11 @@ CONTEXT.md
 AGENTS.md
 CLAUDE.md
 .claude/
+.agents/
 
 # non-source: keep repo to essential source only
 /public
 /scripts
+/designs
 package.json
 package-lock.json
