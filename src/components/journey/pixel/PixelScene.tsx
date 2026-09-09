@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { drawCell, paintStatic } from "./render";
 import { buildScene, COLS, POOL_TOP, ROWS, type Scene } from "./scene";
 import { loadTextures, TILE, WATER_FRAMES, type TexSet } from "./textures";
 
@@ -16,49 +17,6 @@ import { loadTextures, TILE, WATER_FRAMES, type TexSet } from "./textures";
 
 const W = COLS * TILE;
 const H = ROWS * TILE;
-
-function drawCell(
-  g: CanvasRenderingContext2D,
-  scene: Scene,
-  tex: TexSet,
-  r: number,
-  c: number,
-) {
-  const cell = scene.cells[r]?.[c];
-  if (!cell) return;
-  const x = c * TILE;
-  const y = r * TILE;
-  g.drawImage(tex[cell.base], 0, 0, TILE, TILE, x, y, TILE, TILE);
-  if (cell.overlay) g.drawImage(tex[cell.overlay], 0, 0, TILE, TILE, x, y, TILE, TILE);
-  if (cell.dark) {
-    g.fillStyle = `rgba(4,6,16,${cell.dark})`;
-    g.fillRect(x, y, TILE, TILE);
-  }
-  if (cell.bright) {
-    g.fillStyle = `rgba(255,252,240,${cell.bright})`;
-    g.fillRect(x, y, TILE, TILE);
-  }
-}
-
-function paintStatic(g: CanvasRenderingContext2D, scene: Scene, tex: TexSet) {
-  g.imageSmoothingEnabled = false;
-
-  const grad = g.createLinearGradient(0, 0, 0, H);
-  for (const [o, c] of scene.skyStops) grad.addColorStop(o, c);
-  g.fillStyle = grad;
-  g.fillRect(0, 0, W, H);
-
-  for (const gl of scene.glows) {
-    const rg = g.createRadialGradient(gl.x, gl.y, 0, gl.x, gl.y, gl.r);
-    rg.addColorStop(0, gl.color);
-    rg.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = rg;
-    g.fillRect(gl.x - gl.r, gl.y - gl.r, gl.r * 2, gl.r * 2);
-  }
-
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++) drawCell(g, scene, tex, r, c);
-}
 
 function paintClouds(g: CanvasRenderingContext2D, scene: Scene, t: number) {
   const wrap = W + 240;
@@ -150,7 +108,7 @@ export default function PixelScene() {
         // tree crowns sit in front of the clouds — repaint just their leaf cells
         for (const [bc, br, bw, bh] of scene.treeBoxes)
           for (let r = br; r < br + bh; r++)
-            for (let c = bc; c < bc + bw; c++) drawCell(ctx, scene, tex, r, c);
+            for (let c = bc; c < bc + bw; c++) drawCell(ctx, scene.cells, tex, r, c);
         const wf = reduce ? 0 : Math.floor(now / 95) % WATER_FRAMES;
         paintWater(ctx, scene, tex, wf);
         paintSpray(ctx, scene, reduce ? 1400 : now);

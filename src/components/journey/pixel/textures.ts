@@ -1,5 +1,5 @@
 /**
- * Minecraft block textures for the piece1 pixel scene.
+ * Minecraft block textures for the piece1 + piece2 pixel scenes.
  *
  * Sources: vanilla Java resource-pack textures (16x16), catalogued on
  * minecraft.wiki/w/List_of_block_textures, fetched from the
@@ -31,7 +31,13 @@ export type TexKey =
   | "flowering_azalea_leaves"
   | "vine"
   | "snow"
-  | "water_still";
+  | "water_still"
+  | "jungle_leaves"
+  | "spruce_leaves"
+  | "birch_leaves"
+  | "dark_oak_leaves"
+  | "jungle_log"
+  | "glow_lichen";
 
 const FILE: Record<TexKey, string> = {
   stone: "stone.png",
@@ -52,6 +58,12 @@ const FILE: Record<TexKey, string> = {
   vine: "vine.png",
   snow: "snow.png",
   water_still: "water_still.png",
+  jungle_leaves: "jungle_leaves.png",
+  spruce_leaves: "spruce_leaves.png",
+  birch_leaves: "birch_leaves.png",
+  dark_oak_leaves: "dark_oak_leaves.png",
+  jungle_log: "jungle_log.png",
+  glow_lichen: "glow_lichen.png",
 };
 
 /** rgb multiply tint for the greyscale-in-game textures (jungle-leaning) */
@@ -61,6 +73,11 @@ const TINT: Partial<Record<TexKey, string>> = {
   oak_leaves: "#6fae3a",
   vine: "#5c8f2c",
   water_still: "#3a6fd8",
+  jungle_leaves: "#5c8544",
+  spruce_leaves: "#4d6349",
+  birch_leaves: "#84934f",
+  dark_oak_leaves: "#465a3c",
+  glow_lichen: "#63d7b0",
 };
 
 /** water_still.png is a vertical strip of 16x16 frames */

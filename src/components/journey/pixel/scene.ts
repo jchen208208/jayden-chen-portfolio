@@ -24,6 +24,8 @@ export type Cell = {
   dark?: number;
   /** 0..1 — lighten (waterfall highlight seam) */
   bright?: number;
+  /** 0..1 — warm sunset rim wash (lit canopy tops) */
+  warm?: number;
 };
 
 export type WaterCell = { c: number; r: number; bright: number };
