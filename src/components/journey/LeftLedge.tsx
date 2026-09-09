@@ -24,20 +24,24 @@ const TOP_VW = 112; // down the scene section
 const WIDTH_VW = 50; // left edge → tip ≈ screen centre
 
 /* ── parallax planes ─────────────────────────────────────────────────────────
-   `K` = extra screen travel as a fraction of scroll (bigger ⇒ more foreground,
-   rushes past faster); `LAG` = how quickly a plane chases its target each frame
-   (smaller ⇒ drifts longer after you stop). The rock layers diverge only a
-   hair — they have to stay nested — while the panel floats well in front. */
-const PANEL_K = 0.3; // the floating panel — the landing math tracks this
+   The planes rest with the section's composition (panel-top → outcrop-bottom)
+   centred — the frame people stop to read at, kept calm so it reads clean.
+   `K` = extra screen travel as a fraction of scroll; `LAG` = how fast a plane
+   chases its target each frame (smaller ⇒ drifts longer after you stop). Once
+   the reader scrolls PAST the rest frame the travel is multiplied by PAST_MULT
+   — they're done reading, so lean into the depth. The rock layers diverge only
+   a little (they have to stay nested); the panel floats well in front. */
+const PAST_MULT = 2; // extra divergence once scrolled past the rest frame
+const PANEL_K = 0.24; // the floating panel
 const PANEL_LAG = 0.2;
-const ROCK_K = 0.14; // the outcrop as a whole (base layer + grain)
+const ROCK_K = 0.15; // the outcrop as a whole (base layer + grain)
 const ROCK_LAG = 0.14;
-const MID_K = 0.022; // middle layer, extra travel over the base
+const MID_K = 0.03; // middle layer, extra travel over the base
 const MID_LAG = 0.115;
-const MID_CAP = 8; // viewBox units — never let it unstack past the gap
-const INNER_K = 0.045; // inner layer, extra over the base
-const INNER_LAG = 0.095;
-const INNER_CAP = 16; // viewBox units
+const MID_CAP = 10; // viewBox units — never let it unstack past the gap
+const INNER_K = 0.06; // inner layer, extra over the base
+const INNER_LAG = 0.09;
+const INNER_CAP = 20; // viewBox units
 
 /* The 3 outcrop layers, back→front — evenly spaced in lightness
    (HSL L ≈ 15% / 34% / 54%). CYAN_TILE is also the language-tile fill;
@@ -191,8 +195,8 @@ function layerBody(topGap: number, botGap: number, rho = 11) {
 const BODY = layerBody(0, 0, 16); // also the clip path
 const LAYERS = [
   { fill: CYAN, d: BODY },
-  { fill: CYAN_TILE, d: layerBody(25, 9) },
-  { fill: CYAN_LIGHT, d: layerBody(50, 18) },
+  { fill: CYAN_TILE, d: layerBody(25, 11) },
+  { fill: CYAN_LIGHT, d: layerBody(50, 22) },
 ];
 
 const LANGUAGES = ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"];
@@ -247,10 +251,11 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
           const row = Math.floor(i / 3);
           const hidden = { opacity: 0, scale: 0.55, x: (1 - col) * 46, y: 8 };
           return (
+            // outer <li> owns the staggered entrance; inner div owns the hover
+            // lift — a delay-free transition so it drops straight back down
             <motion.li
               key={lang}
-              className="flex aspect-[9/5] items-center justify-center rounded-xl border px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] hover:shadow-[0_18px_36px_rgba(10,7,20,0.55)] sm:text-3xl"
-              style={{ backgroundColor: CYAN_TILE, borderColor: CYAN_LIGHT }}
+              className="aspect-[9/5]"
               initial={hidden}
               animate={show ? { opacity: 1, scale: 1, x: 0, y: 0 } : hidden}
               transition={T({
@@ -259,12 +264,15 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
                 damping: 19,
                 delay: TILES_AT + row * ROW_GAP,
               })}
-              whileHover={{
-                y: -8,
-                transition: { type: "spring", stiffness: 400, damping: 22 },
-              }}
             >
-              {lang}
+              <motion.div
+                className="flex h-full w-full items-center justify-center rounded-xl border px-3 text-center font-title text-xl tracking-wide text-white shadow-[0_8px_24px_rgba(10,7,20,0.4)] hover:shadow-[0_18px_36px_rgba(10,7,20,0.55)] sm:text-3xl"
+                style={{ backgroundColor: CYAN_TILE, borderColor: CYAN_LIGHT }}
+                whileHover={{ y: -8 }}
+                transition={{ type: "spring", stiffness: 400, damping: 26 }}
+              >
+                {lang}
+              </motion.div>
             </motion.li>
           );
         })}
@@ -273,18 +281,13 @@ function LanguagesPanel({ show, reduce }: { show: boolean; reduce: boolean }) {
   );
 }
 
-/* px the landed panel sits BELOW the exact viewport centre (positive = lower) */
-const LAND_OFFSET = 64;
+/* px the composition centre sits BELOW the exact viewport centre at the rest
+   frame (also where "Skills" lands) — a touch low reads better than dead centre */
+const FRAME_LOWER = 56;
 
-/* ── hold the reader on the section while the entrance plays ──────────────────
-   A fast scroll could blow straight past the pop-in. Once the scroll reaches
-   the point where the Languages panel is ~centred, freeze the page for LOCK_MS,
-   then let go. */
-const LOCK_MS = 780;
-let navScrollAt = 0; // set by scrollToLanguages so a "Skills" click isn't pinned
-
-/** scrollY at which the Languages panel lands ~centred in the viewport (nudged
-    down by LAND_OFFSET), accounting for the parallax. */
+/** scrollY that frames the section's composition (panel-top → outcrop-bottom)
+    FRAME_LOWER px below the viewport centre. At that scroll the parallax is
+    exactly at rest, so the frame reads as laid out. */
 function languagesLandingY(ledge: HTMLElement, panel: HTMLElement) {
   const lt = ledge.style.transform;
   const pt = panel.style.transform;
@@ -295,27 +298,18 @@ function languagesLandingY(ledge: HTMLElement, panel: HTMLElement) {
   ledge.style.transform = lt;
   panel.style.transform = pt;
 
-  const sy = window.scrollY;
-  const baseCentre = lr.top + sy + lr.height / 2;
-  const panelCentre = pr.top + sy + pr.height / 2;
-  const delta = panelCentre - baseCentre;
-  return Math.max(
-    0,
-    baseCentre - window.innerHeight / 2 + (delta - LAND_OFFSET) / (1 + PANEL_K),
-  );
+  const rest = (pr.top + lr.bottom) / 2 + window.scrollY - FRAME_LOWER;
+  return Math.max(0, rest - window.innerHeight / 2);
 }
 
 /**
- * Scroll so the Languages panel lands near the viewport's vertical centre.
- * The entrance plays on its own once the section scrolls into view. Wired to
- * "Skills".
+ * Scroll so the Languages composition sits framed in the viewport. The entrance
+ * plays on its own once the section scrolls into view. Wired to "Skills".
  */
 export function scrollToLanguages() {
   const ledge = document.getElementById("ledge-languages");
   const panel = document.getElementById("skills");
   if (!ledge || !panel) return;
-
-  navScrollAt = Date.now();
   window.scrollTo({ top: languagesLandingY(ledge, panel), behavior: "smooth" });
 }
 
@@ -338,12 +332,23 @@ export default function LeftLedge() {
     if (!el || reduce) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
-    let centre = 0;
+    let centre = 0; // doc-space y the planes rest at — the composition centre
     let uPerPx = 1; // viewBox units per screen px, for the SVG-child planes
     const measure = () => {
       const r = el.getBoundingClientRect();
-      centre = r.top + window.scrollY + r.height / 2;
       uPerPx = r.width > 0 ? 1010 / r.width : 1;
+      // rest with the composition (panel-top → outcrop-bottom) framed a touch
+      // low — matches languagesLandingY so "Skills" lands on the rest frame
+      const p = document.getElementById("skills");
+      if (p) {
+        const pt = p.style.transform;
+        p.style.transform = "none";
+        const pr = p.getBoundingClientRect();
+        p.style.transform = pt;
+        centre = (pr.top + r.bottom) / 2 + window.scrollY - FRAME_LOWER;
+      } else {
+        centre = r.top + window.scrollY + r.height / 2;
+      }
     };
 
     const planes = [
@@ -354,9 +359,14 @@ export default function LeftLedge() {
     ];
     type Plane = (typeof planes)[number];
     const targetOf = (p: Plane, rel: number) => {
-      let t = rel * p.k;
+      // rel < 0 ⇒ scrolled past the rest frame: amplify, they're done reading
+      let t = rel * p.k * (rel < 0 ? PAST_MULT : 1);
       if (p.unit) t *= uPerPx;
-      if (p.cap) t = p.cap * Math.tanh(t / p.cap); // soft-clamp so it never unstacks
+      if (p.cap) {
+        // soft-clamp; the past-frame (upward) direction is the one with room
+        const lim = t < 0 ? p.cap * 2 : p.cap * 0.7;
+        t = lim * Math.tanh(t / lim);
+      }
       return t;
     };
 
@@ -398,87 +408,6 @@ export default function LeftLedge() {
       cancelAnimationFrame(raf);
     };
   }, [reduce, rockY, midY, innerY, panelY]);
-
-  /* Hold the reader on the section until the entrance animation finishes.
-     When the scroll reaches the point where the Languages panel is ~centred,
-     freeze the page hard — overflow:hidden plus swallowed wheel/touch/key
-     input, no scroll-position tweaking so there's nothing to rubber-band
-     against — then release once the animation's had its ~LOCK_MS. */
-  useEffect(() => {
-    if (!show || reduce) return;
-    if (Date.now() - navScrollAt < 1600) return; // a nav click drives its own scroll
-    const el = ref.current;
-    const panel = document.getElementById("skills");
-    if (!el || !panel) return;
-    if (panel.getBoundingClientRect().bottom < window.innerHeight * 0.3) return; // section already gone
-
-    const root = document.documentElement;
-    const body = document.body;
-    const pinY = languagesLandingY(el, panel); // panel ~centred
-    const releaseAt = Date.now() + LOCK_MS;
-
-    let raf = 0;
-    let holdTimer = 0;
-    let frozen = false;
-
-    const swallow = (e: Event) => e.preventDefault();
-    const SCROLL_KEYS = new Set([
-      " ", "Spacebar", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End",
-    ]);
-    const onKey = (e: KeyboardEvent) => {
-      if (SCROLL_KEYS.has(e.key)) e.preventDefault();
-    };
-
-    const thaw = () => {
-      if (!frozen) return;
-      frozen = false;
-      root.style.overflow = "";
-      body.style.overflow = "";
-      root.style.paddingRight = "";
-      window.removeEventListener("wheel", swallow);
-      window.removeEventListener("touchmove", swallow);
-      window.removeEventListener("keydown", onKey, true);
-    };
-    const freeze = () => {
-      frozen = true;
-      // reserve the scrollbar's width so hiding it doesn't reflow the page
-      const sbw = window.innerWidth - root.clientWidth;
-      root.style.overflow = "hidden";
-      body.style.overflow = "hidden";
-      if (sbw > 0) root.style.paddingRight = `${sbw}px`;
-      window.addEventListener("wheel", swallow, { passive: false });
-      window.addEventListener("touchmove", swallow, { passive: false });
-      window.addEventListener("keydown", onKey, true);
-      holdTimer = window.setTimeout(thaw, Math.max(150, releaseAt - Date.now()));
-    };
-
-    const cleanup = () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-      clearTimeout(holdTimer);
-      thaw();
-    };
-    const check = () => {
-      raf = 0;
-      if (frozen) return;
-      if (Date.now() >= releaseAt) return cleanup();
-      if (window.scrollY >= pinY) freeze();
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(check);
-    };
-
-    if (window.scrollY >= pinY) freeze(); // already there — hold in place
-    else window.addEventListener("scroll", onScroll, { passive: true });
-    // safety: drop the listener if the pin line is never reached in time
-    const guard = window.setTimeout(() => {
-      if (!frozen) cleanup();
-    }, LOCK_MS + 400);
-    return () => {
-      clearTimeout(guard);
-      cleanup();
-    };
-  }, [show, reduce]);
 
   const T = (config: object) => (reduce ? { duration: 0 } : config);
   const slideIn = (i: number) => ({
@@ -560,14 +489,15 @@ export default function LeftLedge() {
       </motion.div>
 
       {/* panel plane — floats in front of the outcrop, travels fastest.
-          anchored to the BASE layer's top edge (BODY y=30 ⇒ ≈ 98.93% up). */}
+          anchored above the BASE layer's top edge (BODY y=30 ⇒ ≈ 98.93% up),
+          with clearance so the bottom tile row hovers over the rock at rest. */}
       <motion.div
         id="skills"
         className="pointer-events-auto absolute will-change-transform"
         style={{
           y: panelY,
           left: "3vw",
-          bottom: "calc(98.93% + 12px)",
+          bottom: "calc(98.93% + 0.75rem)",
           width: "39vw",
         }}
       >
