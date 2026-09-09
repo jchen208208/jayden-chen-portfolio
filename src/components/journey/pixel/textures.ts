@@ -37,7 +37,11 @@ export type TexKey =
   | "birch_leaves"
   | "dark_oak_leaves"
   | "jungle_log"
-  | "glow_lichen";
+  | "glow_lichen"
+  | "fern"
+  | "large_fern_top"
+  | "large_fern_bottom"
+  | "hanging_roots";
 
 const FILE: Record<TexKey, string> = {
   stone: "stone.png",
@@ -64,6 +68,10 @@ const FILE: Record<TexKey, string> = {
   dark_oak_leaves: "dark_oak_leaves.png",
   jungle_log: "jungle_log.png",
   glow_lichen: "glow_lichen.png",
+  fern: "fern.png",
+  large_fern_top: "large_fern_top.png",
+  large_fern_bottom: "large_fern_bottom.png",
+  hanging_roots: "hanging_roots.png",
 };
 
 /** rgb multiply tint for the greyscale-in-game textures (jungle-leaning) */
@@ -78,6 +86,10 @@ const TINT: Partial<Record<TexKey, string>> = {
   birch_leaves: "#84934f",
   dark_oak_leaves: "#465a3c",
   glow_lichen: "#63d7b0",
+  fern: "#6f8f3e",
+  large_fern_top: "#6f8f3e",
+  large_fern_bottom: "#6f8f3e",
+  hanging_roots: "#b98a5a",
 };
 
 /** water_still.png is a vertical strip of 16x16 frames */
