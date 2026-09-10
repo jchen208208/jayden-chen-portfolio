@@ -48,16 +48,6 @@ function Screen({
   );
 }
 
-/** one chair caster: a little wheel on a fork */
-function Caster({ x, y }: { x: number; y: number }) {
-  return (
-    <>
-      <line x1={x} y1={y - 12} x2={x} y2={y - 3} />
-      <ellipse cx={x} cy={y} rx={10} ry={7} fill={PAPER} />
-    </>
-  );
-}
-
 export default function DeskSvg({ className }: { className?: string }) {
   const { w, h } = DESK_VIEWBOX;
 
@@ -148,8 +138,8 @@ export default function DeskSvg({ className }: { className?: string }) {
           {/* stems */}
           <line x1={1454} y1={452} x2={1450} y2={548} />
           <line x1={1478} y1={452} x2={1482} y2={548} />
-          {/* pot (opaque) */}
-          <path d="M1420 548 L1520 548 L1504 650 L1436 650 Z" fill={PAPER} />
+          {/* pot (opaque) — sits on the floor line */}
+          <path d="M1420 548 L1520 548 L1506 662 L1434 662 Z" fill={PAPER} />
           <rect x={1412} y={538} width={116} height={14} rx={3} fill={PAPER} />
           <line x1={1420} y1={566} x2={1520} y2={566} opacity={0.4} />
           {/* leafy canopy (opaque, tidy lumpy outline) */}
@@ -198,15 +188,15 @@ export default function DeskSvg({ className }: { className?: string }) {
           <path d="M128 320 Q124 372 160 420" opacity={0.6} />
         </g>
 
-        {/* ── desk: a slab on two splayed trestle legs ──────────────────── */}
+        {/* ── desk: a slab on angled legs ───────────────────────────────── */}
         <g>
-          {/* legs (behind the apron) */}
-          <path d="M444 430 L458 430 L426 662 L410 662 Z" fill={PAPER} />
-          <path d="M480 430 L494 430 L526 662 L510 662 Z" fill={PAPER} />
-          <rect x={430} y={556} width={80} height={9} fill={PAPER} />
-          <path d="M1128 430 L1142 430 L1102 662 L1086 662 Z" fill={PAPER} />
-          <path d="M1164 430 L1178 430 L1276 662 L1260 662 Z" fill={PAPER} />
-          <rect x={1120} y={556} width={132} height={9} fill={PAPER} />
+          {/* left pair — both rake to the left, the back leg tucked behind
+              the front so only a sliver of it shows */}
+          <path d="M486 430 L502 430 L436 662 L420 662 Z" fill={PAPER} />
+          <path d="M500 430 L516 430 L450 662 L434 662 Z" fill={PAPER} />
+          {/* right pair — both rake to the right, back leg tucked behind */}
+          <path d="M1112 430 L1128 430 L1194 662 L1178 662 Z" fill={PAPER} />
+          <path d="M1098 430 L1114 430 L1180 662 L1164 662 Z" fill={PAPER} />
 
           {/* front skirt (opaque) */}
           <rect x={DESK_L} y={DESK_TOP} width={DESK_R - DESK_L} height={DESK_APRON - DESK_TOP} fill={PAPER} />
@@ -287,64 +277,59 @@ export default function DeskSvg({ className }: { className?: string }) {
           <ellipse cx={1153} cy={DESK_TOP} rx={50} ry={5} fill={PAPER} />
         </g>
 
-        {/* ── PC tower under the desk, left side ────────────────────────── */}
+        {/* ── PC tower under the desk, clear of the legs and the chair ──── */}
         <g>
-          <rect x={508} y={434} width={144} height={214} rx={5} fill={PAPER} />
+          <rect x={524} y={434} width={150} height={222} rx={5} fill={PAPER} />
           {/* tempered-glass panel */}
-          <rect x={516} y={442} width={100} height={198} rx={3} />
+          <rect x={532} y={442} width={100} height={206} rx={3} />
           {/* three RGB fans */}
-          {[478, 540, 602].map((cy) => (
+          {[482, 548, 614].map((cy) => (
             <g key={cy}>
-              <circle cx={566} cy={cy} r={26} />
-              <circle cx={566} cy={cy} r={7} />
-              <path d={`M566 ${cy - 26} A26 26 0 0 1 ${566 + 18} ${cy - 19}`} />
-              <path d={`M${566 + 18} ${cy + 19} A26 26 0 0 1 566 ${cy + 26}`} />
-              <path d={`M${566 - 18} ${cy - 19} A26 26 0 0 1 566 ${cy - 26}`} />
+              <circle cx={582} cy={cy} r={26} />
+              <circle cx={582} cy={cy} r={7} />
+              <path d={`M582 ${cy - 26} A26 26 0 0 1 ${582 + 18} ${cy - 19}`} />
+              <path d={`M${582 + 18} ${cy + 19} A26 26 0 0 1 582 ${cy + 26}`} />
+              <path d={`M${582 - 18} ${cy - 19} A26 26 0 0 1 582 ${cy - 26}`} />
             </g>
           ))}
           {/* front panel strip + power button */}
-          <line x1={624} y1={450} x2={644} y2={450} />
-          <line x1={624} y1={458} x2={644} y2={458} />
-          <circle cx={634} cy={474} r={4} />
-          <path d="M516 648 v6 M644 648 v6" />
+          <line x1={642} y1={450} x2={662} y2={450} />
+          <line x1={642} y1={458} x2={662} y2={458} />
+          <circle cx={652} cy={474} r={4} />
+          <path d="M532 656 v6 M664 656 v6" />
         </g>
 
         {/* ── rolling office chair, front and centre ────────────────────── */}
         <g>
-          {/* backrest (opaque) */}
-          <rect x={718} y={348} width={164} height={112} rx={30} fill={PAPER} />
-          <path d="M736 404 Q800 392 864 404" opacity={0.4} />
-          {/* connector posts to the seat */}
-          <line x1={788} y1={460} x2={788} y2={478} />
-          <line x1={812} y1={460} x2={812} y2={478} />
-          {/* seat (opaque) */}
+          {/* backrest — top edge sits just below the desk's top edge */}
+          <rect x={720} y={386} width={160} height={120} rx={22} fill={PAPER} />
+          <path d="M736 448 Q800 438 864 448" opacity={0.4} />
+          {/* posts linking the backrest to the seat */}
+          <line x1={788} y1={506} x2={788} y2={548} />
+          <line x1={812} y1={506} x2={812} y2={548} />
+          {/* seat — same width as the backrest */}
           <path
-            d="M690 486
-               Q690 470 800 470
-               Q910 470 910 486
-               L910 506
-               Q910 522 800 522
-               Q690 522 690 506 Z"
+            d="M720 552
+               Q720 540 800 540
+               Q880 540 880 552
+               L880 574
+               Q880 588 800 588
+               Q720 588 720 574 Z"
             fill={PAPER}
           />
-          {/* gas lift (opaque) */}
-          <rect x={792} y={522} width={16} height={48} fill={PAPER} />
-          <ellipse cx={800} cy={572} rx={15} ry={6} fill={PAPER} />
-          {/* five-star base + casters */}
-          {[
-            [706, 604],
-            [754, 622],
-            [802, 628],
-            [852, 620],
-            [900, 602],
-          ].map(([cx, cy]) => (
-            <line key={cx} x1={800} y1={572} x2={cx} y2={cy} />
-          ))}
-          <Caster x={704} y={614} />
-          <Caster x={754} y={632} />
-          <Caster x={804} y={638} />
-          <Caster x={854} y={630} />
-          <Caster x={902} y={612} />
+          {/* short central column from under the seat */}
+          <rect x={794} y={588} width={12} height={16} fill={PAPER} />
+          {/* the column branches into three legs, feet on the floor line */}
+          <line x1={800} y1={604} x2={800} y2={636} />
+          <path d="M800 604 L728 614 L728 636" />
+          <path d="M800 604 L872 614 L872 636" />
+          {/* centre caster — a rounded bar */}
+          <rect x={791} y={636} width={18} height={26} rx={9} fill={PAPER} />
+          {/* side casters — a circle with an inset circle */}
+          <circle cx={728} cy={650} r={12} fill={PAPER} />
+          <circle cx={728} cy={650} r={5} />
+          <circle cx={872} cy={650} r={12} fill={PAPER} />
+          <circle cx={872} cy={650} r={5} />
         </g>
       </g>
     </svg>
