@@ -53,7 +53,7 @@ export default function DeskSvg({ className }: { className?: string }) {
 
   const FLOOR = 662;
   const DESK_TOP = 396; // top surface of the desktop
-  const DESK_APRON = 430; // bottom of the front skirt
+  const DESK_APRON = 422; // underside of the slab
   const DESK_L = 292;
   const DESK_R = 1312;
 
@@ -160,66 +160,103 @@ export default function DeskSvg({ className }: { className?: string }) {
           <path d="M1352 336 Q1340 322 1356 316 Q1368 328 1366 342 Q1360 344 1352 336 Z" />
         </g>
 
-        {/* ── 3D printer, immediately left of the desk ──────────────────── */}
-        <g>
-          {/* electronics base (opaque) */}
-          <rect x={74} y={566} width={188} height={86} rx={5} fill={PAPER} />
-          <path d="M88 652 v8 M248 652 v8" />
-          {/* moving Y bed on top of the base */}
-          <rect x={92} y={554} width={152} height={12} rx={2} fill={PAPER} />
-          {/* control screen + knob on the base */}
-          <rect x={208} y={598} width={48} height={30} rx={3} fill={PAPER} />
-          <circle cx={244} cy={613} r={6} />
-          {/* upright gantry (open frame) */}
-          <path d="M106 554 L106 330 L234 330 L234 554" />
-          <line x1={94} y1={330} x2={246} y2={330} />
-          {/* X rail + print head (head opaque) + part-cooling fan */}
-          <line x1={106} y1={424} x2={234} y2={424} />
-          <rect x={150} y={420} width={34} height={28} rx={3} fill={PAPER} />
-          <rect x={136} y={424} width={14} height={18} rx={2} fill={PAPER} />
-          <path d="M159 448 L175 448 L167 462 Z" fill={PAPER} />
-          {/* print surface on the bed */}
-          <line x1={98} y1={548} x2={246} y2={548} />
-          <line x1={98} y1={554} x2={246} y2={554} />
-          {/* filament spool on a top mount (opaque) */}
-          <line x1={128} y1={330} x2={128} y2={318} />
-          <circle cx={128} cy={304} r={16} fill={PAPER} />
-          <circle cx={128} cy={304} r={4} />
-          <path d="M128 320 Q124 372 160 420" opacity={0.6} />
+        {/* ── 3D printer — right edge touches the desk's left edge ──────── */}
+        <g transform="translate(32 0)">
+          {/* ---- electronics base ---- */}
+          <rect x={76} y={552} width={184} height={102} rx={5} fill={PAPER} />
+          <path d="M90 654 v8 M242 654 v8" />
+          {/* LCD readout */}
+          <rect x={172} y={566} width={82} height={34} rx={3} fill={PAPER} />
+          <line x1={180} y1={577} x2={232} y2={577} opacity={0.5} />
+          <line x1={180} y1={588} x2={224} y2={588} opacity={0.5} />
+          {/* click wheel */}
+          <circle cx={222} cy={624} r={9} />
+          <circle cx={222} cy={624} r={3} />
+          {/* power rocker */}
+          <rect x={84} y={566} width={22} height={15} rx={2} fill={PAPER} />
+          <line x1={95} y1={566} x2={95} y2={581} opacity={0.5} />
+          {/* two rows of buttons */}
+          {[592, 616].map((by) =>
+            [92, 112, 132, 152].map((bx) => (
+              <circle key={`${bx}-${by}`} cx={bx} cy={by} r={5.5} />
+            )),
+          )}
+          {/* ---- print bed + carriage ---- */}
+          <rect x={98} y={540} width={148} height={12} rx={2} fill={PAPER} />
+          <line x1={104} y1={540} x2={240} y2={540} />
+          {/* ---- gantry frame ---- */}
+          <line x1={106} y1={404} x2={106} y2={540} />
+          <line x1={230} y1={404} x2={230} y2={540} />
+          <line x1={100} y1={404} x2={236} y2={404} />
+          {/* X rail + print head + part-cooling fan + nozzle */}
+          <line x1={106} y1={448} x2={230} y2={448} />
+          <rect x={150} y={446} width={34} height={24} rx={3} fill={PAPER} />
+          <rect x={138} y={450} width={12} height={15} rx={2} fill={PAPER} />
+          <path d="M158 470 L174 470 L166 482 Z" fill={PAPER} />
+          {/* ---- the print in progress: a curvy vase, half-built on the bed ---- */}
+          <path
+            d="M156 540
+               C 144 528 140 515 147 503
+               C 151 495 157 489 164 488
+               L 176 488
+               C 183 489 189 495 193 503
+               C 200 515 196 528 184 540 Z"
+            fill={PAPER}
+          />
+          <line x1={149} y1={500} x2={191} y2={500} opacity={0.32} />
+          <line x1={146} y1={512} x2={194} y2={512} opacity={0.32} />
+          <line x1={147} y1={524} x2={193} y2={524} opacity={0.32} />
+          <line x1={151} y1={536} x2={189} y2={536} opacity={0.32} />
+          {/* ---- filament spool, side-mounted ---- */}
+          <line x1={88} y1={424} x2={54} y2={438} />
+          <circle cx={50} cy={452} r={16} fill={PAPER} />
+          <circle cx={50} cy={452} r={4} />
+          <path d="M50 436 C 46 406 84 398 116 404 C 142 410 152 428 160 440" opacity={0.5} />
+          {/* ---- glass enclosure around the exposed print area ---- */}
+          <rect x={80} y={396} width={176} height={156} rx={4} />
+          {/* hinged front door + handle */}
+          <rect x={90} y={406} width={156} height={140} rx={3} opacity={0.55} />
+          <line x1={236} y1={462} x2={236} y2={492} strokeWidth={3} />
+          {/* soft glass reflections, top-left */}
+          <line x1={100} y1={448} x2={128} y2={412} opacity={0.22} />
+          <line x1={112} y1={460} x2={134} y2={428} opacity={0.22} />
         </g>
 
-        {/* ── desk: a slab on angled legs ───────────────────────────────── */}
+        {/* ── desk: a flat slab on angled legs (front elevation, no top face) ── */}
         <g>
           {/* left pair — both rake to the left, the back leg tucked behind
               the front so only a sliver of it shows */}
-          <path d="M486 430 L502 430 L436 662 L420 662 Z" fill={PAPER} />
-          <path d="M500 430 L516 430 L450 662 L434 662 Z" fill={PAPER} />
+          <path d="M486 422 L502 422 L436 662 L420 662 Z" fill={PAPER} />
+          <path d="M500 422 L516 422 L450 662 L434 662 Z" fill={PAPER} />
           {/* right pair — both rake to the right, back leg tucked behind */}
-          <path d="M1112 430 L1128 430 L1194 662 L1178 662 Z" fill={PAPER} />
-          <path d="M1098 430 L1114 430 L1180 662 L1164 662 Z" fill={PAPER} />
+          <path d="M1112 422 L1128 422 L1194 662 L1178 662 Z" fill={PAPER} />
+          <path d="M1098 422 L1114 422 L1180 662 L1164 662 Z" fill={PAPER} />
 
-          {/* front skirt (opaque) */}
-          <rect x={DESK_L} y={DESK_TOP} width={DESK_R - DESK_L} height={DESK_APRON - DESK_TOP} fill={PAPER} />
-          {/* top slab, a shallow perspective sliver (opaque) */}
-          <path d={`M${DESK_L} ${DESK_TOP} L${DESK_R} ${DESK_TOP} L${DESK_R - 12} ${DESK_TOP - 16} L${DESK_L + 12} ${DESK_TOP - 16} Z`} fill={PAPER} />
-          <line x1={DESK_L + 6} y1={DESK_APRON - 4} x2={DESK_R - 6} y2={DESK_APRON - 4} opacity={0.3} />
+          {/* the desktop — a plain slab: top surface line + front face */}
+          <rect
+            x={DESK_L}
+            y={DESK_TOP}
+            width={DESK_R - DESK_L}
+            height={DESK_APRON - DESK_TOP}
+            fill={PAPER}
+          />
         </g>
 
-        {/* ── soldering station, sitting on top of the 3D printer ───────── */}
-        <g>
-          {/* station body (opaque) — rests on the printer's top crossbar */}
-          <rect x={150} y={298} width={104} height={32} rx={5} fill={PAPER} />
-          <circle cx={168} cy={314} r={7} />
-          <rect x={190} y={306} width={44} height={16} rx={2} fill={PAPER} />
-          <line x1={198} y1={314} x2={222} y2={314} opacity={0.55} />
+        {/* ── soldering station, sitting on top of the 3D printer's case ── */}
+        <g transform="translate(32 0)">
+          {/* station body (opaque) — rests on the enclosure roof */}
+          <rect x={150} y={364} width={104} height={32} rx={5} fill={PAPER} />
+          <circle cx={168} cy={380} r={7} />
+          <rect x={190} y={372} width={44} height={16} rx={2} fill={PAPER} />
+          <line x1={198} y1={380} x2={222} y2={380} opacity={0.55} />
           {/* small stand on top, holding the iron */}
-          <path d="M196 298 l5 -12 M232 298 l-5 -12" />
+          <path d="M196 364 l5 -12 M232 364 l-5 -12" />
           {/* the soldering iron: fat handle → shaft → fine tip */}
-          <rect x={180} y={274} width={34} height={13} rx={6} fill={PAPER} />
-          <line x1={196} y1={281} x2={190} y2={281} opacity={0.5} />
-          <line x1={204} y1={281} x2={198} y2={281} opacity={0.5} />
-          <line x1={214} y1={281} x2={242} y2={281} />
-          <line x1={242} y1={281} x2={254} y2={281} strokeWidth={1.4} />
+          <rect x={180} y={340} width={34} height={13} rx={6} fill={PAPER} />
+          <line x1={196} y1={347} x2={190} y2={347} opacity={0.5} />
+          <line x1={204} y1={347} x2={198} y2={347} opacity={0.5} />
+          <line x1={214} y1={347} x2={242} y2={347} />
+          <line x1={242} y1={347} x2={254} y2={347} strokeWidth={1.4} />
         </g>
 
         {/* ── cactus on the desk, left of screen 1 ─────────────────────── */}
@@ -258,16 +295,18 @@ export default function DeskSvg({ className }: { className?: string }) {
 
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         <g>
-          <Screen x={602} y={300} w={150} h={94} r={6} inset={9} />
-          <path d={`M584 ${DESK_TOP - 2} L770 ${DESK_TOP - 2} L792 ${DESK_TOP + 12} L562 ${DESK_TOP + 12} Z`} fill={PAPER} />
-          <line x1={600} y1={DESK_TOP + 4} x2={754} y2={DESK_TOP + 4} opacity={0.5} />
+          <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
+          {/* keyboard base — front edge rests on the desk surface */}
+          <path d={`M588 390 L768 390 L790 ${DESK_TOP} L566 ${DESK_TOP} Z`} fill={PAPER} />
+          <line x1={604} y1={393} x2={752} y2={393} opacity={0.45} />
         </g>
 
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
-          <Screen x={802} y={272} w={222} h={122} r={6} inset={10} />
-          <path d={`M782 ${DESK_TOP - 2} L1046 ${DESK_TOP - 2} L1070 ${DESK_TOP + 14} L758 ${DESK_TOP + 14} Z`} fill={PAPER} />
-          <line x1={800} y1={DESK_TOP + 5} x2={1026} y2={DESK_TOP + 5} opacity={0.5} />
+          <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
+          {/* keyboard base — front edge rests on the desk surface */}
+          <path d={`M782 388 L1046 388 L1070 ${DESK_TOP} L758 ${DESK_TOP} Z`} fill={PAPER} />
+          <line x1={800} y1={392} x2={1028} y2={392} opacity={0.45} />
         </g>
 
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
