@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- full-bleed painted plate */
 "use client";
 
 import Hero from "./Hero";
@@ -8,13 +7,14 @@ import RightLedge from "./RightLedge";
 import PixelScene from "./pixel/PixelScene";
 import PixelScene2 from "./pixel/PixelScene2";
 import PixelScene3 from "./pixel/PixelScene3";
-import { MASTER } from "./plates";
+import PixelScene4 from "./pixel/PixelScene4";
 
 /**
- * The Descent, scene 1. piece1 (sunset falls), piece2 (plunge pool + canopy) and
- * piece3 (jungle interior) are hand-built Minecraft-block <canvas> scenes, each
- * pulled up so it overlaps the one above; the canvas top/bottom mask-feathers
- * blend the joins. piece4 (roots) is still the painted plate, stitched on below.
+ * The Descent, scene 1 — now four hand-built Minecraft-block <canvas> scenes
+ * stitched into one continuous scroll: piece1 (sunset falls) → piece2 (plunge
+ * pool + canopy) → piece3 (jungle interior) → piece4 (roots + deep earth). Each
+ * is pulled up so it overlaps the one above; the canvas top/bottom mask-feathers
+ * blend the joins. No painted plates left.
  */
 
 export default function WaterfallScene() {
@@ -22,7 +22,7 @@ export default function WaterfallScene() {
     <section id="top" className="relative bg-dusk">
       <Hero />
 
-      {/* piece1 — Minecraft-block scene (sunset sky, falls, mossy cliffs) */}
+      {/* piece1 — sunset sky, falls, mossy cliffs */}
       <PixelScene />
 
       {/* piece2 — plunge pool, mist, forest canopy */}
@@ -35,18 +35,10 @@ export default function WaterfallScene() {
         <PixelScene3 />
       </div>
 
-      {/* piece4 — painted roots/ground plate (deep overlap buries the seam) */}
-      <img
-        src={MASTER.roots}
-        alt=""
-        className="block w-full"
-        style={{
-          filter: "brightness(1.02) saturate(0.92)",
-          marginTop: "-34vw",
-          maskImage: "linear-gradient(180deg,transparent 0,#000 12vw)",
-          WebkitMaskImage: "linear-gradient(180deg,transparent 0,#000 12vw)",
-        }}
-      />
+      {/* piece4 — the end of the descent: shrub band, root systems, deep earth */}
+      <div style={{ marginTop: "-26vw" }}>
+        <PixelScene4 />
+      </div>
 
       {/* skill ledge 1 — cyan outcrop from the left edge, parallax */}
       <LeftLedge />

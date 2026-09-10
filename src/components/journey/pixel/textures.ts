@@ -41,7 +41,16 @@ export type TexKey =
   | "fern"
   | "large_fern_top"
   | "large_fern_bottom"
-  | "hanging_roots";
+  | "hanging_roots"
+  | "mangrove_roots_side"
+  | "mangrove_roots_top"
+  | "rooted_dirt"
+  | "coarse_dirt"
+  | "podzol_top"
+  | "podzol_side"
+  | "deepslate"
+  | "tuff"
+  | "poppy";
 
 const FILE: Record<TexKey, string> = {
   stone: "stone.png",
@@ -72,6 +81,15 @@ const FILE: Record<TexKey, string> = {
   large_fern_top: "large_fern_top.png",
   large_fern_bottom: "large_fern_bottom.png",
   hanging_roots: "hanging_roots.png",
+  mangrove_roots_side: "mangrove_roots_side.png",
+  mangrove_roots_top: "mangrove_roots_top.png",
+  rooted_dirt: "rooted_dirt.png",
+  coarse_dirt: "coarse_dirt.png",
+  podzol_top: "podzol_top.png",
+  podzol_side: "podzol_side.png",
+  deepslate: "deepslate.png",
+  tuff: "tuff.png",
+  poppy: "poppy.png",
 };
 
 /** rgb multiply tint for the greyscale-in-game textures (jungle-leaning) */
@@ -90,6 +108,10 @@ const TINT: Partial<Record<TexKey, string>> = {
   large_fern_top: "#6f8f3e",
   large_fern_bottom: "#6f8f3e",
   hanging_roots: "#b98a5a",
+  deepslate: "#6b5b5f", // warm the cold grey toward the pit's dusk
+  tuff: "#7c6f68",
+  mangrove_roots_side: "#7c5c40", // the vanilla texture reads too yellow
+  mangrove_roots_top: "#7c5c40",
 };
 
 /** water_still.png is a vertical strip of 16x16 frames */
