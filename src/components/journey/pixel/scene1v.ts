@@ -226,22 +226,41 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
           });
         }
   };
-  // willow (left)
-  trunk(3, 5, TOP_L, 5);
-  crown(4, TOP_L + 6, 5, 3, 3, 3, "azalea_leaves", "flowering_azalea_leaves", 0.14);
-  for (let n = 0; n < 14; n++) {
-    const x = 1 + Math.floor(rng() * 7);
-    const z = 3 + Math.floor(rng() * 5);
-    let y = TOP_L + 5;
-    while (y > TOP_L - 4 && !has(x, y, z)) y--; // find the crown/ground underside
-    for (let k = 1; k <= 3 + Math.floor(rng() * 5); k++)
-      if (!has(x, y - k, z)) tput(x, y - k, z, { base: "vine" });
+  /** a few log blocks fanning onto the clifftop so a trunk reads as rooted */
+  const rootFlare = (bx: number, bz: number, gy: number) => {
+    for (const [dx, dz] of [
+      [-1, 0],
+      [2, 0],
+      [0, -1],
+      [0, 2],
+      [-1, 1],
+      [2, 1],
+      [1, -1],
+    ] as const)
+      tput(bx + dx, gy, bz + dz, { base: "oak_log", dark: 0.12 }, true);
+  };
+
+  // willow (left) — trunk rooted 2 blocks into the clifftop, azalea crown,
+  // foliage draping down the cliff front just below it
+  trunk(3, 5, TOP_L - 2, 9);
+  rootFlare(3, 5, TOP_L);
+  crown(4, TOP_L + 9, 5, 4, 3, 3, "azalea_leaves", "flowering_azalea_leaves", 0.14);
+  for (let x = 2; x <= 6; x++) {
+    if (rng() < 0.28) continue;
+    const len = 5 + Math.floor(rng() * 8);
+    for (let k = 0; k < len; k++) {
+      const c = world.get(K(x, TOP_L - 1 - k, 0));
+      if (c) c.overlay = "vine";
+      else if (k > 0) put(x, TOP_L - 1 - k, 0, { base: "vine" });
+    }
   }
+
   // oak (right)
-  trunk(15, 4, TOP_R, 6);
-  tput(14, TOP_R + 4, 4, { base: "oak_log" }, true);
-  tput(17, TOP_R + 4, 6, { base: "oak_log" }, true);
-  crown(16, TOP_R + 8, 5, 4, 4, 4, "oak_leaves", "azalea_leaves", 0.1);
+  trunk(15, 4, TOP_R - 2, 10);
+  rootFlare(15, 4, TOP_R);
+  tput(14, TOP_R + 5, 4, { base: "oak_log" }, true);
+  tput(17, TOP_R + 5, 6, { base: "oak_log" }, true);
+  crown(16, TOP_R + 9, 5, 4, 4, 4, "oak_leaves", "azalea_leaves", 0.1);
 
   /* ── outcrops jutting toward the camera (z < 0) ───────────────────────── */
   const outcrop = (x0: number, x1: number, y0: number, thick: number, zTip: number) => {
