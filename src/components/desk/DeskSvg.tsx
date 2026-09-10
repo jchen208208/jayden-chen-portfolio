@@ -133,31 +133,31 @@ export default function DeskSvg({ className }: { className?: string }) {
           <path d="M654 246 L672 242 L668 206 L650 210 Z" fill={PAPER} />
         </g>
 
-        {/* ── plant, to the right of the desk ───────────────────────────── */}
-        <g>
-          {/* stems */}
-          <line x1={1454} y1={452} x2={1450} y2={548} />
-          <line x1={1478} y1={452} x2={1482} y2={548} />
-          {/* pot (opaque) — sits on the floor line */}
-          <path d="M1420 548 L1520 548 L1506 662 L1434 662 Z" fill={PAPER} />
-          <rect x={1412} y={538} width={116} height={14} rx={3} fill={PAPER} />
-          <line x1={1420} y1={566} x2={1520} y2={566} opacity={0.4} />
-          {/* leafy canopy (opaque, tidy lumpy outline) */}
+        {/* ── snake plant in a tall pot, clear of the desk ─────────────── */}
+        <g transform="translate(-12 0)">
+          {/* sword leaves — broad blades, opaque, centre leaf behind the fan */}
+          <path d="M1408 512 C 1394 420 1402 340 1422 288 C 1442 340 1450 420 1436 512 Z" fill={PAPER} />
+          <path d="M1404 512 C 1382 424 1362 348 1382 298 C 1400 350 1414 428 1422 512 Z" fill={PAPER} />
+          <path d="M1418 512 C 1430 424 1450 350 1462 302 C 1458 356 1440 430 1428 512 Z" fill={PAPER} />
+          <path d="M1398 512 C 1368 454 1342 392 1338 332 C 1356 396 1386 456 1420 512 Z" fill={PAPER} />
+          <path d="M1422 512 C 1452 454 1478 392 1502 342 C 1488 400 1454 456 1424 512 Z" fill={PAPER} />
+          <path d="M1398 514 C 1372 484 1344 452 1336 398 C 1350 456 1378 490 1418 514 Z" fill={PAPER} />
+          <path d="M1424 514 C 1450 484 1480 452 1506 398 C 1494 458 1462 492 1428 514 Z" fill={PAPER} />
+          {/* pot — a tall tapered planter, rounded base on the floor */}
           <path
-            d="M1452 452
-               C1412 452 1392 412 1414 386
-               C1392 360 1402 322 1436 312
-               C1428 274 1466 248 1506 258
-               C1520 230 1568 230 1582 258
-               C1620 250 1648 288 1630 320
-               C1652 346 1642 388 1608 396
-               C1604 434 1560 454 1528 440
-               C1506 460 1472 460 1452 452 Z"
+            d="M1346 514
+               C 1344 560 1350 618 1366 644 C 1382 662 1396 662 1420 662
+               C 1444 662 1458 662 1474 644 C 1490 618 1496 560 1494 514 Z"
             fill={PAPER}
           />
-          {/* a small offshoot reaching toward the monitor */}
-          <path d="M1418 360 Q1378 352 1352 336" />
-          <path d="M1352 336 Q1340 322 1356 316 Q1368 328 1366 342 Q1360 344 1352 336 Z" />
+          {/* rim band */}
+          <path d="M1338 484 L1346 514 L1494 514 L1502 484 Z" fill={PAPER} />
+          <path d="M1338 484 Q1420 476 1502 484" opacity={0.35} />
+          <path d="M1338 484 Q1420 494 1502 484" />
+          {/* faint centre veins on the tall leaves */}
+          <path d="M1421 478 C 1418 420 1420 350 1422 296" opacity={0.3} />
+          <path d="M1406 478 C 1394 428 1378 352 1384 302" opacity={0.28} />
+          <path d="M1432 478 C 1442 428 1456 356 1462 308" opacity={0.28} />
         </g>
 
         {/* ── 3D printer — right edge touches the desk's left edge ──────── */}
