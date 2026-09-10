@@ -1,15 +1,20 @@
 import Nav from "@/components/site/Nav";
-import WaterfallScene from "@/components/journey/WaterfallScene";
-// CanopyScene (video-scrub) parked — scene 2+ being rebuilt as the stitched
-// still-painting + code sprites. See CONTEXT.md session 5b.
+
+/**
+ * Clean slate — the whole "Descent" journey scene (Hero + waterfall/canopy/
+ * jungle/roots pieces + skill-ledge sections) was removed to rebuild from
+ * scratch. The parallax rig is preserved at
+ * `src/components/journey/parallax.ts`. Next step: plan the new design.
+ */
 
 export default function Home() {
   return (
     <>
       <Nav />
-      <main className="relative z-10">
-        {/* Scene 1 — stitched waterfall + canopy painting, living water */}
-        <WaterfallScene />
+      <main id="top" className="relative z-10 flex min-h-[100svh] items-center justify-center px-6">
+        <p className="font-mono text-sm tracking-[0.15em] text-ink-faint">
+          rebuilding — planning next
+        </p>
       </main>
     </>
   );

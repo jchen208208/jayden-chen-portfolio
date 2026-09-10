@@ -4,15 +4,27 @@ import { useEffect, type RefObject } from "react";
 import { useMotionValue } from "motion/react";
 
 /**
- * Shared machinery for the skill-ledge outcrops (LeftLedge, RightLedge, …):
- * the outline geometry and the multi-plane parallax. Each ledge supplies its
- * own tip/drop/anchors for a unique shape; everything else follows one set of
- * rules so the sections read as a family.
+ * Preserved parallax rig from the (removed) skill-ledge sections — kept because
+ * the next journey design still needs multi-plane scroll parallax.
+ *
+ * `useLedgeParallax` drives N planes, each easing toward its own scroll-linked
+ * target at its own rate + lag, so the planes drift apart while the page moves
+ * and re-settle when it stops. Divergence is amplified once the reader scrolls
+ * past the "rest frame" (they're done reading), and capped planes soft-clamp so
+ * stacked layers can never unstack. `ledgeLandingY` computes the scrollY that
+ * frames a composition where the parallax is at rest.
+ *
+ * NOTE: this used `useMotionValue` and returned values to bind onto SVG/HTML
+ * planes. The plainer, arguably more reliable pattern proven elsewhere in this
+ * project: a rAF-throttled `scroll` listener that sets
+ * `el.style.transform = translate3d(0, (baseCentre - viewCentre) * strength, 0)`
+ * with `baseCentre` measured once on mount (strength 0.2–0.35 ⇒ element travels
+ * 1.2–1.35× the page). Pick per the new design.
  */
 
-/* ═══════════════════════════════════ geometry ═══════════════════════════════ */
+/* ── generic helpers (were shared with the outcrop geometry) ────────────────── */
 
-/** seeded PRNG so a "random-looking" outline is identical every render */
+/** seeded PRNG so a "random-looking" layout is identical every render (SSR-safe) */
 export function mulberry32(seed: number) {
   return () => {
     seed |= 0;
@@ -39,122 +51,6 @@ export function smooth(pts: [number, number][]) {
   }
   return d;
 }
-
-export type OutcropSpec = {
-  /** tip corner in viewBox units — x near the right, y = flat-top level */
-  tip: { x: number; y: number };
-  /** vertical drop from tip level down to where the underside meets the wall */
-  drop: number;
-  /** underside anchors as [x, f] — f is 0..1 fraction of `drop`. The outer two
-      get no hand-wobble so the shape pins to the flat top and the wall. */
-  anchors: [number, number][];
-  /** PRNG seed for the wobble — change it for a different hand-drawn wiggle */
-  seed: number;
-  /** [topGap, botGap] (viewBox units) for the middle and inner layers */
-  layerGaps: [[number, number], [number, number]];
-  /** rounded-tip nub radius [base, inner-two] (viewBox units) */
-  rho?: [number, number];
-  /** wobble amplitude (viewBox units) */
-  wobble?: number;
-};
-
-/**
- * The 3 nested outcrop layers, back→front / darkest→lightest. Every layer
- * traces the base underside offset inward by a CONSTANT `botGap` (equal bottom
- * gap all along), with the flat top dropped by a larger `topGap`; the tip is
- * capped with a rounded nub where the layer gets too thin to hold both edges.
- * `body` is the base outline (also handy as a clip path).
- */
-export function buildOutcrop(spec: OutcropSpec) {
-  const { tip, drop, seed, wobble = 11 } = spec;
-  const rnd = mulberry32(seed);
-
-  const anchorPts: [number, number][] = spec.anchors.map(([x, f], i, a) => {
-    const w = i === 0 || i === a.length - 1 ? 0 : (rnd() - 0.5) * wobble;
-    return [x, tip.y + drop * f + w];
-  });
-
-  // dense Catmull-Rom sampling of the underside, tip → wall
-  const SEG = 14;
-  const underside: [number, number][] = [];
-  for (let i = 0; i < anchorPts.length - 1; i++) {
-    const p0 = anchorPts[i - 1] ?? anchorPts[i];
-    const p1 = anchorPts[i];
-    const p2 = anchorPts[i + 1];
-    const p3 = anchorPts[i + 2] ?? p2;
-    const end = i === anchorPts.length - 2 ? SEG : SEG - 1;
-    for (let s = 0; s <= end; s++) {
-      const t = s / SEG;
-      const t2 = t * t;
-      const t3 = t2 * t;
-      underside.push([
-        0.5 *
-          (2 * p1[0] +
-            (p2[0] - p0[0]) * t +
-            (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
-            (3 * p1[0] - p0[0] - 3 * p2[0] + p3[0]) * t3),
-        0.5 *
-          (2 * p1[1] +
-            (p2[1] - p0[1]) * t +
-            (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
-            (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * t3),
-      ]);
-    }
-  }
-
-  const layerBody = (topGap: number, botGap: number, rho: number) => {
-    const topY = tip.y + topGap;
-    const n = underside.length;
-    const off = underside.map(([px, py], i): [number, number] => {
-      const a = underside[Math.max(0, i - 1)];
-      const b = underside[Math.min(n - 1, i + 1)];
-      const tx = b[0] - a[0];
-      const ty = b[1] - a[1];
-      const len = Math.hypot(tx, ty) || 1;
-      return [px - (ty / len) * botGap, py + (tx / len) * botGap];
-    });
-
-    const capYB = topY + 2 * rho;
-    let k = 1;
-    while (k < n - 1 && off[k][1] < capYB) k++;
-    const [x1, y1] = off[k - 1];
-    const [x2, y2] = off[k];
-    const capX = x1 + ((capYB - y1) / (y2 - y1 || 1)) * (x2 - x1);
-
-    const edge: [number, number][] = [
-      [capX, topY],
-      [capX + rho * 0.7, topY + rho * 0.3],
-      [capX + rho, topY + rho],
-      [capX + rho * 0.7, capYB - rho * 0.3],
-      [capX, capYB],
-      ...off.slice(k),
-    ];
-    const lastY = edge[edge.length - 1][1];
-    return (
-      `M0,${topY.toFixed(1)} L${capX.toFixed(1)},${topY.toFixed(1)} ` +
-      smooth(edge) +
-      `L0,${lastY.toFixed(1)} Z`
-    );
-  };
-
-  const [rhoBase, rhoInner] = spec.rho ?? [16, 11];
-  const body = layerBody(0, 0, rhoBase);
-  return {
-    body,
-    layers: [
-      body,
-      layerBody(spec.layerGaps[0][0], spec.layerGaps[0][1], rhoInner),
-      layerBody(spec.layerGaps[1][0], spec.layerGaps[1][1], rhoInner),
-    ] as [string, string, string],
-  };
-}
-
-/* The 3 outcrop layers, back→front — evenly spaced in lightness (HSL L ≈ 15 /
-   34 / 54). TILE is also the label-tile fill; LIGHT is also the heading bar +
-   the permanent tile border. Shared across every skill section. */
-export const CYAN = "#0c3742";
-export const CYAN_TILE = "#1c7e93";
-export const CYAN_LIGHT = "#48b4cc";
 
 /* ═══════════════════════════════════ parallax ══════════════════════════════ */
 
@@ -188,9 +84,9 @@ const DEFAULTS: Required<ParallaxConfig> = {
   innerCap: 20,
 };
 
-/** scrollY that frames a ledge's composition (panel-top → outcrop-bottom)
-    `frameLower` px below the viewport centre — where the parallax is at rest,
-    so the frame reads exactly as laid out. */
+/** scrollY that frames a composition (panel-top → base-bottom) `frameLower` px
+    below the viewport centre — where the parallax is at rest, so the frame
+    reads exactly as laid out. */
 export function ledgeLandingY(
   ledge: HTMLElement,
   panel: HTMLElement,
@@ -210,12 +106,12 @@ export function ledgeLandingY(
 }
 
 /**
- * Four parallax planes — rock (base layer + grain), the middle layer, the inner
- * layer, and the floating panel — each easing toward its own scroll-linked
- * target at its own rate and lag, so they drift apart while moving and re-settle
- * when the scroll stops. Divergence is multiplied once the reader has scrolled
- * past the rest frame (they're done reading). The rock layers are soft-clamped
- * so they can never unstack. Returns motion values to bind to the SVG + panel.
+ * Four parallax planes — base, middle, inner, and a floating panel — each easing
+ * toward its own scroll-linked target at its own rate and lag, so they drift
+ * apart while moving and re-settle when the scroll stops. Divergence is
+ * multiplied once the reader has scrolled past the rest frame. The middle/inner
+ * planes are soft-clamped so they can never unstack. Returns motion values to
+ * bind to the plane elements.
  */
 export function useLedgeParallax<T extends HTMLElement>(
   ref: RefObject<T | null>,
@@ -223,7 +119,7 @@ export function useLedgeParallax<T extends HTMLElement>(
   cfg: ParallaxConfig = {},
 ) {
   const c = { ...DEFAULTS, ...cfg };
-  const rockY = useMotionValue(0); // px — the outcrop plane (HTML wrapper)
+  const rockY = useMotionValue(0); // px — the base plane (HTML wrapper)
   const midY = useMotionValue(0); // viewBox units — middle layer, extra drift
   const innerY = useMotionValue(0); // viewBox units — inner layer, extra drift
   const panelY = useMotionValue(0); // px — the floating panel plane
