@@ -94,8 +94,7 @@ const FILE: Record<TexKey, string> = {
 
 /** rgb multiply tint for the greyscale-in-game textures (jungle-leaning) */
 const TINT: Partial<Record<TexKey, string>> = {
-  grass_block_top: "#7cb646",
-  grass_block_side: "#7cb646", // applied to the top strip only
+  grass_block_top: "#7cb646", // grayscale in-game, biome-tinted
   oak_leaves: "#6fae3a",
   vine: "#5c8f2c",
   water_still: "#3a6fd8",
@@ -128,13 +127,9 @@ function loadImage(src: string) {
   });
 }
 
-/** draw `img` to a fresh canvas, optionally multiply-tinting (all of it, or
- *  just the top `tintRows` px for the grass side strip). */
-function bake(
-  img: HTMLImageElement,
-  tint?: string,
-  tintRows?: number,
-): HTMLCanvasElement {
+/** draw `img` to a fresh canvas, optionally multiply-tinting it (for the
+ *  greyscale-in-game textures that get biome-tinted). */
+function bake(img: HTMLImageElement, tint?: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = img.naturalWidth;
   c.height = img.naturalHeight;
@@ -144,7 +139,7 @@ function bake(
   if (tint) {
     g.globalCompositeOperation = "multiply";
     g.fillStyle = tint;
-    g.fillRect(0, 0, c.width, tintRows ?? c.height);
+    g.fillRect(0, 0, c.width, c.height);
     // restore alpha eaten by the opaque fill
     g.globalCompositeOperation = "destination-in";
     g.drawImage(img, 0, 0);
@@ -161,11 +156,7 @@ export async function loadTextures(basePath = "/textures/mc"): Promise<TexSet> {
   const imgs = await Promise.all(keys.map((k) => loadImage(`${basePath}/${FILE[k]}`)));
   const set = {} as TexSet;
   keys.forEach((k, i) => {
-    set[k] = bake(
-      imgs[i],
-      TINT[k],
-      k === "grass_block_side" ? 5 : undefined,
-    );
+    set[k] = bake(imgs[i], TINT[k]);
   });
   cache = set;
   return set;

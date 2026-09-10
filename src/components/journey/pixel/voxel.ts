@@ -8,7 +8,7 @@
  */
 
 import { faceColors } from "./render";
-import { TILE, type TexSet } from "./textures";
+import { TILE, type TexKey, type TexSet } from "./textures";
 import type { Cell } from "./scene";
 
 export const T = TILE; // 16 — front-face size on screen
@@ -28,12 +28,6 @@ export function sx(mx: number, x: number, z: number) {
 }
 export function sy(my: number, wy: number, y: number, z: number) {
   return my + (wy - y) * T - z * DY;
-}
-
-/** back-to-front: far z first; within a z-slice lower + left first so nearer
- *  fronts cover the parallelogram spill of the blocks behind them */
-export function voxOrder(a: Vox, b: Vox) {
-  return b.z - a.z || a.y - b.y || a.x - b.x;
 }
 
 export type VoxProj = { mx: number; my: number; wy: number };
@@ -110,6 +104,70 @@ export function drawFront(
   g.drawImage(s.c, x, y);
 }
 
+/* which texture a block shows on its TOP face (side/front = the base key) */
+const TOP_TEX: Partial<Record<TexKey, TexKey>> = {
+  grass_block_side: "grass_block_top",
+  oak_log: "oak_log_top",
+  oak_log_top: "oak_log_top",
+  jungle_log: "jungle_log",
+  podzol_side: "podzol_top",
+};
+/* holey blocks — skip the solid seam-filling backing so their gaps stay clear */
+const HOLEY = new Set<TexKey>([
+  "oak_leaves",
+  "azalea_leaves",
+  "flowering_azalea_leaves",
+  "jungle_leaves",
+  "spruce_leaves",
+  "dark_oak_leaves",
+  "birch_leaves",
+  "vine",
+  "fern",
+  "large_fern_top",
+  "large_fern_bottom",
+  "hanging_roots",
+  "glow_lichen",
+  "poppy",
+]);
+
+/** paint `texCanvas` (16px) into a parallelogram via the affine `m`, with the
+ *  cell's dark/warm/bright plus a per-face shade, clipped to the texture alpha */
+function drawSkew(
+  g: CanvasRenderingContext2D,
+  texCanvas: CanvasImageSource,
+  cell: Cell,
+  m: [number, number, number, number, number, number],
+  faceDark: number,
+  faceWarm: number,
+) {
+  const s = scr();
+  s.g.clearRect(0, 0, T, T);
+  s.g.globalCompositeOperation = "source-over";
+  s.g.drawImage(texCanvas, 0, 0, T, T, 0, 0, T, T);
+  const dk = Math.min(0.85, (cell.dark ?? 0) + faceDark);
+  const wm = Math.min(0.8, (cell.warm ?? 0) + faceWarm);
+  const br = cell.bright ?? 0;
+  if (dk || wm || br) {
+    s.g.globalCompositeOperation = "source-atop";
+    if (dk) {
+      s.g.fillStyle = `rgba(6,8,18,${dk})`;
+      s.g.fillRect(0, 0, T, T);
+    }
+    if (wm) {
+      s.g.fillStyle = `rgba(255,176,108,${wm})`;
+      s.g.fillRect(0, 0, T, T);
+    }
+    if (br) {
+      s.g.fillStyle = `rgba(255,252,240,${br})`;
+      s.g.fillRect(0, 0, T, T);
+    }
+    s.g.globalCompositeOperation = "source-over";
+  }
+  g.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
+  g.drawImage(s.c, 0, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+}
+
 /** draw one voxel's visible faces. `p` gives the screen origin + world height. */
 export function drawVox(
   g: CanvasRenderingContext2D,
@@ -119,15 +177,39 @@ export function drawVox(
 ) {
   const X = sx(p.mx, v.x, v.z);
   const Y = sy(p.my, p.wy, v.y, v.z); // front-bottom-left corner
-  const fc = faceColors(v.cell.base, v.cell.dark ?? 0, v.cell.warm ?? 0);
+  const base = v.cell.base;
+  const solid = !HOLEY.has(base);
+  const fc = solid
+    ? faceColors(base, v.cell.dark ?? 0, v.cell.warm ?? 0)
+    : null;
 
   if (v.f & F_RIGHT) {
-    g.fillStyle = fc.side;
-    quad(g, X + T, Y - T, X + T + DX, Y - T - DY, X + T + DX, Y - DY, X + T, Y);
+    if (fc) {
+      g.fillStyle = fc.side; // solid backing closes the seam
+      quad(g, X + T, Y - T, X + T + DX, Y - T - DY, X + T + DX, Y - DY, X + T, Y);
+    }
+    drawSkew(
+      g,
+      tex[base],
+      v.cell,
+      [DX / T, -DY / T, 0, 1, X + T, Y - T],
+      0.34,
+      0,
+    );
   }
   if (v.f & F_TOP) {
-    g.fillStyle = fc.top;
-    quad(g, X, Y - T, X + T, Y - T, X + T + DX, Y - T - DY, X + DX, Y - T - DY);
+    if (fc) {
+      g.fillStyle = fc.top;
+      quad(g, X, Y - T, X + T, Y - T, X + T + DX, Y - T - DY, X + DX, Y - T - DY);
+    }
+    drawSkew(
+      g,
+      tex[TOP_TEX[base] ?? base],
+      v.cell,
+      [1, 0, DX / T, -DY / T, X, Y - T],
+      0,
+      0.05,
+    );
   }
   if (v.f & F_FRONT) {
     drawFront(g, tex, v.cell, X, Y - T);

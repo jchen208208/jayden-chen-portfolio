@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { buildPiece1Voxels, type Piece1Voxels } from "./scene1v";
+import {
+  buildPiece1Voxels,
+  TRUNK_SPLIT_Z,
+  type Cloud,
+  type Piece1Voxels,
+} from "./scene1v";
 import { loadTextures, TILE, WATER_FRAMES, type TexSet } from "./textures";
 import { DX, DY, F_FRONT, F_RIGHT, F_TOP, T, drawVox, quad, sx, sy } from "./voxel";
 
@@ -45,17 +50,21 @@ function paintClouds(
   s: Piece1Voxels,
   W: number,
   t: number,
+  cloudOk: (c: Cloud) => boolean,
+  blockOk?: (bz: number) => boolean,
 ) {
   const { mx, my, wy } = s.proj;
   // translucent so the clouds fog over the trees + cliffs rather than hide them
   g.save();
   g.globalAlpha = 0.42;
   for (const cloud of s.clouds) {
+    if (!cloudOk(cloud)) continue;
     const off = Math.round(t * cloud.drift * T) % (W + 400);
     const has = new Set(cloud.blocks.map((b) => `${b.x},${b.y},${b.z}`));
     // far blocks first
     const bs = [...cloud.blocks].sort((a, b) => b.z - a.z || a.y - b.y || a.x - b.x);
     for (const b of bs) {
+      if (blockOk && !blockOk(b.z)) continue;
       const X = sx(mx, b.x, b.z) + off;
       const Y = sy(my, wy, b.y, b.z);
       const topOpen = !has.has(`${b.x},${b.y + 1},${b.z}`);
@@ -155,12 +164,26 @@ export default function PixelScene() {
 
       ctx.imageSmoothingEnabled = false;
 
+      const isBehind = (c: Cloud) => c.layer === "behind";
+      const isThrough = (c: Cloud) => c.layer === "through";
+      const isFront = (c: Cloud) => c.layer === "front";
       const frame = (now: number) => {
+        const t = reduce ? 0 : now;
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(off, 0, 0);
-        paintClouds(ctx, s, W, reduce ? 0 : now);
+        // 1. clouds that pass BEHIND the trees → re-lay the whole tree over them
+        paintClouds(ctx, s, W, t, isBehind);
+        for (const v of s.treeVox) drawVox(ctx, tex, s.proj, v);
+        // 2. clouds that pass THROUGH a tree: the part behind the bark plane,
+        //    then the bark cuts it, then the part in front of the bark. Leaves
+        //    are never re-laid, so the cloud stays visible through them.
+        paintClouds(ctx, s, W, t, isThrough, (bz) => bz >= TRUNK_SPLIT_Z);
+        for (const v of s.trunkVox) drawVox(ctx, tex, s.proj, v);
+        paintClouds(ctx, s, W, t, isThrough, (bz) => bz < TRUNK_SPLIT_Z);
         const wf = reduce ? 0 : Math.floor(now / 95) % WATER_FRAMES;
         paintWater(ctx, s, tex, wf);
+        // 3. clouds that drift in FRONT of everything
+        paintClouds(ctx, s, W, t, isFront);
         paintSpray(ctx, s, reduce ? 1400 : now);
       };
 

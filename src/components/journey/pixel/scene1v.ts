@@ -12,14 +12,25 @@ import type { Cell } from "./scene";
 import type { TexKey } from "./textures";
 import { DX, DY, F_FRONT, F_RIGHT, F_TOP, T, type Vox } from "./voxel";
 
+/** where a cloud sits relative to the trees */
+export type CloudLayer = "front" | "behind" | "through";
+
 export type Cloud = {
   blocks: { x: number; y: number; z: number }[];
   color: string;
   drift: number;
+  layer: CloudLayer;
 };
+
+/** depth plane that splits a "through" cloud into in-front-of / behind the bark */
+export const TRUNK_SPLIT_Z = 6;
 
 export type Piece1Voxels = {
   voxels: Vox[];
+  /** tree crowns + trunks, re-drawn each frame over the "behind" clouds */
+  treeVox: Vox[];
+  /** just the opaque bark voxels — cut "through" clouds where they're behind */
+  trunkVox: Vox[];
   water: Vox[];
   spray: { x: number; y: number; s: number; phase: number; rate: number }[];
   clouds: Cloud[];
@@ -179,11 +190,18 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
       }
 
   /* ── trees ────────────────────────────────────────────────────────────── */
+  const treeKeys = new Set<string>();
+  const trunkKeys = new Set<string>(); // opaque bark only (cuts through clouds)
+  const tput = (x: number, y: number, z: number, cell: Cell, bark = false) => {
+    put(x, y, z, cell);
+    treeKeys.add(K(x, y, z));
+    if (bark) trunkKeys.add(K(x, y, z));
+  };
   const trunk = (bx: number, bz: number, topY: number, h: number) => {
     for (let y = topY; y < topY + h; y++)
       for (let dx = 0; dx <= 1; dx++)
         for (let dz = 0; dz <= 1; dz++)
-          put(bx + dx, y, bz + dz, { base: "oak_log", dark: dx + dz > 1 ? 0.12 : 0 });
+          tput(bx + dx, y, bz + dz, { base: "oak_log", dark: dx + dz > 1 ? 0.12 : 0 }, true);
   };
   const crown = (
     cx: number,
@@ -201,7 +219,7 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
         for (let dz = -rz; dz <= rz; dz++) {
           const d = (dx / rx) ** 2 + (dy / ry) ** 2 + (dz / rz) ** 2;
           if (d > 1 + (rng() - 0.4) * 0.35) continue;
-          put(cx + dx, cy + dy, cz + dz, {
+          tput(cx + dx, cy + dy, cz + dz, {
             base: rng() < accentP ? accent : leaf,
             warm: dy > 0 ? 0 : 0.14,
             dark: dy < -ry * 0.3 ? 0.2 : 0,
@@ -217,12 +235,12 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
     let y = TOP_L + 5;
     while (y > TOP_L - 4 && !has(x, y, z)) y--; // find the crown/ground underside
     for (let k = 1; k <= 3 + Math.floor(rng() * 5); k++)
-      if (!has(x, y - k, z)) put(x, y - k, z, { base: "vine" });
+      if (!has(x, y - k, z)) tput(x, y - k, z, { base: "vine" });
   }
   // oak (right)
   trunk(15, 4, TOP_R, 6);
-  put(14, TOP_R + 4, 4, { base: "oak_log" });
-  put(17, TOP_R + 4, 6, { base: "oak_log" });
+  tput(14, TOP_R + 4, 4, { base: "oak_log" }, true);
+  tput(17, TOP_R + 4, 6, { base: "oak_log" }, true);
   crown(16, TOP_R + 8, 5, 4, 4, 4, "oak_leaves", "azalea_leaves", 0.1);
 
   /* ── outcrops jutting toward the camera (z < 0) ───────────────────────── */
@@ -268,16 +286,35 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
   const cmp = (a: Vox, b: Vox) => b.z - a.z || a.y - b.y || a.x - b.x;
   voxels.sort(cmp);
   water.sort(cmp);
+  const treeVox = voxels
+    .filter((v) => treeKeys.has(K(v.x, v.y, v.z)))
+    .sort(cmp);
+  const trunkVox = voxels
+    .filter((v) => trunkKeys.has(K(v.x, v.y, v.z)))
+    .sort(cmp);
 
   /* ── clouds ──────────────────────────────────────────────────────────── */
   const clouds: Cloud[] = [];
-  for (let b = 0; b < 6; b++) {
+  // 2 front, 2 through (straddling the trunk plane at the trunk height), 3 behind
+  const LAYERS: CloudLayer[] = [
+    "front",
+    "front",
+    "through",
+    "through",
+    "behind",
+    "behind",
+    "behind",
+  ];
+  for (const layer of LAYERS) {
+    const through = layer === "through";
     const cx = -2 + Math.floor(rng() * 24);
-    const cy = 30 + Math.floor(rng() * 7);
-    const cz = 4 + Math.floor(rng() * 6);
+    const cy = through
+      ? TOP_L + 2 + Math.floor(rng() * 8) // around trunk height
+      : 30 + Math.floor(rng() * 7);
+    const cz = through ? 3 : 4 + Math.floor(rng() * 6);
     const w = 3 + Math.floor(rng() * 3);
     const h = rng() < 0.5 ? 1 : 0;
-    const dep = 2 + Math.floor(rng() * 2);
+    const dep = through ? 5 : 2 + Math.floor(rng() * 2); // deep enough to straddle
     const blocks: { x: number; y: number; z: number }[] = [];
     for (let dx = 0; dx < w; dx++)
       for (let dy = 0; dy <= h; dy++)
@@ -288,6 +325,7 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
       blocks,
       color: `rgb(${Math.round(lerp(214, 250, warmth))},${Math.round(lerp(196, 208, warmth))},${Math.round(lerp(214, 182, warmth))})`,
       drift: 0.0012 + rng() * 0.002,
+      layer,
     });
   }
 
@@ -345,5 +383,5 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
     { x: mx + 17 * T, y: my + (WY - TOP_R - 3) * T, r: 15 * T, color: "rgba(255,150,120,0.22)" },
   ];
 
-  return { voxels, water, spray, clouds, skyStops, glows, proj: { mx, my, wy: WY }, canvasW, canvasH };
+  return { voxels, treeVox, trunkVox, water, spray, clouds, skyStops, glows, proj: { mx, my, wy: WY }, canvasW, canvasH };
 }
