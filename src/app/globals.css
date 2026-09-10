@@ -1,80 +1,48 @@
 @import "tailwindcss";
 
 /*
-  "The Descent" — a scroll journey from a sunset waterfall down to the roots.
-  Dark theme. Scene 1 opens at golden hour in violet + gold; the page dims
-  toward night as you travel down.
+  "The Desk" — a black room, a desk, four screens. One light key, no color on the
+  page except each section's accent.
 */
 :root {
-  /* Surfaces (dark) */
-  --paper: #0e0b19; /* page base / content zone */
-  --haze: #171128;
-  --mist: #241b3c;
-  --card: #191325;
-  --card-sunk: #110d1d;
+  /* surfaces */
+  --paper: #000000; /* page ground */
+  --card: #0c0e12;
+  --line: rgba(255, 255, 255, 0.12);
 
-  /* Ink */
-  --ink: #ece8f5;
-  --ink-soft: #a8a2bd;
-  --ink-faint: #726c88;
-  --line: rgba(236, 232, 245, 0.12);
+  /* ink */
+  --ink: #f4f6f8;
+  --ink-soft: rgba(255, 255, 255, 0.62);
+  --ink-faint: rgba(255, 255, 255, 0.4);
 
-  /* Sunset light */
-  --sun: #f4b268;
-  --sun-soft: #ffdcae;
-  --ember: #e6884a; /* primary warm accent — CTAs, punctuation */
-  --violet: #7d57b0;
-  --violet-deep: #3c2a63;
-  --magenta: #a8517e;
-  --dusk: #1a1436;
+  /* legacy accent kept as a fallback for <Accent> */
+  --ember: #e6a15c;
 
-  /* Water */
-  --water: #9cc2dc;
-  --water-deep: #40708f;
-  --spray: #eaf3ff;
+  /* per-section accents */
+  --accent-projects: #e6a15c;
+  --accent-experience: #5fb98f;
+  --accent-skills: #5cc8e6;
+  --accent-about: #a98cf0;
 
-  /* Forest (used from Scene 2 on) */
-  --bark: #cbba9d;
-  --bark-shadow: #8f8068;
-  --leaf: #5f7d55;
-  --leaf-deep: #33513c;
-  --pine: #26412f;
+  /* themed-app surface (same for all four; only --accent varies) */
+  --app-bg: #0b0d10;
+  --app-fg: #e9edf2;
+  --app-fg-soft: #9aa3ad;
 }
 
 @theme inline {
   --color-paper: var(--paper);
-  --color-haze: var(--haze);
-  --color-mist: var(--mist);
   --color-card: var(--card);
-  --color-card-sunk: var(--card-sunk);
-
+  --color-line: var(--line);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
-  --color-line: var(--line);
-
-  --color-sun: var(--sun);
-  --color-sun-soft: var(--sun-soft);
   --color-ember: var(--ember);
-  --color-violet: var(--violet);
-  --color-violet-deep: var(--violet-deep);
-  --color-magenta: var(--magenta);
-  --color-dusk: var(--dusk);
-
-  --color-water: var(--water);
-  --color-water-deep: var(--water-deep);
-  --color-spray: var(--spray);
-
-  --color-bark: var(--bark);
-  --color-bark-shadow: var(--bark-shadow);
-  --color-leaf: var(--leaf);
-  --color-leaf-deep: var(--leaf-deep);
-  --color-pine: var(--pine);
 
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
-  --font-title: var(--font-mileast); /* hero name + primary buttons */
+  --font-title: var(--font-mileast);
 }
 
 html {
@@ -91,113 +59,23 @@ body {
 }
 
 ::selection {
-  background: var(--ember);
-  color: #1b1206;
+  background: var(--ink);
+  color: #000;
 }
 
-/* ---------------------------------------------------------------------------
-   Keyframes
-   --------------------------------------------------------------------------- */
-
-/* falling water — ripple bands scroll downward; period must match the
-   repeating-gradient period for a seamless loop */
-@keyframes water-fall {
-  to {
-    background-position-y: 90px;
-  }
-}
-@keyframes water-fall-slow {
-  to {
-    background-position-y: 24px;
-  }
-}
-
-/* drifting mist / cloud banks */
-@keyframes mist-drift {
-  from {
-    transform: translate3d(-4%, 0, 0);
-  }
-  to {
-    transform: translate3d(4%, 0, 0);
-  }
-}
-
-/* slow sway for foliage / branches */
-@keyframes sway {
-  0%,
-  100% {
-    transform: rotate(-0.7deg);
-  }
-  50% {
-    transform: rotate(0.7deg);
-  }
-}
-
-/* spray shimmer at the plunge pool */
-@keyframes spray-flicker {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.75;
-  }
-}
-
-/* spirit-mote drift — three slightly different wander paths so a shared
-   sprite source doesn't read as a repeated pattern */
-@keyframes mote-drift-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(3%, -6%, 0) scale(1.06);
-  }
-  100% {
-    transform: translate3d(-2%, 1%, 0) scale(1);
-  }
-}
-@keyframes mote-drift-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-4%, -4%, 0) scale(0.94);
-  }
-  100% {
-    transform: translate3d(2%, 3%, 0) scale(1);
-  }
-}
-@keyframes mote-drift-c {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(2%, 5%, 0) scale(1.05);
-  }
-  100% {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-}
-@keyframes mote-flicker {
-  0%,
-  100% {
-    opacity: var(--mote-min, 0.45);
-  }
-  50% {
-    opacity: var(--mote-max, 0.95);
-  }
-}
+/* --------------------------------------------------------------------------- */
+/*  Keyframes                                                                   */
+/* --------------------------------------------------------------------------- */
 
 @keyframes float-cue {
   0%,
   100% {
     transform: translateY(0);
-    opacity: 0.4;
+    opacity: 0.3;
   }
   50% {
-    transform: translateY(8px);
-    opacity: 0.9;
+    transform: translateY(6px);
+    opacity: 0.85;
   }
 }
 
@@ -205,9 +83,16 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
-/* ---------------------------------------------------------------------------
-   Utilities
-   --------------------------------------------------------------------------- */
+/* mid-flight blur that hides pixel interpolation during the screen morph */
+@keyframes vt-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+/* --------------------------------------------------------------------------- */
+/*  Utilities                                                                   */
+/* --------------------------------------------------------------------------- */
 
 .watermark {
   font-family: var(--font-fraunces), Georgia, serif;
@@ -222,7 +107,7 @@ body {
 }
 
 .frost {
-  background: color-mix(in srgb, var(--paper) 68%, transparent);
+  background: color-mix(in srgb, var(--paper) 60%, transparent);
   backdrop-filter: blur(14px) saturate(1.1);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
 }
@@ -236,12 +121,34 @@ body {
   background-size: 4px 4px;
 }
 
+/* --------------------------------------------------------------------------- */
+/*  View Transitions (progressive enhancement — the site works without them)    */
+/* --------------------------------------------------------------------------- */
+
+/* let clicks through the transition overlay onto the live page */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: vt-blur;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .scroll-cue,
-  [data-anim] {
+  .scroll-cue {
     animation: none !important;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }

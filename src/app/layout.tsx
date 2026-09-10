@@ -35,7 +35,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Jayden Chen — Portfolio",
   description:
-    "Jayden Chen — developer. Projects, experience, skills and awards, set in a birch forest at golden hour.",
+    "Jayden Chen — Computer Engineering @ Waterloo. A portfolio built around the desk: four screens, one for each of projects, experience, skills, and about.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -43,12 +43,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} h-full bg-paper antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
-          that mutates the DOM before hydration.
-          No background on <body> — see globals.css (the -z-10 forest backdrop). */}
-      <body suppressHydrationWarning className="min-h-full text-ink">
+          that mutates the DOM before hydration. */}
+      <body suppressHydrationWarning className="min-h-full bg-paper text-ink">
         {children}
       </body>
     </html>

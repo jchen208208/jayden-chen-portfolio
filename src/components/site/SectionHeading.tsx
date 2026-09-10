@@ -3,7 +3,7 @@ import Reveal from "./Reveal";
 
 type Props = {
   /** the oversized faint word behind the title */
-  watermark: string;
+  watermark?: string;
   /** small mono kicker above the title */
   kicker?: string;
   /** the bold title; wrap the accent bit in <Accent> */
@@ -11,18 +11,20 @@ type Props = {
 };
 
 export function Accent({ children }: { children: ReactNode }) {
-  return <span className="text-ember">{children}</span>;
+  return <span style={{ color: "var(--accent, var(--ember))" }}>{children}</span>;
 }
 
 export default function SectionHeading({ watermark, kicker, children }: Props) {
   return (
     <div className="relative mb-14 sm:mb-20">
-      <span
-        aria-hidden
-        className="watermark absolute -left-1 -top-10 text-[22vw] sm:-top-16 sm:text-[13rem]"
-      >
-        {watermark}
-      </span>
+      {watermark && (
+        <span
+          aria-hidden
+          className="watermark absolute -left-1 -top-10 text-[22vw] sm:-top-16 sm:text-[13rem]"
+        >
+          {watermark}
+        </span>
+      )}
       <div className="relative">
         {kicker && (
           <Reveal>
