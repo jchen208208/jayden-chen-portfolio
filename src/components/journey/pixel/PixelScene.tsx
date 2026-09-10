@@ -47,6 +47,9 @@ function paintClouds(
   t: number,
 ) {
   const { mx, my, wy } = s.proj;
+  // translucent so the clouds fog over the trees + cliffs rather than hide them
+  g.save();
+  g.globalAlpha = 0.42;
   for (const cloud of s.clouds) {
     const off = Math.round(t * cloud.drift * T) % (W + 400);
     const has = new Set(cloud.blocks.map((b) => `${b.x},${b.y},${b.z}`));
@@ -72,6 +75,7 @@ function paintClouds(
       }
     }
   }
+  g.restore();
 }
 
 function paintWater(

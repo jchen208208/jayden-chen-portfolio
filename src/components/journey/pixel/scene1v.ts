@@ -287,7 +287,7 @@ export function buildPiece1Voxels(seed = 0x1cef): Piece1Voxels {
     clouds.push({
       blocks,
       color: `rgb(${Math.round(lerp(214, 250, warmth))},${Math.round(lerp(196, 208, warmth))},${Math.round(lerp(214, 182, warmth))})`,
-      drift: 0.003 + rng() * 0.005,
+      drift: 0.0012 + rng() * 0.002,
     });
   }
 
