@@ -11,7 +11,7 @@
 
 import type { SectionId } from "./site";
 
-export const DESK_VIEWBOX = { w: 1600, h: 900 } as const;
+export const DESK_VIEWBOX = { w: 1600, h: 740 } as const;
 
 /** Flat decorative shapes, one light key on black. */
 export const DESK_PATHS = {
