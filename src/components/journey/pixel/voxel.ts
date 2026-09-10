@@ -12,8 +12,9 @@ import { TILE, type TexSet } from "./textures";
 import type { Cell } from "./scene";
 
 export const T = TILE; // 16 — front-face size on screen
-export const DX = 8; // screen px right per unit of depth z
-export const DY = 9; // screen px up per unit of depth z (downward tilt)
+// near-frontal view: a thin right-face shear + a gentle downward tilt
+export const DX = 4; // screen px right per unit of depth z
+export const DY = 6; // screen px up per unit of depth z
 
 export const F_FRONT = 1;
 export const F_TOP = 2;
