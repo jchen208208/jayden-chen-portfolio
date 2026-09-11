@@ -48,7 +48,14 @@ function Screen({
   );
 }
 
-export default function DeskSvg({ className }: { className?: string }) {
+export default function DeskSvg({
+  className,
+  lampOn = false,
+}: {
+  className?: string;
+  /** pull-chain state — lit, the bulb fills yellow and the chain hangs a touch lower */
+  lampOn?: boolean;
+}) {
   const { w, h } = DESK_VIEWBOX;
 
   const FLOOR = 662;
@@ -320,8 +327,31 @@ export default function DeskSvg({ className }: { className?: string }) {
                 with the side kinks eased into curves; one path so there's no
                 dividing line across it */}
             <path d="M986 132 L1010 132 Q1021 150 1025 168 L971 168 Q975 150 986 132 Z" fill={PAPER} />
-            {/* just the 2D side of the bulb, poking out below the opening */}
-            <path d="M984 168 A16 8 0 0 0 1016 168" />
+            {/* just the 2D side of the bulb, poking out below the opening —
+                closed back across its flat top so it can take a fill; centred
+                on the head's own centreline (x=998) so it hangs in line with
+                the shade above it. Lit, it fills yellow. */}
+            <path d="M985 168 A13 7 0 0 0 1011 168 Z" fill={lampOn ? "#ffd75e" : "none"} />
+            {/* pull chain — attaches to the shade's rim just right of the
+                bulb and drips straight down, a string of small linked beads
+                ending in a slightly larger handle. The attach point rotates
+                with the tilted head (it's fixed to the shade), but this
+                inner group counter-rotates by the same 15° so the chain
+                itself always hangs vertically, not at the head's angle.
+                Pulling it (click target on the handle, wired in DeskScene)
+                stretches the last link and lights the bulb. */}
+            <g transform="rotate(-15 1015 169)" strokeWidth={1.4}>
+              {[4, 8, 12, 16].map((dy) => (
+                <circle key={dy} cx={1015} cy={169 + dy} r={1} fill={PAPER} />
+              ))}
+              <circle
+                cx={1015}
+                cy={169 + (lampOn ? 24 : 20)}
+                r={2}
+                fill={PAPER}
+                style={{ transition: "cy 180ms ease-out" }}
+              />
+            </g>
           </g>
           {/* joint knuckle at the arm/third-part bend, capping the seam */}
           <circle cx={998} cy={118} r={6} fill={PAPER} />

@@ -62,8 +62,17 @@ const SCREENS: ScreenDemo[] = [
 const ZOOM_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const ZOOM_MS = 900;
 
+/** the lamp's pull-chain handle, in the same viewBox units as `SCREENS` —
+ *  a generous hit box around the chain of beads drawn in `DeskSvg`. The
+ *  chain's own attach point is (1017,169) local to the tilted head group,
+ *  which — carried through that group's 15° rotation and the lamp group's
+ *  translate(-5,0) — lands around (998,172) on screen; the chain then hangs
+ *  straight down from there to the handle at dy 20–24. */
+const LAMP_CHAIN_HIT: Rect = { x: 988, y: 165, w: 22, h: 42 };
+
 export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [lampOn, setLampOn] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
   // How big the clicked screen's glass was on screen, as a fraction of the
   // viewport — the fullscreen content starts at this scale (roughly the
@@ -116,6 +125,8 @@ export default function DeskScene({ className }: { className?: string }) {
 
   const close = useCallback(() => setOpenId(null), []);
 
+  const toggleLamp = useCallback(() => setLampOn((v) => !v), []);
+
   const zoomed = openId !== null;
 
   useEffect(() => {
@@ -134,7 +145,21 @@ export default function DeskScene({ className }: { className?: string }) {
           className="relative w-full"
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
-          <DeskSvg className="absolute inset-0 h-full w-full" />
+          <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} />
+          <button
+            type="button"
+            aria-label={lampOn ? "Turn lamp off" : "Turn lamp on"}
+            aria-pressed={lampOn}
+            onClick={toggleLamp}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute cursor-pointer outline-none"
+            style={{
+              left: `${(LAMP_CHAIN_HIT.x / DESK_VIEWBOX.w) * 100}%`,
+              top: `${(LAMP_CHAIN_HIT.y / DESK_VIEWBOX.h) * 100}%`,
+              width: `${(LAMP_CHAIN_HIT.w / DESK_VIEWBOX.w) * 100}%`,
+              height: `${(LAMP_CHAIN_HIT.h / DESK_VIEWBOX.h) * 100}%`,
+            }}
+          />
           {SCREENS.map((s) => (
             <button
               key={s.id}
