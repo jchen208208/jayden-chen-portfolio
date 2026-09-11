@@ -297,28 +297,34 @@ export default function DeskSvg({ className }: { className?: string }) {
           <line x1={310} y1={378} x2={354} y2={378} opacity={0.4} />
         </g>
 
-        {/* ── architect desk lamp, between screens 3 & 4 ────────────────── */}
+        {/* ── desk lamp, copied from a simple icon reference ─────────────── */}
         <g>
-          {/* weighted base on the desk */}
-          <ellipse cx={1050} cy={DESK_TOP - 2} rx={20} ry={5} fill={PAPER} />
-          <rect x={1046} y={DESK_TOP - 16} width={8} height={14} fill={PAPER} />
-          {/* tall pole */}
-          <line x1={1050} y1={DESK_TOP - 16} x2={1050} y2={128} />
-          {/* top joint + arm reaching down-left over the desk */}
-          <circle cx={1050} cy={130} r={4} fill={PAPER} />
-          <line x1={1050} y1={130} x2={942} y2={186} />
-          <circle cx={942} cy={186} r={4} fill={PAPER} />
-          {/* cone shade, opening angled down toward the work surface */}
-          <path d="M942 186 L906 220 Q930 234 956 224 Z" fill={PAPER} />
-          <path d="M906 220 Q930 234 956 224" />
-          <circle cx={930} cy={220} r={4} />
+          {/* weighted foot on the desk */}
+          <ellipse cx={1050} cy={DESK_TOP - 2} rx={20} ry={6} fill={PAPER} />
+          <rect x={1045} y={DESK_TOP - 14} width={10} height={13} fill={PAPER} />
+          {/* one straight supporting beam — drawn thick, base to shade */}
+          <path
+            d={`M1055 ${DESK_TOP - 16} L951 178 L941 184 L1045 ${DESK_TOP - 10} Z`}
+            fill={PAPER}
+          />
+          {/* joint tab where the shade meets the beam */}
+          <rect x={934} y={169} width={17} height={14} rx={2} fill={PAPER} />
+          {/* dome shade, opening down toward the desk */}
+          <path d="M930 179 L951 179 L963 203 Q943 214 923 203 Z" fill={PAPER} />
+          <path d="M923 203 Q943 214 963 203" opacity={0.5} />
+          <circle cx={943} cy={201} r={4} />
         </g>
 
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
         <g>
-          <Screen x={382} y={250} w={202} h={138} />
-          <path d={`M464 388 L502 388 L508 ${DESK_TOP} L458 ${DESK_TOP} Z`} fill={PAPER} />
-          <ellipse cx={483} cy={DESK_TOP} rx={46} ry={5} fill={PAPER} />
+          <Screen x={382} y={239} w={202} h={138} />
+          {/* connecting beam — a touch longer than before */}
+          <path d="M464 377 L502 377 L508 387 L458 387 Z" fill={PAPER} />
+          {/* base — flat, rounded only on top, bottom flush on the desk */}
+          <path
+            d={`M448 ${DESK_TOP} L448 391 Q448 387 452 387 L514 387 Q518 387 518 391 L518 ${DESK_TOP} Z`}
+            fill={PAPER}
+          />
         </g>
 
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
