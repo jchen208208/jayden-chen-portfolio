@@ -224,13 +224,13 @@ export default function DeskSvg({ className }: { className?: string }) {
 
         {/* ── desk: a flat slab on angled legs (front elevation, no top face) ── */}
         <g>
-          {/* left pair — both rake to the left, the back leg tucked behind
-              the front so only a sliver of it shows */}
-          <path d="M486 422 L502 422 L436 662 L420 662 Z" fill={PAPER} />
-          <path d="M500 422 L516 422 L450 662 L434 662 Z" fill={PAPER} />
-          {/* right pair — both rake to the right, back leg tucked behind */}
-          <path d="M1112 422 L1128 422 L1194 662 L1178 662 Z" fill={PAPER} />
-          <path d="M1098 422 L1114 422 L1180 662 L1164 662 Z" fill={PAPER} />
+          {/* left pair — set nearer the left end, both raking left, the back
+              leg tucked behind the front so only a sliver shows */}
+          <path d="M386 422 L402 422 L336 662 L320 662 Z" fill={PAPER} />
+          <path d="M400 422 L416 422 L350 662 L334 662 Z" fill={PAPER} />
+          {/* right pair — set nearer the right end, both raking right */}
+          <path d="M1212 422 L1228 422 L1294 662 L1278 662 Z" fill={PAPER} />
+          <path d="M1198 422 L1214 422 L1280 662 L1264 662 Z" fill={PAPER} />
 
           {/* the desktop — a plain slab: top surface line + front face */}
           <rect
@@ -316,8 +316,8 @@ export default function DeskSvg({ className }: { className?: string }) {
           <ellipse cx={1153} cy={DESK_TOP} rx={50} ry={5} fill={PAPER} />
         </g>
 
-        {/* ── PC tower under the desk, clear of the legs and the chair ──── */}
-        <g>
+        {/* ── PC tower under the desk — moves with the left legs ────────── */}
+        <g transform="translate(-100 0)">
           <rect x={524} y={434} width={150} height={222} rx={5} fill={PAPER} />
           {/* tempered-glass panel */}
           <rect x={532} y={442} width={100} height={206} rx={3} />
@@ -338,14 +338,40 @@ export default function DeskSvg({ className }: { className?: string }) {
           <path d="M532 656 v6 M664 656 v6" />
         </g>
 
+        {/* ── trash bin, tucked near the right desk legs ────────────────── */}
+        <g transform="translate(36 0)">
+          {/* tapered body */}
+          <path d="M1022 510 L1154 510 L1130 662 L1046 662 Z" fill={PAPER} />
+          {/* rim + opening */}
+          <path d="M1008 510 L1168 510 L1166 486 L1010 486 Z" fill={PAPER} />
+          <path d="M1010 486 Q1088 496 1166 486" opacity={0.4} />
+          <path d="M1010 486 Q1088 476 1166 486" />
+          {/* faint vertical ribs, following the taper */}
+          <line x1={1050} y1={514} x2={1058} y2={656} opacity={0.25} />
+          <line x1={1076} y1={514} x2={1080} y2={658} opacity={0.25} />
+          <line x1={1102} y1={514} x2={1100} y2={658} opacity={0.25} />
+          <line x1={1126} y1={514} x2={1120} y2={656} opacity={0.25} />
+          {/* recycling symbol — the universal three-arrow Möbius loop */}
+          <g transform="translate(1088 580) scale(0.92)" strokeLinejoin="round">
+            {[0, 120, 240].map((deg) => (
+              <g key={deg} transform={`rotate(${deg})`}>
+                {/* one folded arrow: a bent band with a barbed head */}
+                <path
+                  d="M-14 -30 L10 -30 L10 -37 L34 -20 L16 -8 L10 -20 L-8 -18 L-20 4 L-32 -2 L-22 -24 Z"
+                  fill={PAPER}
+                />
+                {/* fold crease */}
+                <path d="M-8 -18 L-18 -30" fill="none" opacity={0.6} />
+              </g>
+            ))}
+          </g>
+        </g>
+
         {/* ── rolling office chair, front and centre ────────────────────── */}
         <g>
           {/* backrest — top edge sits just below the desk's top edge */}
           <rect x={720} y={386} width={160} height={120} rx={22} fill={PAPER} />
           <path d="M736 448 Q800 438 864 448" opacity={0.4} />
-          {/* posts linking the backrest to the seat */}
-          <line x1={788} y1={506} x2={788} y2={548} />
-          <line x1={812} y1={506} x2={812} y2={548} />
           {/* seat — same width as the backrest */}
           <path
             d="M720 552
@@ -356,12 +382,19 @@ export default function DeskSvg({ className }: { className?: string }) {
                Q720 588 720 574 Z"
             fill={PAPER}
           />
+          {/* connector — off the backrest, laid over the seat cushion to about
+              half its depth, then dropping in */}
+          <path
+            d="M782 492 L818 492 L818 556 Q818 566 809 566 L791 566 Q782 566 782 556 Z"
+            fill={PAPER}
+          />
+          <path d="M776 560 Q800 570 824 560" opacity={0.4} />
           {/* short central column from under the seat */}
           <rect x={794} y={588} width={12} height={16} fill={PAPER} />
-          {/* the column branches into three legs, feet on the floor line */}
-          <line x1={800} y1={604} x2={800} y2={636} />
-          <path d="M800 604 L728 614 L728 636" />
-          <path d="M800 604 L872 614 L872 636" />
+          {/* the column branches into three legs — a little thickness, feet on the floor */}
+          <rect x={795} y={602} width={10} height={38} fill={PAPER} />
+          <path d="M799 600 L727 610 L723 615 L723 640 L733 640 L733 618 L803 608 Z" fill={PAPER} />
+          <path d="M801 600 L873 610 L877 615 L877 640 L867 640 L867 618 L797 608 Z" fill={PAPER} />
           {/* centre caster — a rounded bar */}
           <rect x={791} y={636} width={18} height={26} rx={9} fill={PAPER} />
           {/* side casters — a circle with an inset circle */}
