@@ -259,14 +259,42 @@ export default function DeskSvg({ className }: { className?: string }) {
           <line x1={242} y1={347} x2={254} y2={347} strokeWidth={1.4} />
         </g>
 
-        {/* ── cactus on the desk, left of screen 1 ─────────────────────── */}
+        {/* ── potted cactus on the desk, traced from the reference ─────── */}
         <g>
-          <path d={`M304 ${DESK_TOP} L356 ${DESK_TOP} L350 356 L310 356 Z`} fill={PAPER} />
-          <rect x={300} y={348} width={60} height={10} rx={2} fill={PAPER} />
-          {/* trunk + two arms (opaque) */}
-          <path d={`M322 356 L322 308 Q322 296 330 296 Q338 296 338 308 L338 ${DESK_TOP} Z`} fill={PAPER} />
-          <path d="M322 344 Q306 344 306 328 L306 318 Q306 313 310 313 Q314 313 314 318 L314 328 Q314 336 322 336 Z" fill={PAPER} />
-          <path d="M338 336 Q354 336 354 322 L354 312 Q354 307 350 307 Q346 307 346 312 L346 320 Q346 328 338 328 Z" fill={PAPER} />
+          {/* the cactus itself, nudged right so its centre branch lines up
+              with the centre of the pot */}
+          <g transform="translate(4 0)">
+            {/* left arm — thin, uniform width, out horizontally then a
+                near-90° turn straight up */}
+            <path
+              d="M318 340 L307 340 L307 320 A5 5 0 0 0 297 320
+                 L297 345 A5 5 0 0 1 302 350 L318 350 Z"
+              fill={PAPER}
+            />
+            {/* right arm — the same, mirrored and reaching a touch higher */}
+            <path
+              d="M338 332 L349 332 L349 312 A5 5 0 0 1 359 312
+                 L359 337 A5 5 0 0 0 354 342 L338 342 Z"
+              fill={PAPER}
+            />
+            {/* arm ridge lines */}
+            <path d="M317 343 L304 343 L304 321" opacity={0.3} />
+            <path d="M339 334 L352 334 L352 314" opacity={0.3} />
+            {/* body — a slim rounded column */}
+            <path
+              d="M316 396 L316 322 C316 312 320 306 328 306 C336 306 340 312 340 322
+                 L340 396 Z"
+              fill={PAPER}
+            />
+            {/* ridge lines on the body */}
+            <path d="M321 310 L321 392" opacity={0.35} />
+            <path d="M328 306 L328 392" opacity={0.35} />
+            <path d="M335 310 L335 392" opacity={0.35} />
+          </g>
+          {/* pot — keep the terracotta shape */}
+          <path d="M305 362 L359 362 L355 378 L309 378 Z" fill={PAPER} />
+          <path d="M309 378 L355 378 L344 396 L320 396 Z" fill={PAPER} />
+          <line x1={310} y1={378} x2={354} y2={378} opacity={0.4} />
         </g>
 
         {/* ── architect desk lamp, between screens 3 & 4 ────────────────── */}
@@ -321,15 +349,28 @@ export default function DeskSvg({ className }: { className?: string }) {
           <rect x={524} y={434} width={150} height={222} rx={5} fill={PAPER} />
           {/* tempered-glass panel */}
           <rect x={532} y={442} width={100} height={206} rx={3} />
-          {/* three RGB fans */}
+          {/* three RGB fans facing the camera */}
           {[482, 548, 614].map((cy) => (
             <g key={cy}>
-              <circle cx={582} cy={cy} r={26} />
-              <circle cx={582} cy={cy} r={7} />
-              <path d={`M582 ${cy - 26} A26 26 0 0 1 ${582 + 18} ${cy - 19}`} />
-              <path d={`M${582 + 18} ${cy + 19} A26 26 0 0 1 582 ${cy + 26}`} />
-              <path d={`M${582 - 18} ${cy - 19} A26 26 0 0 1 582 ${cy - 26}`} />
+              <circle cx={573} cy={cy} r={26} />
+              <circle cx={573} cy={cy} r={7} />
+              <path d={`M573 ${cy - 26} A26 26 0 0 1 ${573 + 18} ${cy - 19}`} />
+              <path d={`M${573 + 18} ${cy + 19} A26 26 0 0 1 573 ${cy + 26}`} />
+              <path d={`M${573 - 18} ${cy - 19} A26 26 0 0 1 573 ${cy - 26}`} />
             </g>
+          ))}
+          {/* three more fans turned 90° — plain cross-sections, stuck to the
+              right wall of the glass */}
+          {[482, 548, 614].map((cy) => (
+            <rect
+              key={`s${cy}`}
+              x={613}
+              y={cy - 24}
+              width={19}
+              height={48}
+              rx={4}
+              fill={PAPER}
+            />
           ))}
           {/* front panel strip + power button */}
           <line x1={642} y1={450} x2={662} y2={450} />
@@ -342,27 +383,22 @@ export default function DeskSvg({ className }: { className?: string }) {
         <g transform="translate(36 0)">
           {/* tapered body */}
           <path d="M1022 510 L1154 510 L1130 662 L1046 662 Z" fill={PAPER} />
-          {/* rim + opening */}
+          {/* rim — flat top, no opening curve */}
           <path d="M1008 510 L1168 510 L1166 486 L1010 486 Z" fill={PAPER} />
-          <path d="M1010 486 Q1088 496 1166 486" opacity={0.4} />
-          <path d="M1010 486 Q1088 476 1166 486" />
           {/* faint vertical ribs, following the taper */}
           <line x1={1050} y1={514} x2={1058} y2={656} opacity={0.25} />
           <line x1={1076} y1={514} x2={1080} y2={658} opacity={0.25} />
           <line x1={1102} y1={514} x2={1100} y2={658} opacity={0.25} />
           <line x1={1126} y1={514} x2={1120} y2={656} opacity={0.25} />
-          {/* recycling symbol — the universal three-arrow Möbius loop */}
-          <g transform="translate(1088 580) scale(0.92)" strokeLinejoin="round">
+          {/* recycling symbol — three chunky arrows wrapping a triangle */}
+          <g transform="translate(1088 582) scale(1)" strokeLinejoin="round">
             {[0, 120, 240].map((deg) => (
-              <g key={deg} transform={`rotate(${deg})`}>
-                {/* one folded arrow: a bent band with a barbed head */}
-                <path
-                  d="M-14 -30 L10 -30 L10 -37 L34 -20 L16 -8 L10 -20 L-8 -18 L-20 4 L-32 -2 L-22 -24 Z"
-                  fill={PAPER}
-                />
-                {/* fold crease */}
-                <path d="M-8 -18 L-18 -30" fill="none" opacity={0.6} />
-              </g>
+              <path
+                key={deg}
+                transform={`rotate(${deg})`}
+                d="M-30 9 L-9 -27 L-2 -32 L10 -34 L14 -10 L-4 -22 L-21 14 Z"
+                fill={PAPER}
+              />
             ))}
           </g>
         </g>
