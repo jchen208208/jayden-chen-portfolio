@@ -75,8 +75,8 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── floor ─────────────────────────────────────────────────────── */}
         <line x1={40} y1={FLOOR} x2={1560} y2={FLOOR} opacity={0.3} />
 
-        {/* ── wall shelf, behind screens 1 & 2 ──────────────────────────── */}
-        <g>
+        {/* ── wall shelf, behind screens 1 & 2; centred over screen 2 ──── */}
+        <g transform="translate(105 -20)">
           {/* pegboard panel (left half) */}
           <rect x={420} y={100} width={160} height={146} rx={4} fill={PAPER} />
           <g opacity={0.22}>
@@ -330,6 +330,9 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
         <g>
           <Screen x={382} y={239} w={202} h={138} />
+          {/* placeholder "play" triangle marking this screen as clickable —
+              centred in the glass (392,249,182,118) */}
+          <path d="M464 282 L464 334 L518 308 Z" fill={INK} />
           {/* connecting beam — a touch longer than before */}
           <path d="M464 377 L502 377 L508 387 L458 387 Z" fill={PAPER} />
           {/* base — flat, rounded only on top, bottom flush on the desk */}
