@@ -345,6 +345,20 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         <g>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
+          {/* placeholder label marking this screen as clickable — centred in
+              the glass (611,309,132,72) */}
+          <text
+            x={677}
+            y={345}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={15}
+            fontFamily="var(--font-jetbrains-mono), monospace"
+            fill={INK}
+            stroke="none"
+          >
+            Section 1
+          </text>
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
           <rect x={594} y={388} width={166} height={8} rx={2} fill={PAPER} />
@@ -353,6 +367,20 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
+          {/* placeholder label marking this screen as clickable — centred in
+              the glass (812,278,202,100) */}
+          <text
+            x={913}
+            y={328}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={18}
+            fontFamily="var(--font-jetbrains-mono), monospace"
+            fill={INK}
+            stroke="none"
+          >
+            Section 2
+          </text>
           {/* base — just its sideways thickness, no keyboard face in this side view;
               wider than the screen, sides slanting inward slightly toward the desk */}
           <path d="M792 384 L1034 384 L1026 396 L800 396 Z" fill={PAPER} />
@@ -361,6 +389,20 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
         <g>
           <Screen x={1062} y={128} w={182} h={252} r={10} inset={12} />
+          {/* placeholder label marking this screen as clickable — centred in
+              the glass (1074,140,158,228) */}
+          <text
+            x={1153}
+            y={254}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={15}
+            fontFamily="var(--font-jetbrains-mono), monospace"
+            fill={INK}
+            stroke="none"
+          >
+            Section 3
+          </text>
           {/* two legs — connect the screen down to the base */}
           <path d="M1140 380 L1150 380 L1146 388 L1136 388 Z" fill={PAPER} />
           <path d="M1156 380 L1166 380 L1170 388 L1160 388 Z" fill={PAPER} />
