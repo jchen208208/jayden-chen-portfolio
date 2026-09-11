@@ -249,21 +249,59 @@ export default function DeskSvg({
           />
         </g>
 
-        {/* ── soldering station, sitting on top of the 3D printer's case ── */}
-        <g transform="translate(32 0)">
-          {/* station body (opaque) — rests on the enclosure roof */}
-          <rect x={150} y={364} width={104} height={32} rx={5} fill={PAPER} />
-          <circle cx={168} cy={380} r={7} />
-          <rect x={190} y={372} width={44} height={16} rx={2} fill={PAPER} />
-          <line x1={198} y1={380} x2={222} y2={380} opacity={0.55} />
-          {/* small stand on top, holding the iron */}
-          <path d="M196 364 l5 -12 M232 364 l-5 -12" />
-          {/* the soldering iron: fat handle → shaft → fine tip */}
-          <rect x={180} y={340} width={34} height={13} rx={6} fill={PAPER} />
-          <line x1={196} y1={347} x2={190} y2={347} opacity={0.5} />
-          <line x1={204} y1={347} x2={198} y2={347} opacity={0.5} />
-          <line x1={214} y1={347} x2={242} y2={347} />
-          <line x1={242} y1={347} x2={254} y2={347} strokeWidth={1.4} />
+        {/* ── soldering station, sitting on top of the 3D printer's case ──
+            rebuilding from scratch, base first ── */}
+        <g transform="translate(32 0) translate(-23 0) translate(202 396) scale(0.95) translate(-202 -396)">
+          {/* base — a rectangle with its top-left corner cut by a diagonal
+              running from the midpoint of the top edge to the midpoint of
+              the left edge; raised up on two short stands that land on the
+              printer's top edge (y=396) */}
+          <path d="M254 358 L202 358 L150 374 L150 390 L254 390 Z" fill={PAPER} />
+          {/* two very short stands, with a bit of width, running from the
+              base down to the printer's top edge */}
+          <rect x={156} y={390} width={10} height={6} rx={1} fill={PAPER} />
+          <rect x={238} y={390} width={10} height={6} rx={1} fill={PAPER} />
+          {/* two short line stands, off the two corners of the slanted edge,
+              running up to the two ends of the coiled spring */}
+          <path d="M150 374 L145.3 358.7 M202 358 L197.3 342.7" />
+          {/* the coiled spring itself — run parallel to the base's slanted
+              edge, offset above it, with a tight, high-frequency wind */}
+          <path
+            d="M145.3 358.7 Q147.6 350.7 156.0 362.7 Q156.2 348.0 164.7 360.1
+               Q164.9 345.3 173.4 357.4 Q173.6 342.7 182.0 354.7
+               Q182.2 340.0 190.7 352.1 Q190.9 337.3 197.3 342.7"
+          />
+          {/* stand for the iron to rest on — rising off the base's flat top
+              edge at roughly 75° from the +x axis, positioned under the
+              handle's midsection instead of its left end, so it no longer
+              reads as fused with the collar */}
+          <path d="M231.9 358.8 L237.1 339.3 L231.3 337.7 L226.1 357.2 Z" fill={PAPER} />
+          {/* the iron's handle, resting on top of the stand, perpendicular
+              to the stand's own angle rather than flat — a bit thicker than
+              the stand, flat on the left, rounded on the right; shifted up
+              and left, together with the collar, to meet the rod */}
+          <path d="M220.7 330.7 L245.9 337.5 A4 4 0 0 1 243.8 345.2 L218.7 338.5 Z" fill={PAPER} />
+          {/* a thin collar off the handle's left end, centred on the
+              handle's own centreline, back in the stand's orientation —
+              straight sides, with the top and bottom caps given a slight
+              outward curve instead of being flat */}
+          <path d="M215.4 342.8 L220.1 325.4 Q222.3 324.9 224.0 326.4 L219.3 343.8 Q217.1 344.3 215.4 342.8 Z" fill={PAPER} />
+          {/* the metal rod — same orientation as the handle, but thinner
+              and longer, running off the collar's left side to a pointed,
+              screwdriver-like tip; one path, so there's no seam between the
+              shaft and the tip; shifted up to meet the collar again */}
+          <path d="M218.7 330.8 L185.4 321.8 L173.3 322.1 L183.5 328.5 L216.9 337.4 Z" fill={PAPER} />
+          {/* cord — out of the handle's rounded rear end, a smooth
+              semicircular arc down to the midpoint of the base's right
+              edge, a bit thicker than the rest of the linework */}
+          <path d="M248.7 342.4 A16 16 0 0 1 254 374" strokeWidth={3.2} />
+          {/* control panel, on the base's flat front-right face: two small
+              buttons and a turnable knob */}
+          <circle cx={213} cy={372} r={3.5} fill={PAPER} />
+          <circle cx={224} cy={372} r={3.5} fill={PAPER} />
+          <circle cx={240} cy={377} r={9} />
+          <circle cx={240} cy={377} r={2.5} fill={PAPER} />
+          <line x1={240} y1={377} x2={240} y2={368} />
         </g>
 
         {/* ── potted cactus on the desk, traced from the reference ─────── */}
