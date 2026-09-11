@@ -297,22 +297,34 @@ export default function DeskSvg({ className }: { className?: string }) {
           <line x1={310} y1={378} x2={354} y2={378} opacity={0.4} />
         </g>
 
-        {/* ── desk lamp, copied from a simple icon reference ─────────────── */}
-        <g>
-          {/* weighted foot on the desk */}
-          <ellipse cx={1050} cy={DESK_TOP - 2} rx={20} ry={6} fill={PAPER} />
-          <rect x={1045} y={DESK_TOP - 14} width={10} height={13} fill={PAPER} />
-          {/* one straight supporting beam — drawn thick, base to shade */}
+        {/* ── desk lamp: base like the monitors, arm bends left then down to the head ── */}
+        <g transform="translate(-5 0)">
+          {/* base — same flat, rounded-top styling as the monitor bases; centred
+              in the gap between screens 3 and 4 and tucks behind them, since
+              this whole group paints before either screen */}
           <path
-            d={`M1055 ${DESK_TOP - 16} L951 178 L941 184 L1045 ${DESK_TOP - 10} Z`}
+            d={`M1023 ${DESK_TOP} L1023 391 Q1023 387 1027 387 L1069 387 Q1073 387 1073 391
+               L1073 ${DESK_TOP} Z`}
             fill={PAPER}
           />
-          {/* joint tab where the shade meets the beam */}
-          <rect x={934} y={169} width={17} height={14} rx={2} fill={PAPER} />
-          {/* dome shade, opening down toward the desk */}
-          <path d="M930 179 L951 179 L963 203 Q943 214 923 203 Z" fill={PAPER} />
-          <path d="M923 203 Q943 214 963 203" opacity={0.5} />
-          <circle cx={943} cy={201} r={4} />
+          {/* post + arm: one solid outline, straight up then bent left — the
+              joint knuckle below covers the seam where the third part attaches */}
+          <path d="M1052 114 L1052 387 L1044 387 L1044 122 L994 122 L994 114 Z" fill={PAPER} />
+          {/* joint knuckle at the post/arm bend */}
+          <circle cx={1048} cy={118} r={6} fill={PAPER} />
+          {/* third part: instead of dropping straight down, it tilts slightly
+              left — and the head tilts with it, pivoting on the joint below */}
+          <g transform="rotate(15 998 118)">
+            <rect x={994} y={114} width={8} height={18} fill={PAPER} />
+            {/* lamp head — same tapered shape as the cactus pot, opening down,
+                with the side kinks eased into curves; one path so there's no
+                dividing line across it */}
+            <path d="M986 132 L1010 132 Q1021 150 1025 168 L971 168 Q975 150 986 132 Z" fill={PAPER} />
+            {/* just the 2D side of the bulb, poking out below the opening */}
+            <path d="M984 168 A16 8 0 0 0 1016 168" />
+          </g>
+          {/* joint knuckle at the arm/third-part bend, capping the seam */}
+          <circle cx={998} cy={118} r={6} fill={PAPER} />
         </g>
 
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
