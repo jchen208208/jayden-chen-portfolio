@@ -330,24 +330,31 @@ export default function DeskSvg({ className }: { className?: string }) {
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         <g>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* keyboard base — front edge rests on the desk surface */}
-          <path d={`M588 390 L768 390 L790 ${DESK_TOP} L566 ${DESK_TOP} Z`} fill={PAPER} />
-          <line x1={604} y1={393} x2={752} y2={393} opacity={0.45} />
+          {/* base — just its sideways thickness, no keyboard face in this side view;
+              slightly wider than the screen so it reads as a laptop base */}
+          <rect x={594} y={388} width={166} height={8} rx={2} fill={PAPER} />
         </g>
 
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
-          {/* keyboard base — front edge rests on the desk surface */}
-          <path d={`M782 388 L1046 388 L1070 ${DESK_TOP} L758 ${DESK_TOP} Z`} fill={PAPER} />
-          <line x1={800} y1={392} x2={1028} y2={392} opacity={0.45} />
+          {/* base — just its sideways thickness, no keyboard face in this side view;
+              wider than the screen, sides slanting inward slightly toward the desk */}
+          <path d="M792 384 L1034 384 L1026 396 L800 396 Z" fill={PAPER} />
         </g>
 
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
         <g>
-          <Screen x={1062} y={138} w={182} h={252} r={10} inset={12} />
-          <path d={`M1132 390 L1174 390 L1180 ${DESK_TOP} L1126 ${DESK_TOP} Z`} fill={PAPER} />
-          <ellipse cx={1153} cy={DESK_TOP} rx={50} ry={5} fill={PAPER} />
+          <Screen x={1062} y={128} w={182} h={252} r={10} inset={12} />
+          {/* two legs — connect the screen down to the base */}
+          <path d="M1140 380 L1150 380 L1146 388 L1136 388 Z" fill={PAPER} />
+          <path d="M1156 380 L1166 380 L1170 388 L1160 388 Z" fill={PAPER} />
+          {/* base — flat, rounded only on top, sitting flush on the desk */}
+          <path
+            d={`M1126 ${DESK_TOP} L1126 391 Q1126 388 1130 388 L1176 388 Q1180 388 1180 391
+               L1180 ${DESK_TOP} Z`}
+            fill={PAPER}
+          />
         </g>
 
         {/* ── PC tower under the desk — moves with the left legs ────────── */}
