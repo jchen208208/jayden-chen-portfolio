@@ -173,22 +173,42 @@ export default function DeskSvg({
             {/* a single work glove, traced from designs/reference/glove_reference.jpg
                 (just one of the pair), enlarged, and hung upside down —
                 cuff on top, fingers dangling down — moved in next to the
-                scissors. Fingers are drawn as thick capsules first, then
-                a tall palm block is painted over roughly their top half,
-                so the dividing lines between them only show for their
-                bottom half (near the tips) instead of running the whole
-                length like disjoint sticks. No seam line between the cuff
-                and palm — they read as one piece. A thumb bump is painted
-                on top of the palm's left edge last, so it doesn't leave a
-                seam either */}
-            <path d="M466 185 L471 185 L471 206 Q468.5 210.5 466 206 Z" fill={PAPER} />
-            <path d="M472 185 L477 185 L477 213 Q474.5 217.5 472 213 Z" fill={PAPER} />
-            <path d="M478 185 L483 185 L483 211 Q480.5 215.5 478 211 Z" fill={PAPER} />
-            <path d="M484 185 L489 185 L489 203 Q486.5 207.5 484 203 Z" fill={PAPER} />
-            <rect x={465} y={183} width={24} height={16} rx={3} fill={PAPER} />
-            <rect x={465} y={177} width={24} height={6} fill={PAPER} />
-            <g transform="translate(467 189) rotate(35)">
-              <rect x={-2.5} y={0} width={5} height={13} rx={2.5} fill={PAPER} />
+                scissors, nudged right a bit. Fingers are drawn as thick
+                capsules first, then the thumb, then the palm block painted
+                over both last — its opaque fill hides the tops of the
+                fingers and the base of the thumb, and its own border is a
+                path that omits the closing "Z" so the bottom edge fills
+                but is never stroked, so no line cuts across the fingers
+                where they meet the palm. The cuff sits directly above with
+                no gap */}
+            <g transform="translate(8 0)">
+              <path d="M465.5 185 L471.5 185 L471.5 206 Q468.5 210.5 465.5 206 Z" fill={PAPER} />
+              <path d="M471.5 185 L477.5 185 L477.5 213 Q474.5 217.5 471.5 213 Z" fill={PAPER} />
+              <path d="M477.5 185 L483.5 185 L483.5 211 Q480.5 215.5 477.5 211 Z" fill={PAPER} />
+              <path
+                d="M483.5 185 L489.5 185 L488.2 199 Q488.7 202.5 489.5 206 Q486.5 210.5 483.5 206 Z"
+                fill={PAPER}
+              />
+              <g transform="translate(467 189) rotate(35)">
+                <rect x={-2.5} y={0} width={5} height={13} rx={2.5} fill={PAPER} />
+              </g>
+              {/* palm fill is a plain unstroked rect; its visible border is drawn
+                  separately below, and stops right at the top-left corner
+                  instead of running the rest of the way down the left side,
+                  so the palm's own edge doesn't carry on past where the
+                  thumb attaches — the thumb's own outline (plus the round
+                  line-cap closing the small gap) picks up the silhouette
+                  from there down */}
+              <rect x={465} y={183} width={26} height={16} fill={PAPER} stroke="none" />
+              {/* right edge curves inward a touch through the palm — the
+                  matching curve continues into the cuff above and the
+                  pinky below so the whole right side reads as one bowed
+                  line instead of three straight ones */}
+              <path
+                d="M488.2 199 Q487.1 191 488 183 L468 183 Q465 183 465 186"
+                fill="none"
+              />
+              <path d="M465 177 L489 177 Q488.4 180 488 183 L465 183 Z" fill={PAPER} />
             </g>
             {/* pliers, traced from designs/reference/pliers_clipart.png and
                 turned upright — shorter, thicker filled handles, a longer
