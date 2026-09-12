@@ -70,6 +70,69 @@ const ZOOM_MS = 900;
  *  straight down from there to the handle at dy 20–24. */
 const LAMP_CHAIN_HIT: Rect = { x: 988, y: 165, w: 22, h: 42 };
 
+/** one "click here" cue per screen — a bouncing title-font label with a pair
+ *  of small arrowheads underneath, sitting in the gap between the wall shelf
+ *  and each screen's own bezel. `top`/`centerX` are in viewBox units, each
+ *  hand-picked so the cue clears whatever's drawn above that particular
+ *  screen (the wall shelf, the lamp, the toolboxes). */
+type ScreenCueSpec = { label: string; centerX: number; top: number };
+
+const SCREEN_CUES: ScreenCueSpec[] = [
+  // screen 1 (382,239,202,138) — the "Projects" play-button screen
+  { label: "Projects", centerX: 382 + 202 / 2, top: 185 },
+  // screen 2 (602,300,150,90) — "Skills"
+  { label: "Skills", centerX: 602 + 150 / 2, top: 246 },
+  // screen 3 (802,268,222,120) — "Personal"
+  { label: "Personal", centerX: 802 + 222 / 2, top: 214 },
+  // screen 4 (1062,128,182,252) — sits highest on the desk, so its cue gets
+  // the least headroom
+  { label: "Experience/Awards", centerX: 1062 + 182 / 2, top: 74 },
+];
+
+function ScreenCue({ label, centerX, top }: ScreenCueSpec) {
+  return (
+    <div
+      aria-hidden
+      className="bounce-cue pointer-events-none absolute flex -translate-x-1/2 flex-col items-center text-white/70"
+      style={{
+        left: `${(centerX / DESK_VIEWBOX.w) * 100}%`,
+        top: `${(top / DESK_VIEWBOX.h) * 100}%`,
+      }}
+    >
+      <span className="font-title text-[13px] uppercase tracking-wide sm:text-[15px]">
+        {label}
+      </span>
+      <div className="-mt-1 flex flex-col items-center">
+        <ArrowheadDown />
+        <ArrowheadDown className="-mt-0.5" />
+      </div>
+    </div>
+  );
+}
+
+/** a single down-pointing arrowhead, used in pairs beneath each screen cue —
+ *  smaller than the text it sits under */
+function ArrowheadDown({ className }: { className?: string }) {
+  return (
+    <svg
+      width="9"
+      height="5"
+      viewBox="0 0 9 5"
+      fill="none"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M1 1L4.5 4L8 1"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [lampOn, setLampOn] = useState(false);
@@ -180,6 +243,10 @@ export default function DeskScene({ className }: { className?: string }) {
                 height: `${(s.glass.h / DESK_VIEWBOX.h) * 100}%`,
               }}
             />
+          ))}
+          {/* one click-here cue per screen — see `SCREEN_CUES` above */}
+          {SCREEN_CUES.map((cue) => (
+            <ScreenCue key={cue.label} {...cue} />
           ))}
         </div>
       </div>

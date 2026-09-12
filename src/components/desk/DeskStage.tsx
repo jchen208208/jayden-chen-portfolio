@@ -44,10 +44,11 @@ export default function DeskStage() {
       hero.style.transform = `translate3d(0, ${(-56 * ease).toFixed(1)}px, 0)`;
       hero.style.pointerEvents = p > 0.45 ? "none" : "auto";
 
-      // desk: always visible; starts low at rest size, rises and zooms slightly
-      // closer as the scroll brings it into full frame
+      // desk: always visible; starts low at rest size, rises and zooms in
+      // as the scroll brings it into full frame, ending noticeably larger
+      // so it fills more of the screen once the title has lifted away
       const ty = (1 - ease) * 184;
-      const scale = 1 + 0.08 * ease;
+      const scale = 1 + 0.35 * ease;
       desk.style.transform = `translate3d(0, ${ty.toFixed(1)}px, 0) scale(${scale.toFixed(4)})`;
     };
     const onScroll = () => {

@@ -83,6 +83,20 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
+@keyframes bounce-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
+}
+
+.bounce-cue {
+  animation: bounce-cue 2.2s ease-in-out infinite;
+}
+
 /* mid-flight blur that hides pixel interpolation during the screen morph */
 @keyframes vt-blur {
   30% {
@@ -142,7 +156,8 @@ body {
   html {
     scroll-behavior: auto;
   }
-  .scroll-cue {
+  .scroll-cue,
+  .bounce-cue {
     animation: none !important;
   }
   ::view-transition-old(*),

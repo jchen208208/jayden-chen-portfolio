@@ -12,7 +12,7 @@ export default function Hero() {
       <h1 className="font-title text-[clamp(2.75rem,9vw,6rem)] leading-[0.95] tracking-tight text-white">
         {PROFILE.name}
       </h1>
-      <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-white/45 sm:text-sm">
+      <p className="mt-6 font-mono text-xs uppercase tracking-[0.3em] text-white/65 sm:text-sm">
         {PROFILE.tagline}
       </p>
 
