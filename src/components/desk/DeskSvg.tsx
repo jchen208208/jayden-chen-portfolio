@@ -103,13 +103,12 @@ export default function DeskSvg({
           <rect x={479} y={124} width={7} height={11} rx={1.5} fill={PAPER} />
           {/* a second, smaller toolbox to the right of the first — shorter,
               more square, sharp corners instead of rounded, and different
-              details: a flat tab handle, a single round latch, and a pair
-              of corner rivets instead of a lid seam and twin clasps */}
-          <rect x={518} y={120} width={20} height={5} fill={PAPER} />
-          <rect x={507} y={125} width={42} height={22} fill={PAPER} />
+              details: a flat tab handle and a pair of corner rivets instead
+              of a lid seam and twin clasps */}
+          <rect x={521} y={120} width={28} height={5} fill={PAPER} />
+          <rect x={507} y={125} width={56} height={22} fill={PAPER} />
           <circle cx={513} cy={130} r={1} fill={PAPER} />
-          <circle cx={543} cy={130} r={1} fill={PAPER} />
-          <circle cx={528} cy={136} r={3} fill={PAPER} />
+          <circle cx={557} cy={130} r={1} fill={PAPER} />
           {/* two upside-down (frustum) pyramids hang from the shelf's
               underside, each set in a bit from its end toward the middle —
               same trapezoid shape as the cactus pot, just inverted */}
@@ -222,12 +221,38 @@ export default function DeskSvg({
             {/* hammer, traced from designs/reference/hammer_reference.jpg and
                 stood upright (right side up) instead of tilted: a squared-
                 off rectangular striking face on one side of the head, and
-                on the other a pointed beak that curves down past the
-                face — not a hook — down toward the handle */}
-            <rect x={549} y={180} width={11} height={10} rx={1} fill={PAPER} />
-            <circle cx={554} cy={185} r={1.5} fill={PAPER} />
-            <path d="M560 180 Q566 179 568 183 Q570 188 566 192 Q562 187 560 190 Z" fill={PAPER} />
-            <rect x={551} y={190} width={6} height={28} rx={3} fill={PAPER} />
+                on the other a claw. Matching the reference, the claw is a
+                simple wedge, not a hook that loops back on itself: the top
+                edge runs flat off the top of the square — never rising
+                above it — then curves downward, and the underside curves
+                downward too (dipping below its own attachment point on the
+                square), the two meeting the tip from opposite angles so it
+                comes to a sharp point rather than rounding off. A blunt
+                face sits on the left, taller than the centre square and
+                joined to it by a short connecting beam. Moved up near the
+                wrench,
+                just below it, with a longer handle. Drawn as one
+                continuous outline, the same trick as the glove: the blunt
+                face, beam, centre square and claw are traced as a single
+                path following only the true outer silhouette (with small
+                in-and-out steps where the narrower beam meets the wider
+                pieces on either side), instead of separate stroked/filled
+                shapes, so no seam lines show where those meet — but the
+                line where the head meets the handle is kept, drawn back in
+                separately, since that's a real seam (a wood/metal handle
+                socketed into the head) rather than one continuous piece */}
+            <g transform="translate(-4 -16)">
+              <path
+                d="M542 179 L546 179 L546 182 L549 182 L549 180 L560 180
+                   Q566 180 570 188 Q566 187 560 187
+                   L560 190 L557 190 L557 219
+                   Q557 222 554 222 Q551 222 551 219
+                   L551 190 L549 190 L549 188 L546 188 L546 191 L542 191
+                   Q541 191 541 190 L541 180 Q541 179 542 179 Z"
+                fill={PAPER}
+              />
+              <line x1={551} y1={190} x2={557} y2={190} />
+            </g>
           </g>
 
           {/* bookshelf carcass (right half) — same inset-rect framing */}
