@@ -84,60 +84,202 @@ export default function DeskSvg({
 
         {/* ── wall shelf, behind screens 1 & 2; centred over screen 2 ──── */}
         <g transform="translate(105 -20)">
-          {/* pegboard panel (left half) */}
-          <rect x={420} y={100} width={160} height={146} rx={4} fill={PAPER} />
-          <g opacity={0.22}>
-            {[436, 458, 480, 502, 524, 546, 566].map((px) =>
-              [116, 138, 160, 182, 204, 226].map((py) => (
+          {/* tool wall (left half) — sharp corners, unlike the bookshelf;
+              an inset rect gives the frame a visible border thickness, the
+              same bezel trick as `Screen` */}
+          <rect x={420} y={100} width={160} height={146} fill={PAPER} />
+          <rect x={428} y={108} width={144} height={130} fill={PAPER} />
+          {/* a single shelf, styled like one bookshelf tier divider, sitting
+              ~2/3 of the way up the wall (measured from the bottom) and a
+              touch narrower than the inner border */}
+          <rect x={432} y={147} width={136} height={4} fill={PAPER} />
+          {/* toolbox, traced from designs/reference/toolbox_reference.png,
+              resting on the shelf and set a bit left of its centre — kept
+              clear of every tool-wall edge */}
+          <path d="M458 121 L458 115 L482 115 L482 121 L478 121 L478 118 L462 118 L462 121 Z" fill={PAPER} />
+          <rect x={442} y={121} width={56} height={26} rx={5} fill={PAPER} />
+          <line x1={442} y1={129} x2={498} y2={129} />
+          <rect x={455} y={124} width={7} height={11} rx={1.5} fill={PAPER} />
+          <rect x={479} y={124} width={7} height={11} rx={1.5} fill={PAPER} />
+          {/* a second, smaller toolbox to the right of the first — shorter,
+              more square, sharp corners instead of rounded, and different
+              details: a flat tab handle, a single round latch, and a pair
+              of corner rivets instead of a lid seam and twin clasps */}
+          <rect x={518} y={120} width={20} height={5} fill={PAPER} />
+          <rect x={507} y={125} width={42} height={22} fill={PAPER} />
+          <circle cx={513} cy={130} r={1} fill={PAPER} />
+          <circle cx={543} cy={130} r={1} fill={PAPER} />
+          <circle cx={528} cy={136} r={3} fill={PAPER} />
+          {/* two upside-down (frustum) pyramids hang from the shelf's
+              underside, each set in a bit from its end toward the middle —
+              same trapezoid shape as the cactus pot, just inverted */}
+          <path d="M451.5 151 L458.5 151 L457.0 166 L453.0 166 Z" fill={PAPER} />
+          <path d="M541.5 151 L548.5 151 L547.0 166 L543.0 166 Z" fill={PAPER} />
+          {/* evenly spaced pegboard-style dots filling the wall below the
+              shelf, 5 columns by 5 rows — one extra row added above (clear
+              of the pyramids and the hung tools) and one below (clear of
+              the inner border) */}
+          <g opacity={0.5}>
+            {[444, 472, 500, 528, 556].map((px) =>
+              [172, 182, 198, 214, 230].map((py) => (
                 <circle key={`${px}-${py}`} cx={px} cy={py} r={1.5} />
               )),
             )}
           </g>
-          {/* scissors */}
-          <circle cx={444} cy={150} r={6} fill={PAPER} />
-          <circle cx={456} cy={150} r={6} fill={PAPER} />
-          <path d="M446 156 L462 198" />
-          <path d="M454 156 L440 198" />
-          <circle cx={450} cy={163} r={2.4} fill={PAPER} />
-          {/* two screwdrivers */}
-          <rect x={480} y={116} width={12} height={26} rx={5} fill={PAPER} />
-          <line x1={486} y1={142} x2={486} y2={190} />
-          <path d="M482 190 L490 190" />
-          <rect x={498} y={118} width={12} height={24} rx={5} fill={PAPER} />
-          <line x1={504} y1={142} x2={504} y2={184} />
-          <path d="M501 184 L507 184 M504 184 l0 4" />
-          {/* pliers */}
-          <path d="M528 150 L524 196" />
-          <path d="M536 150 L542 196" />
-          <path d="M528 150 Q525 137 531 131 M536 150 Q539 137 533 131" />
-          <path d="M531 131 Q532 127 534 131" />
-          <circle cx={532} cy={150} r={2.4} fill={PAPER} />
-          {/* coiled jumper wires hanging from a peg */}
-          {[556, 562, 568].map((px, i) => (
-            <path key={px} d={`M554 150 Q ${px} ${190 + i * 6} ${px + 8} 150`} />
-          ))}
+          {/* five tools hung across the wall, bigger and built from solid
+              filled shapes rather than thin outline strokes, each clear of
+              its neighbours */}
+          {/* scissors — shifted right a bit; filled rings (with a punched
+              hole) and filled, tapered blades crossing at the pivot */}
+          <circle cx={439} cy={180} r={5} fill={PAPER} />
+          <circle cx={439} cy={180} r={2.3} fill={PAPER} />
+          <circle cx={451} cy={180} r={5} fill={PAPER} />
+          <circle cx={451} cy={180} r={2.3} fill={PAPER} />
+          <path d="M437 183 L442 187 L457 220 Z" fill={PAPER} />
+          <path d="M453 183 L448 187 L433 220 Z" fill={PAPER} />
+          <circle cx={445} cy={194} r={2} fill={PAPER} />
+          {/* wrench, redrawn from designs/reference/wrench2.png as a single
+              unbroken path — both heads and the shaft in one outline, so
+              there's no seam line at the width of the beam where they
+              meet. Each head is built almost entirely from curves (a true
+              rounded disc, not a boxy rect with rounded corners), with a
+              squared-off rectangular notch — not a pointed V, and slim in
+              height — bitten into its outer edge: a shallow flat-bottomed
+              slot on one side, a deeper one on the other, so one prong
+              reads longer than its twin. The right head is the left
+              head's outline point-mirrored through the wrench's centre,
+              which is why the long prong lands on top on one end and on
+              the bottom on the other — same as the reference. Hangs
+              horizontally across the top of the board, on the dot layer,
+              instead of straight down like the rest */}
+          <path
+            d="M492 166 Q492 164 490.536 164.464 Q489.07 163 487 163
+               Q484.93 163 483.464 164.464 Q482.79 165.14 482.417 166
+               L486 166 L486 169 L482.101 169
+               Q482.4 170.47 483.464 171.536 Q484.93 173 487 173
+               Q489.07 173 490.536 171.536 Q492 172 492 170
+               L520 170
+               Q520 172 521.464 171.536 Q522.93 173 525 173
+               Q527.07 173 528.536 171.536 Q529.21 170.86 529.583 170
+               L526 170 L526 167 L529.899 167
+               Q529.6 165.53 528.536 164.464 Q527.07 163 525 163
+               Q522.93 163 521.464 164.464 Q520 164 520 166
+               L492 166 Z"
+            fill={PAPER}
+          />
+          {/* glove, pliers and hammer all shifted down a bit to clear the
+              wrench's new horizontal spot at the top of the board */}
+          <g transform="translate(0 14)">
+            {/* a single work glove, traced from designs/reference/glove_reference.jpg
+                (just one of the pair), enlarged, and hung upside down —
+                cuff on top, fingers dangling down — moved in next to the
+                scissors. Fingers are drawn as thick capsules first, then
+                a tall palm block is painted over roughly their top half,
+                so the dividing lines between them only show for their
+                bottom half (near the tips) instead of running the whole
+                length like disjoint sticks. No seam line between the cuff
+                and palm — they read as one piece. A thumb bump is painted
+                on top of the palm's left edge last, so it doesn't leave a
+                seam either */}
+            <path d="M466 185 L471 185 L471 206 Q468.5 210.5 466 206 Z" fill={PAPER} />
+            <path d="M472 185 L477 185 L477 213 Q474.5 217.5 472 213 Z" fill={PAPER} />
+            <path d="M478 185 L483 185 L483 211 Q480.5 215.5 478 211 Z" fill={PAPER} />
+            <path d="M484 185 L489 185 L489 203 Q486.5 207.5 484 203 Z" fill={PAPER} />
+            <rect x={465} y={183} width={24} height={16} rx={3} fill={PAPER} />
+            <rect x={465} y={177} width={24} height={6} fill={PAPER} />
+            <g transform="translate(467 189) rotate(35)">
+              <rect x={-2.5} y={0} width={5} height={13} rx={2.5} fill={PAPER} />
+            </g>
+            {/* pliers, traced from designs/reference/pliers_clipart.png and
+                turned upright — shorter, thicker filled handles, a longer
+                metal nose with a centre line bisecting it — evenly spaced
+                between the glove and the hammer */}
+            <path d="M515 195 L523 195 L519 171 Z" fill={PAPER} />
+            <line x1={519} y1={195} x2={519} y2={173} />
+            <circle cx={519} cy={195} r={2.5} fill={PAPER} />
+            <path d="M515 196 Q506 202 509 209 L512 209 Q511 203 517 196 Z" fill={PAPER} />
+            <path d="M523 196 Q532 202 529 209 L526 209 Q527 203 521 196 Z" fill={PAPER} />
+            {/* hammer, traced from designs/reference/hammer_reference.jpg and
+                stood upright (right side up) instead of tilted: a squared-
+                off rectangular striking face on one side of the head, and
+                on the other a pointed beak that curves down past the
+                face — not a hook — down toward the handle */}
+            <rect x={549} y={180} width={11} height={10} rx={1} fill={PAPER} />
+            <circle cx={554} cy={185} r={1.5} fill={PAPER} />
+            <path d="M560 180 Q566 179 568 183 Q570 188 566 192 Q562 187 560 190 Z" fill={PAPER} />
+            <rect x={551} y={190} width={6} height={28} rx={3} fill={PAPER} />
+          </g>
 
-          {/* bookshelf carcass (right half) */}
+          {/* bookshelf carcass (right half) — same inset-rect framing */}
           <rect x={584} y={100} width={140} height={146} rx={4} fill={PAPER} />
-          <line x1={584} y1={148} x2={724} y2={148} />
-          <line x1={584} y1={196} x2={724} y2={196} />
-          {/* top tier */}
-          <rect x={594} y={112} width={12} height={36} fill={PAPER} />
-          <rect x={608} y={116} width={11} height={32} fill={PAPER} />
-          <path d="M623 148 L627 114 L639 116 L636 148 Z" fill={PAPER} />
-          <rect x={646} y={110} width={13} height={38} fill={PAPER} />
-          <rect x={661} y={118} width={11} height={30} fill={PAPER} />
-          {/* middle tier */}
-          <rect x={594} y={158} width={13} height={38} fill={PAPER} />
-          <rect x={609} y={154} width={12} height={42} fill={PAPER} />
-          <rect x={623} y={160} width={12} height={36} fill={PAPER} />
-          <path d="M639 196 L643 160 L655 162 L652 196 Z" fill={PAPER} />
-          <rect x={659} y={156} width={13} height={40} fill={PAPER} />
-          {/* bottom tier */}
-          <rect x={594} y={206} width={12} height={40} fill={PAPER} />
-          <rect x={608} y={202} width={14} height={44} fill={PAPER} />
-          <rect x={624} y={208} width={12} height={38} fill={PAPER} />
-          <path d="M654 246 L672 242 L668 206 L650 210 Z" fill={PAPER} />
+          <rect x={592} y={108} width={124} height={130} rx={2} fill={PAPER} />
+          {/* tier dividers, given real thickness instead of hairlines —
+              spanning only the inner border's width so they connect to it
+              without crossing through the frame */}
+          <rect x={592} y={148} width={124} height={4} fill={PAPER} />
+          <rect x={592} y={196} width={124} height={4} fill={PAPER} />
+          {/* top tier — books only, traced loosely from
+              designs/reference/bookshelf_reference.avif: varying widths and
+              heights, a couple of decorative spine accents, and one leaning
+              against its neighbour */}
+          <rect x={594} y={112} width={10} height={36} fill={PAPER} />
+          <rect x={607} y={116} width={6} height={32} fill={PAPER} />
+          <g opacity={0.5}>
+            {[124, 134, 144].map((y) => (
+              <circle key={y} cx={610} cy={y} r={1.3} />
+            ))}
+          </g>
+          <path d="M619 148 L619 114 L630 112 L630 148 Z" fill={PAPER} />
+          <rect x={633} y={118} width={10} height={30} fill={PAPER} />
+          <rect x={646} y={112} width={11} height={36} fill={PAPER} />
+          <path d="M652 117 L654 120 L652 123 L650 120 Z" opacity={0.6} />
+          <rect x={660} y={117} width={10} height={31} fill={PAPER} />
+          <g transform="rotate(10 680 146)">
+            <rect x={676} y={118} width={8} height={28} fill={PAPER} />
+          </g>
+          <rect x={689} y={114} width={11} height={34} fill={PAPER} />
+          <rect x={703} y={110} width={12} height={38} fill={PAPER} />
+
+          {/* middle tier — books only */}
+          <rect x={594} y={158} width={12} height={38} fill={PAPER} />
+          <rect x={609} y={154} width={11} height={42} fill={PAPER} />
+          <path d="M615 168 L617 171 L615 174 L613 171 Z" opacity={0.6} />
+          <rect x={623} y={162} width={11} height={34} fill={PAPER} />
+          <rect x={637} y={160} width={11} height={36} fill={PAPER} />
+          <rect x={651} y={156} width={10} height={40} fill={PAPER} />
+          <rect x={664} y={162} width={11} height={34} fill={PAPER} />
+          <g opacity={0.5}>
+            <circle cx={670} cy={170} r={1.3} />
+            <circle cx={670} cy={178} r={1.3} />
+            <circle cx={670} cy={186} r={1.3} />
+          </g>
+          <rect x={678} y={158} width={10} height={38} fill={PAPER} />
+          <rect x={691} y={154} width={11} height={42} fill={PAPER} />
+          <rect x={705} y={160} width={10} height={36} fill={PAPER} />
+
+          {/* bottom tier — a stack of books lying flat, a trophy, and a
+              figurine, all kept clear of the divider and the inner border */}
+          <rect x={594} y={228} width={38} height={10} rx={1} fill={PAPER} />
+          <line x1={596} y1={233} x2={630} y2={233} opacity={0.45} />
+          <rect x={594} y={218} width={33} height={10} rx={1} fill={PAPER} />
+          <line x1={596} y1={223} x2={625} y2={223} opacity={0.45} />
+          <rect x={594} y={208} width={28} height={10} rx={1} fill={PAPER} />
+          <line x1={596} y1={213} x2={620} y2={213} opacity={0.45} />
+          <path d="M643 212 Q636 214 638 220 Q640 224 645 222" />
+          <path d="M659 212 Q666 214 664 220 Q662 224 657 222" />
+          <path d="M643 210 L659 210 L657 228 L645 228 Z" fill={PAPER} />
+          <rect x={649} y={228} width={4} height={6} fill={PAPER} />
+          <rect x={644} y={234} width={14} height={4} rx={1} fill={PAPER} />
+          {/* alarm clock, filling the space where the figurine was —
+              shifted right, with smaller bells and shorter legs */}
+          <path d="M681 210 Q690 204 699 210" />
+          <circle cx={681} cy={213} r={2} fill={PAPER} />
+          <circle cx={699} cy={213} r={2} fill={PAPER} />
+          <circle cx={690} cy={224} r={11} fill={PAPER} />
+          <line x1={690} y1={224} x2={690} y2={218} />
+          <line x1={690} y1={224} x2={694} y2={225} />
+          <circle cx={690} cy={224} r={1} fill={PAPER} />
+          <path d="M684 235 L681 238 M696 235 L699 238" />
         </g>
 
         {/* ── snake plant in a tall pot, clear of the desk ─────────────── */}
