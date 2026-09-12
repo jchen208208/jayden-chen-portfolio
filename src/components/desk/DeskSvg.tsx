@@ -10,8 +10,8 @@ import { DESK_VIEWBOX } from "@/lib/desk";
  * things in front actually block what's behind them — no false transparency.
  * Painted strictly back-to-front:
  *
- *   wall shelf → lamp pole → plant → 3D printer → desk → soldering station →
- *   cactus → four screens → PC tower → chair
+ *   tool wall → bookshelf → lamp pole → plant → 3D printer → desk →
+ *   soldering station → cactus → four screens → PC tower → chair
  */
 
 const INK = "var(--ink, #f4f6f8)";
@@ -82,11 +82,16 @@ export default function DeskSvg({
         {/* ── floor ─────────────────────────────────────────────────────── */}
         <line x1={40} y1={FLOOR} x2={1560} y2={FLOOR} opacity={0.3} />
 
-        {/* ── wall shelf, behind screens 1 & 2; centred over screen 2 ──── */}
-        <g transform="translate(105 -20)">
-          {/* tool wall (left half) — sharp corners, unlike the bookshelf;
-              an inset rect gives the frame a visible border thickness, the
-              same bezel trick as `Screen` */}
+        {/* ── tool wall, relocated above the soldering station/3D printer on
+            the far left of the desk (was: left half of the wall shelf,
+            paired with the bookshelf) — shifted left, a bit lower than the
+            bookshelf now sits, and scaled up 1.3x around its own centre
+            (420,100,160,146 → centre 500,173) so the whole board and
+            everything mounted on it reads bigger ─────────────────────── */}
+        <g transform="translate(-291.5 15) translate(500 173) scale(1.3) translate(-500 -173)">
+          {/* sharp corners, unlike the bookshelf; an inset rect gives the
+              frame a visible border thickness, the same bezel trick as
+              `Screen` */}
           <rect x={420} y={100} width={160} height={146} fill={PAPER} />
           <rect x={428} y={108} width={144} height={130} fill={PAPER} />
           {/* a single shelf, styled like one bookshelf tier divider, sitting
@@ -254,8 +259,13 @@ export default function DeskSvg({
               <line x1={551} y1={190} x2={557} y2={190} />
             </g>
           </g>
+        </g>
 
-          {/* bookshelf carcass (right half) — same inset-rect framing */}
+        {/* ── wall shelf (bookshelf), behind screens 1 & 2; centred over
+            screen 2 — the tool wall that used to sit beside it has moved
+            above the soldering station ─────────────────────────────── */}
+        <g transform="translate(105 -20)">
+          {/* bookshelf carcass — same inset-rect framing */}
           <rect x={584} y={100} width={140} height={146} rx={4} fill={PAPER} />
           <rect x={592} y={108} width={124} height={130} rx={2} fill={PAPER} />
           {/* tier dividers, given real thickness instead of hairlines —
@@ -600,19 +610,22 @@ export default function DeskSvg({
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         <g>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* placeholder label marking this screen as clickable — centred in
-              the glass (611,309,132,72) */}
+          {/* "SKILLS" label marking this screen as clickable — centred in
+              the glass (611,309,132,72), set in the same display face as
+              the "Jayden Chen" title, all caps to match its treatment
+              elsewhere on the page */}
           <text
             x={677}
             y={345}
             textAnchor="middle"
             dominantBaseline="middle"
-            fontSize={15}
-            fontFamily="var(--font-jetbrains-mono), monospace"
+            fontSize={17}
+            fontFamily="var(--font-mileast)"
+            letterSpacing={1}
             fill={INK}
             stroke="none"
           >
-            Section 1
+            SKILLS
           </text>
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
