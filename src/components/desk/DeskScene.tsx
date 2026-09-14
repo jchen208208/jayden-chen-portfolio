@@ -26,45 +26,33 @@ import { FaJava } from "react-icons/fa6";
 import { TbSql } from "react-icons/tb";
 import { DESK_VIEWBOX } from "@/lib/desk";
 import DeskSvg from "./DeskSvg";
+import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
 import DeskCardList from "./DeskCardList";
 
-/** the soldering iron drawing traced onto the desk's tool wall (see
- *  `DeskSvg`, "soldering station" group) — the same path data, re-based into
- *  its own tight viewBox so it can stand alone as a skill-grid icon. Drawn
- *  as an outline (stroke only, no fill) so it reads the same hand-drawn way
- *  against the card's dark interior as it does on the desk itself. */
+/** the desk's soldering station (`SolderingStation`, shared with `DeskSvg`)
+ *  standing alone as a skill-grid icon, framed tight by its own bounds. The
+ *  card interior is the overlay's page-coloured ground, so the drawing's
+ *  opaque `--paper` fills blend in exactly as they do on the desk. */
+const SOLDERING_ICON_STROKE = 5.5;
 function SolderingIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
+  const b = SOLDERING_BOUNDS;
   return (
     <svg
-      viewBox="139 316 134 86"
+      viewBox={`${b.x} ${b.y} ${b.w} ${b.h}`}
       aria-hidden
       fill="none"
       stroke="currentColor"
-      strokeWidth={2.4}
+      strokeWidth={SOLDERING_ICON_STROKE}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       {...rest}
     >
-      <path d="M254 358 L202 358 L150 374 L150 390 L254 390 Z" />
-      <rect x={156} y={390} width={10} height={6} rx={1} />
-      <rect x={238} y={390} width={10} height={6} rx={1} />
-      <path d="M150 374 L145.3 358.7 M202 358 L197.3 342.7" />
-      <path
-        d="M145.3 358.7 Q147.6 350.7 156.0 362.7 Q156.2 348.0 164.7 360.1
-           Q164.9 345.3 173.4 357.4 Q173.6 342.7 182.0 354.7
-           Q182.2 340.0 190.7 352.1 Q190.9 337.3 197.3 342.7"
+      <SolderingStation
+        ink="currentColor"
+        paper="var(--paper, #000)"
+        strokeWidth={SOLDERING_ICON_STROKE}
       />
-      <path d="M231.9 358.8 L237.1 339.3 L231.3 337.7 L226.1 357.2 Z" />
-      <path d="M220.7 330.7 L245.9 337.5 A4 4 0 0 1 243.8 345.2 L218.7 338.5 Z" />
-      <path d="M215.4 342.8 L220.1 325.4 Q222.3 324.9 224.0 326.4 L219.3 343.8 Q217.1 344.3 215.4 342.8 Z" />
-      <path d="M218.7 330.8 L185.4 321.8 L173.3 322.1 L183.5 328.5 L216.9 337.4 Z" />
-      <path d="M248.7 342.4 A16 16 0 0 1 254 374" strokeWidth={3.2} />
-      <circle cx={213} cy={372} r={3.5} />
-      <circle cx={224} cy={372} r={3.5} />
-      <circle cx={240} cy={377} r={9} />
-      <circle cx={240} cy={377} r={2.5} />
-      <line x1={240} y1={377} x2={240} y2={368} />
     </svg>
   );
 }
@@ -165,8 +153,8 @@ type SkillItem = {
 /** the actual skills inside each card, matched to `SKILLS_BOX_TITLES` by
  *  index — one array per card, each rendered as an icon tile (brand logo +
  *  name underneath) rather than a plain text chip. Soldering has no brand
- *  logo, so it uses the hand-drawn `SolderingIcon` traced from the desk's
- *  own tool wall/3D-printer setup instead of a `react-icons` glyph. */
+ *  logo, so it uses `SolderingIcon` — the same soldering station drawn on
+ *  the desk — instead of a `react-icons` glyph. */
 const SKILLS_BOX_ITEMS: SkillItem[][] = [
   [
     { name: "Python", icon: (c) => <SiPython className={c} /> },
@@ -766,7 +754,7 @@ export default function DeskScene({ className }: { className?: string }) {
                         {SKILLS_BOX_TITLES[i]}
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 justify-items-center gap-x-5 gap-y-7 p-6">
+                    <div className="grid grid-cols-3 justify-items-center gap-x-5 gap-y-6 p-6">
                       {SKILLS_BOX_ITEMS[i].map((item) => (
                         <div
                           key={item.name}
