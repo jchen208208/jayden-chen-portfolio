@@ -32,14 +32,14 @@ const CENTER_X = GLASS.x + GLASS.w / 2;
 
 /** "SKILLS", set on its alphabetic baseline */
 const LABEL_BASELINE = 338;
-const LABEL_SIZE = 16;
+const LABEL_SIZE = 20;
 
 /** ▌ — a left-half block: half a monospace cell wide (cells are 0.6em),
- *  spanning the line from just above the caps to just below the baseline,
- *  the way a terminal's block cursor fills its row */
+ *  spanning the full line-height of the text so it matches a real terminal
+ *  block cursor (ascender to descender) */
 const CURSOR_W = LABEL_SIZE * 0.3;
-const CURSOR_TOP = LABEL_BASELINE - LABEL_SIZE * 0.86;
-const CURSOR_BOTTOM = LABEL_BASELINE + LABEL_SIZE * 0.22;
+const CURSOR_TOP = LABEL_BASELINE - LABEL_SIZE * 0.92;
+const CURSOR_BOTTOM = LABEL_BASELINE + LABEL_SIZE * 0.3;
 
 /** icon row: square icons between ‹ and › */
 const STRIP_CENTER_Y = 358;
@@ -131,7 +131,7 @@ export default function LaptopSkillsScreen() {
         y={LABEL_BASELINE}
         textAnchor="middle"
         fontSize={LABEL_SIZE}
-        fontFamily={MONO}
+        fontFamily='"Consolas", "Courier New", monospace'
         fontWeight={600}
         fill={INK}
         stroke="none"

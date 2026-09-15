@@ -12,9 +12,9 @@
  *
  * Coloured like VS Code's default Dark Modern theme (including its bracket
  * pair colours), with macOS window buttons in the tab bar.
- * One editor font throughout (JetBrains Mono, same as the Skills terminal);
- * the heading earns its size the way a Markdown heading does in a real
- * editor, so the section name stays obvious while everything below still
+ * One editor font throughout (Fira Code for the heading, JetBrains Mono for
+ * the rest); the heading earns its size the way a Markdown heading does in a
+ * real editor, so the section name stays obvious while everything below still
  * reads as code. The code is shaped like one job entry (`role`, `company`,
  * `dates`) — a preview of what the section opens to.
  *
@@ -30,6 +30,7 @@
 
 const INK = "var(--ink, #f4f6f8)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
+const FIRA = "var(--font-fira-code), monospace";
 
 /** the glass — must track `Screen x={802} y={268} w={222} h={120} inset={10}`
  *  in `DeskSvg` (and `SCREENS` in `DeskScene`) */
@@ -43,7 +44,7 @@ const GUTTER_MARK_X = GLASS.x + 4;
 /* ── heading ───────────────────────────────────────────────────────────── */
 const TEXT_X = GLASS.x + 18;
 const HEADING_BASELINE = 311;
-const HEADING_SIZE = 17;
+const HEADING_SIZE = 20;
 
 /* ── code block ────────────────────────────────────────────────────────── */
 const BLOCK = { x: TEXT_X - 4, y: 316, w: 176, h: 57 };
@@ -253,13 +254,13 @@ export default function LaptopExperienceScreen() {
         x={TEXT_X}
         y={HEADING_BASELINE}
         fontSize={HEADING_SIZE}
-        fontFamily={MONO}
+        fontFamily={FIRA}
         fontWeight={600}
         fill={THEME.heading}
         stroke="none"
       >
         <tspan>#</tspan>
-        {" EXPERIENCE"}
+        {" EXPERIENCES"}
       </text>
 
       {/* code block */}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Fira_Code, Inter, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -32,6 +32,12 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const firaCode = Fira_Code({
+  variable: "--font-fira-code",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Jayden Chen — Portfolio",
   description:
@@ -44,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${firaCode.variable} ${mileast.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}
