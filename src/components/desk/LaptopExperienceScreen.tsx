@@ -10,6 +10,8 @@
  *   ·    ▬▬▬▬▬ ▬▬▬▬▬▬▬▬▬,
  *   ·  }];▌                  ← typed in one character at a time, block cursor
  *
+ * Coloured like VS Code's default Dark Modern theme (including its bracket
+ * pair colours), with macOS window buttons in the tab bar.
  * One editor font throughout (JetBrains Mono, same as the Skills terminal);
  * the heading earns its size the way a Markdown heading does in a real
  * editor, so the section name stays obvious while everything below still
@@ -56,28 +58,54 @@ const BAR_INSET = 0.8;
 const CURSOR_W = CH / 2;
 const CURSOR_H = 6.5;
 
-type Tone = "keyword" | "name" | "key" | "string" | "punct";
-const TONE_OPACITY: Record<Tone, number> = {
-  keyword: 1,
-  name: 0.8,
-  key: 0.7,
-  string: 0.45,
-  punct: 0.35,
-};
+/** colours from VS Code's default dark theme (Dark Modern) */
+const THEME = {
+  keyword: "#569cd6", // const
+  constant: "#4fc1ff", // jobs
+  operator: "#cccccc", // =
+  property: "#9cdcfe", // role
+  string: "#ce9178", // "…"
+  punct: "#cccccc", // : , ;
+  bracket1: "#ffd700", // [ ]  — bracket pair colourisation, depth 1
+  bracket2: "#da70d6", // { }  — depth 2
+  heading: "#569cd6", // # EXPERIENCE
+  fence: "#cccccc", // ```ts
+  lineNumber: "#6e7681",
+  cursor: "#aeafad",
+  activeTab: "#0078d4",
+} as const;
+
+/** macOS window buttons: close, minimise, zoom */
+const WINDOW_BUTTONS = ["#ff5f57", "#febc2e", "#28c840"];
+
+type Tone =
+  | "keyword"
+  | "constant"
+  | "operator"
+  | "property"
+  | "string"
+  | "punct"
+  | "bracket1"
+  | "bracket2";
 
 /** the typed code, row by row: an indent, then [length in chars, tone]
- *  tokens separated by one space — roughly
+ *  tokens separated by one space — or none, for a token marked `true`
+ *  (`[{`, `role:`, `",`) — roughly
  *    const jobs = [{
  *      role: "……………………………………",
  *      company: "…………………",
  *      dates: "………………",
  *    }]; */
-const CODE: { indent: number; tokens: [number, Tone][] }[] = [
-  { indent: 0, tokens: [[5, "keyword"], [4, "name"], [1, "punct"], [2, "punct"]] },
-  { indent: 2, tokens: [[5, "key"], [22, "string"], [1, "punct"]] },
-  { indent: 2, tokens: [[8, "key"], [15, "string"], [1, "punct"]] },
-  { indent: 2, tokens: [[6, "key"], [13, "string"], [1, "punct"]] },
-  { indent: 0, tokens: [[3, "punct"]] },
+type CodeToken = [len: number, tone: Tone, joined?: boolean];
+const CODE: { indent: number; tokens: CodeToken[] }[] = [
+  {
+    indent: 0,
+    tokens: [[5, "keyword"], [4, "constant"], [1, "operator"], [1, "bracket1"], [1, "bracket2", true]],
+  },
+  { indent: 2, tokens: [[4, "property"], [1, "punct", true], [22, "string"], [1, "punct", true]] },
+  { indent: 2, tokens: [[7, "property"], [1, "punct", true], [15, "string"], [1, "punct", true]] },
+  { indent: 2, tokens: [[5, "property"], [1, "punct", true], [13, "string"], [1, "punct", true]] },
+  { indent: 0, tokens: [[1, "bracket2"], [1, "bracket1", true], [1, "punct", true]] },
 ];
 
 /* ── timing ────────────────────────────────────────────────────────────── */
@@ -102,8 +130,8 @@ function buildTimeline() {
     if (row > 0) t += NEWLINE_MS;
     // a newline lands straight on the auto-indent
     cursor.push({ t, col, row, steps: 0 });
-    rowTokens.forEach(([len, tone], i) => {
-      if (i > 0) {
+    rowTokens.forEach(([len, tone, joined], i) => {
+      if (i > 0 && !joined) {
         // the space before this token
         cursor.push({ t, col, row, steps: 1 });
         t += CHAR_MS;
@@ -160,6 +188,13 @@ function buildCursorCss() {
 }
 
 const TYPING_CSS = `${TOKEN_CSS}\n${buildCursorCss()}`;
+/** Every token runs its own CSS animation, so they only stay in step if they
+ *  all start on the same frame. A hot reload that adds tokens would mount
+ *  just the new ones mid-cycle (they'd type out of order, after the rest had
+ *  cleared) — keying the whole screen on the generated keyframes remounts
+ *  everything together whenever the code or timing changes. */
+const TIMELINE_KEY = [...TYPING_CSS].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+
 /** only the name and length go inline — play-state stays in globals.css so
  *  hovering the screen can pause it */
 const typeAnimation = (name: string) => ({
@@ -171,19 +206,19 @@ export default function LaptopExperienceScreen() {
   const rows = [HEADING_BASELINE - HEADING_SIZE * 0.36, FENCE_ROW_Y, ...CODE.map((_, r) => rowY(r))];
 
   return (
-    <g>
+    <g key={TIMELINE_KEY}>
       <style>{TYPING_CSS}</style>
 
-      {/* tab bar: window dots, the open file, and a rule under the bar */}
+      {/* tab bar: window buttons, the open file, and a rule under the bar */}
       <g stroke="none" fill={INK}>
         <rect x={GLASS.x} y={GLASS.y} width={GLASS.w} height={TAB_BAR_H} opacity={0.08} />
-        {[0, 1, 2].map((i) => (
+        {WINDOW_BUTTONS.map((color, i) => (
           <circle
-            key={i}
+            key={color}
             cx={GLASS.x + 6 + i * 5.5}
             cy={GLASS.y + TAB_BAR_H / 2}
             r={1.6}
-            opacity={0.5}
+            fill={color}
           />
         ))}
         <text
@@ -197,11 +232,17 @@ export default function LaptopExperienceScreen() {
           experience.md
         </text>
         {/* active-tab marker under the filename */}
-        <rect x={GLASS.x + 24} y={GLASS.y + TAB_BAR_H - 1.2} width={55} height={1.2} />
+        <rect
+          x={GLASS.x + 24}
+          y={GLASS.y + TAB_BAR_H - 1.2}
+          width={55}
+          height={1.2}
+          fill={THEME.activeTab}
+        />
       </g>
 
       {/* gutter: a dim tick where each line number would be */}
-      <g stroke="none" fill={INK} opacity={0.22}>
+      <g stroke="none" fill={THEME.lineNumber}>
         {rows.map((y) => (
           <rect key={y} x={GUTTER_MARK_X} y={y - 1.1} width={5} height={2.2} rx={1.1} />
         ))}
@@ -214,10 +255,10 @@ export default function LaptopExperienceScreen() {
         fontSize={HEADING_SIZE}
         fontFamily={MONO}
         fontWeight={600}
-        fill={INK}
+        fill={THEME.heading}
         stroke="none"
       >
-        <tspan fillOpacity={0.4}>#</tspan>
+        <tspan>#</tspan>
         {" EXPERIENCE"}
       </text>
 
@@ -232,14 +273,14 @@ export default function LaptopExperienceScreen() {
         opacity={0.07}
         stroke="none"
       />
-      <g className="exp-code" fill={INK} stroke="none">
+      <g className="exp-code" stroke="none">
         <text
           x={CODE_X}
           y={FENCE_ROW_Y}
           dominantBaseline="central"
           fontSize={TAB_TEXT_SIZE}
           fontFamily={MONO}
-          opacity={0.45}
+          fill={THEME.fence}
         >
           ```ts
         </text>
@@ -252,7 +293,7 @@ export default function LaptopExperienceScreen() {
             width={tok.len * CH - BAR_INSET}
             height={BAR_H}
             rx={BAR_H / 2}
-            opacity={TONE_OPACITY[tok.tone]}
+            fill={THEME[tok.tone]}
             style={typeAnimation(`exp-tok-${i}`)}
           />
         ))}
@@ -260,6 +301,7 @@ export default function LaptopExperienceScreen() {
         <g className="exp-type" style={typeAnimation("exp-cursor-move")}>
           <rect
             className="exp-cursor"
+            fill={THEME.cursor}
             x={cursorX(FINAL.col)}
             y={cursorY(FINAL.row)}
             width={CURSOR_W}
