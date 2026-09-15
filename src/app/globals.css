@@ -97,6 +97,79 @@ body {
   animation: bounce-cue 2.2s ease-in-out infinite;
 }
 
+/* laptop screen on the desk (`LaptopSkillsScreen`): skill icons slide left
+   one full list-length per loop, and a ▌ block cursor blinks after "SKILLS".
+   Hovering (or keyboard-focusing) that screen's click target brightens the
+   strip and holds the cursor solid — the "yes, this one's live" answer. */
+@keyframes skills-strip {
+  to {
+    transform: translateX(var(--skills-strip-loop));
+  }
+}
+
+.skills-strip-track {
+  animation: skills-strip 32s linear infinite;
+}
+
+.skills-strip {
+  opacity: 0.6;
+  transition: opacity 200ms ease-out;
+}
+
+@keyframes skills-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.skills-caret {
+  animation: skills-caret 1.1s steps(1, end) infinite;
+}
+
+[data-desk]:has([data-screen="screen2"]:is(:hover, :focus-visible)) .skills-strip {
+  opacity: 1;
+}
+
+[data-desk]:has([data-screen="screen2"]:is(:hover, :focus-visible)) .skills-caret {
+  animation: none;
+}
+
+/* larger laptop on the desk (`LaptopExperienceScreen`): code types itself
+   into an editor. The per-token keyframes are generated in that component;
+   these set the shared playback. Hovering that screen's click target pauses
+   the typing, brightens the code and holds the ▌ cursor solid. */
+.exp-type {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* token bars grow rightward from their own left edge */
+.exp-tok {
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+}
+
+.exp-code {
+  opacity: 0.75;
+  transition: opacity 200ms ease-out;
+}
+
+.exp-cursor {
+  animation: skills-caret 1.1s steps(1, end) infinite;
+}
+
+[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-type {
+  animation-play-state: paused;
+}
+
+[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-code {
+  opacity: 1;
+}
+
+[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-cursor {
+  animation: none;
+}
+
 /* mid-flight blur that hides pixel interpolation during the screen morph */
 @keyframes vt-blur {
   30% {
@@ -157,7 +230,11 @@ body {
     scroll-behavior: auto;
   }
   .scroll-cue,
-  .bounce-cue {
+  .bounce-cue,
+  .skills-strip-track,
+  .skills-caret,
+  .exp-type,
+  .exp-cursor {
     animation: none !important;
   }
   ::view-transition-old(*),

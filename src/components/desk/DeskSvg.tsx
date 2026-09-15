@@ -1,5 +1,7 @@
 import { DESK_VIEWBOX } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
+import LaptopExperienceScreen from "./LaptopExperienceScreen";
+import LaptopSkillsScreen from "./LaptopSkillsScreen";
 
 /**
  * "The Desk" — a clean-line trace of Jayden's setup, in the flat style of
@@ -19,6 +21,11 @@ const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
 /** reference-image pixels → desk units for the soldering station */
 const SOLDERING_SCALE = 0.4;
+/** the tool wall's hung tools are tiny, so they use a lighter outline than
+ *  the desk's 2.4 (still ~2 once the wall's 1.3x scale is applied) plus a
+ *  thin weight for interior details, like the lamp's 1.4 chain */
+const TOOL_OUTLINE = 1.6;
+const TOOL_DETAIL = 0.9;
 
 /** a monitor / laptop screen: opaque bezel + inset glass */
 function Screen({
@@ -117,150 +124,139 @@ export default function DeskSvg({
           <rect x={507} y={125} width={56} height={22} fill={PAPER} />
           <circle cx={513} cy={130} r={1} fill={PAPER} />
           <circle cx={557} cy={130} r={1} fill={PAPER} />
+          {/* pegboard holes — a regular 10 × 7 grid filling the wall below
+              the shelf, painted first so the shelf brackets and every hung
+              tool sit on top of them */}
+          <g opacity={0.35} fill={INK} stroke="none">
+            {[437, 451, 465, 479, 493, 507, 521, 535, 549, 563].map((px) =>
+              [160, 172, 184, 196, 208, 220, 232].map((py) => (
+                <circle key={`${px}-${py}`} cx={px} cy={py} r={1.3} />
+              )),
+            )}
+          </g>
           {/* two upside-down (frustum) pyramids hang from the shelf's
               underside, each set in a bit from its end toward the middle —
               same trapezoid shape as the cactus pot, just inverted */}
           <path d="M451.5 151 L458.5 151 L457.0 166 L453.0 166 Z" fill={PAPER} />
           <path d="M541.5 151 L548.5 151 L547.0 166 L543.0 166 Z" fill={PAPER} />
-          {/* evenly spaced pegboard-style dots filling the wall below the
-              shelf, 5 columns by 5 rows — one extra row added above (clear
-              of the pyramids and the hung tools) and one below (clear of
-              the inner border) */}
-          <g opacity={0.5}>
-            {[444, 472, 500, 528, 556].map((px) =>
-              [172, 182, 198, 214, 230].map((py) => (
-                <circle key={`${px}-${py}`} cx={px} cy={py} r={1.5} />
-              )),
-            )}
-          </g>
-          {/* five tools hung across the wall, bigger and built from solid
-              filled shapes rather than thin outline strokes, each clear of
-              its neighbours */}
-          {/* scissors — shifted right a bit; filled rings (with a punched
-              hole) and filled, tapered blades crossing at the pivot */}
-          <circle cx={439} cy={180} r={5} fill={PAPER} />
-          <circle cx={439} cy={180} r={2.3} fill={PAPER} />
-          <circle cx={451} cy={180} r={5} fill={PAPER} />
-          <circle cx={451} cy={180} r={2.3} fill={PAPER} />
-          <path d="M437 183 L442 187 L457 220 Z" fill={PAPER} />
-          <path d="M453 183 L448 187 L433 220 Z" fill={PAPER} />
-          <circle cx={445} cy={194} r={2} fill={PAPER} />
-          {/* wrench, redrawn from designs/reference/wrench2.png as a single
-              unbroken path — both heads and the shaft in one outline, so
-              there's no seam line at the width of the beam where they
-              meet. Each head is built almost entirely from curves (a true
-              rounded disc, not a boxy rect with rounded corners), with a
-              squared-off rectangular notch — not a pointed V, and slim in
-              height — bitten into its outer edge: a shallow flat-bottomed
-              slot on one side, a deeper one on the other, so one prong
-              reads longer than its twin. The right head is the left
-              head's outline point-mirrored through the wrench's centre,
-              which is why the long prong lands on top on one end and on
-              the bottom on the other — same as the reference. Hangs
-              horizontally across the top of the board, on the dot layer,
-              instead of straight down like the rest */}
-          <path
-            d="M492 166 Q492 164 490.536 164.464 Q489.07 163 487 163
-               Q484.93 163 483.464 164.464 Q482.79 165.14 482.417 166
-               L486 166 L486 169 L482.101 169
-               Q482.4 170.47 483.464 171.536 Q484.93 173 487 173
-               Q489.07 173 490.536 171.536 Q492 172 492 170
-               L520 170
-               Q520 172 521.464 171.536 Q522.93 173 525 173
-               Q527.07 173 528.536 171.536 Q529.21 170.86 529.583 170
-               L526 170 L526 167 L529.899 167
-               Q529.6 165.53 528.536 164.464 Q527.07 163 525 163
-               Q522.93 163 521.464 164.464 Q520 164 520 166
-               L492 166 Z"
-            fill={PAPER}
-          />
-          {/* glove, pliers and hammer all shifted down a bit to clear the
-              wrench's new horizontal spot at the top of the board */}
-          <g transform="translate(0 14)">
-            {/* a single work glove, traced from designs/reference/glove_reference.jpg
-                (just one of the pair), enlarged, and hung upside down —
-                cuff on top, fingers dangling down — moved in next to the
-                scissors, nudged right a bit. Fingers are drawn as thick
-                capsules first, then the thumb, then the palm block painted
-                over both last — its opaque fill hides the tops of the
-                fingers and the base of the thumb, and its own border is a
-                path that omits the closing "Z" so the bottom edge fills
-                but is never stroked, so no line cuts across the fingers
-                where they meet the palm. The cuff sits directly above with
-                no gap */}
-            <g transform="translate(8 0)">
-              <path d="M465.5 185 L471.5 185 L471.5 206 Q468.5 210.5 465.5 206 Z" fill={PAPER} />
-              <path d="M471.5 185 L477.5 185 L477.5 213 Q474.5 217.5 471.5 213 Z" fill={PAPER} />
-              <path d="M477.5 185 L483.5 185 L483.5 211 Q480.5 215.5 477.5 211 Z" fill={PAPER} />
+          {/* five tools hung upright across the pegboard, each drawn like a
+              line icon in its own local coordinates (origin = top centre):
+              a slightly lighter outline than the rest of the desk, so a few
+              thin interior detail lines (`TOOL_DETAIL`) still read at this
+              size, and every shape opaque-filled so overlaps stay clean */}
+          <g strokeWidth={TOOL_OUTLINE}>
+            {/* scissors — an asymmetric pair of finger loops (one round,
+                one taller oval, like real shears), arms crossing to a pivot
+                screw, and two overlapping leaf-shaped blades closed to a
+                point */}
+            <g transform="translate(442 171)">
+              <path d="M-3.3 17 Q-4.6 32 -0.7 48 Q1.1 32 1.5 18 Z" fill={PAPER} />
+              <path d="M3.3 17 Q4.6 32 0.7 48 Q-1.1 32 -1.5 18 Z" fill={PAPER} />
+              <path d="M-5.5 11 Q-3 14 -0.6 18.5 L0.9 16.6 Q-1 13 -2.2 10.6 Z" fill={PAPER} />
+              <path d="M5.5 12 Q3 15 0.6 18.5 L-0.9 16.6 Q1 14 2.4 11.4 Z" fill={PAPER} />
+              <ellipse cx={-5} cy={6} rx={4.6} ry={5.2} fill={PAPER} />
+              <ellipse cx={-5} cy={6} rx={2.3} ry={2.9} fill={PAPER} strokeWidth={TOOL_DETAIL} />
+              <ellipse cx={5.6} cy={6.6} rx={4.9} ry={6.2} fill={PAPER} />
+              <ellipse cx={5.6} cy={6.6} rx={2.5} ry={3.8} fill={PAPER} strokeWidth={TOOL_DETAIL} />
+              <circle cx={0} cy={17.4} r={1.5} fill={PAPER} strokeWidth={TOOL_DETAIL} />
+            </g>
+            {/* work glove, after designs/reference/glove_reference.jpg —
+                hung cuff-up: one silhouette for the hand (four tapered
+                fingers with V-notches between them, thumb angled off to
+                the side), finger-seam lines, a knuckle seam across the
+                back, and a separate cuff with a band stitched through it */}
+            <g transform="translate(471 170)">
               <path
-                d="M483.5 185 L489.5 185 L488.2 199 Q488.7 202.5 489.5 206 Q486.5 210.5 483.5 206 Z"
+                d="M8.6 10 L8.9 27 L8.4 38 Q8.2 40.5 6.4 40.5 Q4.6 40.5 4.5 38 L4.3 29.5
+                   L4.1 42.5 Q4 45 2.1 45 Q0.2 45 0.1 42.5 L-0.1 29.5
+                   L-0.2 44 Q-0.3 46.5 -2.2 46.5 Q-4.1 46.5 -4.2 44 L-4.4 29.5
+                   L-4.5 41.5 Q-4.6 44 -6.5 44 Q-8.4 44 -8.5 41.5 L-8.7 26
+                   Q-11.2 27.5 -13.3 31.5 Q-14.8 33.8 -16.2 32.6 Q-17.2 31.6 -16.4 29.6
+                   Q-13.8 21 -8.8 14 L-8.6 10 Z"
                 fill={PAPER}
               />
-              <g transform="translate(467 189) rotate(35)">
-                <rect x={-2.5} y={0} width={5} height={13} rx={2.5} fill={PAPER} />
+              <g strokeWidth={TOOL_DETAIL}>
+                <path d="M4.3 29.5 L4.3 25.5 M-0.1 29.5 L-0.1 25.5 M-4.4 29.5 L-4.4 25.5" />
+                <path d="M-8.2 22.5 Q0 25 8.8 22.5" />
               </g>
-              {/* palm fill is a plain unstroked rect; its visible border is drawn
-                  separately below, and stops right at the top-left corner
-                  instead of running the rest of the way down the left side,
-                  so the palm's own edge doesn't carry on past where the
-                  thumb attaches — the thumb's own outline (plus the round
-                  line-cap closing the small gap) picks up the silhouette
-                  from there down */}
-              <rect x={465} y={183} width={26} height={16} fill={PAPER} stroke="none" />
-              {/* right edge curves inward a touch through the palm — the
-                  matching curve continues into the cuff above and the
-                  pinky below so the whole right side reads as one bowed
-                  line instead of three straight ones */}
-              <path
-                d="M488.2 199 Q487.1 191 488 183 L468 183 Q465 183 465 186"
-                fill="none"
-              />
-              <path d="M465 177 L489 177 Q488.4 180 488 183 L465 183 Z" fill={PAPER} />
+              <path d="M-9.8 1 L9.8 1 L9 10.5 L-9 10.5 Z" fill={PAPER} />
+              <path d="M-9.5 5 L9.5 5" strokeWidth={TOOL_DETAIL} />
             </g>
-            {/* pliers, traced from designs/reference/pliers_clipart.png and
-                turned upright — shorter, thicker filled handles, a longer
-                metal nose with a centre line bisecting it — evenly spaced
-                between the glove and the hammer */}
-            <path d="M515 195 L523 195 L519 171 Z" fill={PAPER} />
-            <line x1={519} y1={195} x2={519} y2={173} />
-            <circle cx={519} cy={195} r={2.5} fill={PAPER} />
-            <path d="M515 196 Q506 202 509 209 L512 209 Q511 203 517 196 Z" fill={PAPER} />
-            <path d="M523 196 Q532 202 529 209 L526 209 Q527 203 521 196 Z" fill={PAPER} />
-            {/* hammer, traced from designs/reference/hammer_reference.jpg and
-                stood upright (right side up) instead of tilted: a squared-
-                off rectangular striking face on one side of the head, and
-                on the other a claw. Matching the reference, the claw is a
-                simple wedge, not a hook that loops back on itself: the top
-                edge runs flat off the top of the square — never rising
-                above it — then curves downward, and the underside curves
-                downward too (dipping below its own attachment point on the
-                square), the two meeting the tip from opposite angles so it
-                comes to a sharp point rather than rounding off. A blunt
-                face sits on the left, taller than the centre square and
-                joined to it by a short connecting beam. Moved up near the
-                wrench,
-                just below it, with a longer handle. Drawn as one
-                continuous outline, the same trick as the glove: the blunt
-                face, beam, centre square and claw are traced as a single
-                path following only the true outer silhouette (with small
-                in-and-out steps where the narrower beam meets the wider
-                pieces on either side), instead of separate stroked/filled
-                shapes, so no seam lines show where those meet — but the
-                line where the head meets the handle is kept, drawn back in
-                separately, since that's a real seam (a wood/metal handle
-                socketed into the head) rather than one continuous piece */}
-            <g transform="translate(-4 -16)">
+            {/* claw hammer — resting on two pegs under its head: a wooden
+                handle socketed into the head (the seam is kept), a rubber
+                grip sleeve with ridges near the butt, and a one-piece head
+                with a bevelled striking face, a narrow neck, the eye block
+                and a curved claw sweeping down to a point */}
+            <g transform="translate(503 161)">
+              <path d="M-2.1 4 L-2.5 38 L2.5 38 L2.1 4 Z" fill={PAPER} />
+              <path d="M-2.9 37 L-3.3 56 Q0 59.5 3.3 56 L2.9 37 Z" fill={PAPER} />
               <path
-                d="M542 179 L546 179 L546 182 L549 182 L549 180 L560 180
-                   Q566 180 570 188 Q566 187 560 187
-                   L560 190 L557 190 L557 219
-                   Q557 222 554 222 Q551 222 551 219
-                   L551 190 L549 190 L549 188 L546 188 L546 191 L542 191
-                   Q541 191 541 190 L541 180 Q541 179 542 179 Z"
+                d="M-3.1 41.5 L3.1 41.5 M-3.15 45.5 L3.15 45.5 M-3.2 49.5 L3.2 49.5"
+                strokeWidth={TOOL_DETAIL}
+              />
+              <path
+                d="M-12.5 -4.2 Q-13.3 -4.2 -13.3 -3.4 L-13.3 3.4 Q-13.3 4.2 -12.5 4.2 L-9.8 4.2 L-9.8 2.4
+                   L-4.2 2.4 L-4.2 5.5 L4.2 5.5 L4.2 2.2 Q10.5 2 16.2 8.8 Q17 9.6 17.3 8.6
+                   Q15.5 -3.6 4.2 -3.8 L4.2 -4.6 L-4.2 -4.6 L-4.2 -2.4 L-9.8 -2.4 L-9.8 -4.2 Z"
                 fill={PAPER}
               />
-              <line x1={551} y1={190} x2={557} y2={190} />
+              <path d="M-11.9 -4 L-11.9 4" strokeWidth={TOOL_DETAIL} />
             </g>
+            {/* combination pliers — jaws up: bowed rubber-sleeved handles
+                (collar line near the top) meeting under a tapered nose with
+                a jaw seam, serration ticks, the rounded cutter/grip opening
+                just above the pivot, and a riveted pivot boss on top */}
+            <g transform="translate(533 166)">
+              <path
+                d="M-3.6 21 Q-7.6 36 -7.6 50.5 Q-7.6 54 -5 54 Q-2.6 54 -2.7 50.5 Q-2.4 37 -0.1 21 Z"
+                fill={PAPER}
+              />
+              <path
+                d="M3.6 21 Q7.6 36 7.6 50.5 Q7.6 54 5 54 Q2.6 54 2.7 50.5 Q2.4 37 0.1 21 Z"
+                fill={PAPER}
+              />
+              <path d="M-5.3 29.5 L-1.3 29.5 M5.3 29.5 L1.3 29.5" strokeWidth={TOOL_DETAIL} />
+              <path
+                d="M-1 0.5 Q0 -0.3 1 0.5 L4.3 17.5 Q4.6 21.5 0 24.5 Q-4.6 21.5 -4.3 17.5 Z"
+                fill={PAPER}
+              />
+              <path d="M0 1 L0 11.5 M0 16.8 L0 18" strokeWidth={TOOL_DETAIL} />
+              <path d="M0 11.5 Q1.5 14.1 0 16.8 Q-1.5 14.1 0 11.5 Z" fill={PAPER} strokeWidth={TOOL_DETAIL} />
+              <path d="M-0.9 4 L0.9 4 M-1.3 6.5 L1.3 6.5 M-1.7 9 L1.7 9" strokeWidth={TOOL_DETAIL * 0.8} />
+              <circle cx={0} cy={20.2} r={2.4} fill={PAPER} />
+              <circle cx={0} cy={20.2} r={0.8} fill={INK} stroke="none" />
+            </g>
+            {/* combination wrench — hung by its open end on a peg: one
+                unbroken outline (angled open-jaw head, a shaft that slims
+                slightly toward the middle, ring-shaped box end) so no seams
+                show where the heads meet the shaft, plus a hex socket in
+                the box end and a recessed channel running down the shaft */}
+            <g transform="translate(558 167)">
+              <path
+                d="M2.3 12.37 A6.3 6.3 0 0 0 0.15 0.2 L2.09 5.01 A2.5 2.5 0 0 1 -2.54 6.88
+                   L-4.48 2.07 A6.3 6.3 0 0 0 -2.3 12.37 L-1.85 32.24 L-2.3 52.11
+                   A5.4 5.4 0 1 0 2.3 52.11 L1.85 32.24 Z"
+                fill={PAPER}
+              />
+              <path
+                d="M2.51 58.45 L0 59.9 L-2.51 58.45 L-2.51 55.55 L0 54.1 L2.51 55.55 Z"
+                fill={PAPER}
+                strokeWidth={TOOL_DETAIL}
+              />
+              <path
+                d="M-0.75 16.37 L-0.6 32.24 L-0.75 48.11 M0.75 16.37 L0.6 32.24 L0.75 48.11"
+                strokeWidth={TOOL_DETAIL}
+              />
+            </g>
+          </g>
+          {/* the pegs each tool hangs from, painted over the tools: one
+              through the scissors' round loop, two under the hammer's head
+              either side of the handle, one in the wrench's open jaw */}
+          <g fill={INK} stroke="none">
+            <circle cx={437} cy={174.6} r={1.3} />
+            <circle cx={496} cy={167} r={1.3} />
+            <circle cx={510} cy={166.5} r={1.3} />
+            <circle cx={557.78} cy={171.74} r={1.3} />
           </g>
         </g>
 
@@ -571,23 +567,9 @@ export default function DeskSvg({
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         <g>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* "SKILLS" label marking this screen as clickable — centred in
-              the glass (611,309,132,72), set in the same display face as
-              the "Jayden Chen" title, all caps to match its treatment
-              elsewhere on the page */}
-          <text
-            x={677}
-            y={345}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={17}
-            fontFamily="var(--font-mileast)"
-            letterSpacing={1}
-            fill={INK}
-            stroke="none"
-          >
-            SKILLS
-          </text>
+          {/* terminal-style "SKILLS" + ▌ block cursor, over a ‹ › strip of the
+              section's skill icons scrolling past — see `LaptopSkillsScreen` */}
+          <LaptopSkillsScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
           <rect x={594} y={388} width={166} height={8} rx={2} fill={PAPER} />
@@ -596,20 +578,9 @@ export default function DeskSvg({
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
-          {/* placeholder label marking this screen as clickable — centred in
-              the glass (812,278,202,100) */}
-          <text
-            x={913}
-            y={328}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={18}
-            fontFamily="var(--font-jetbrains-mono), monospace"
-            fill={INK}
-            stroke="none"
-          >
-            Section 2
-          </text>
+          {/* an editor on `experience.md`: a large "# EXPERIENCE" heading over
+              code typing itself in — see `LaptopExperienceScreen` */}
+          <LaptopExperienceScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               wider than the screen, sides slanting inward slightly toward the desk */}
           <path d="M792 384 L1034 384 L1026 396 L800 396 Z" fill={PAPER} />

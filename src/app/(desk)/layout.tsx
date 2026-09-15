@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import DeskStage from "@/components/desk/DeskStage";
+import SmoothScroll from "@/components/site/SmoothScroll";
 
 /**
  * Persistent desk. `DeskStage` stays mounted across `/ ↔ /projects ↔ …` so each
@@ -9,6 +10,7 @@ import DeskStage from "@/components/desk/DeskStage";
 export default function DeskLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <SmoothScroll />
       <DeskStage />
       {children}
     </>

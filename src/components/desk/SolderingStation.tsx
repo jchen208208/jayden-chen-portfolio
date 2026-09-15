@@ -4,7 +4,7 @@
  * pixel space (476×280), so every coordinate below can be checked straight
  * against the reference. Shared by the desk (`DeskSvg`, which scales it down
  * onto the 3D printer) and the "Soldering" skill tile (`SolderingIcon` in
- * `DeskScene`), so the two can never drift apart.
+ * `skillItems`), so the two can never drift apart.
  *
  * Outline style like the rest of the desk: stroke comes from the parent
  * `<g>`/`<svg>`, every shape carries an opaque `paper` fill so parts in front
