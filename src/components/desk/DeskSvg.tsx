@@ -27,6 +27,36 @@ const SOLDERING_SCALE = 0.4;
 const TOOL_OUTLINE = 1.6;
 const TOOL_DETAIL = 0.9;
 
+/**
+ * Screen 2 — the smaller laptop — is drawn at its original coordinates and
+ * then scaled up in place.
+ *
+ * Anchored at (`ax`, `ay`): `ay` is the desk surface, so the laptop grows
+ * upward and stays planted on it rather than floating or sinking, and `ax` is
+ * its own horizontal centre so it grows evenly about itself. `dx` then nudges
+ * the whole thing right. `scale` is bounded by its neighbours — screen 1's
+ * bezel ends at x=584 and screen 3's base starts at x=792, and at 1.12 with
+ * dx=12 this laptop spans ~596..782, clearing both by ~10.
+ */
+const LAPTOP1 = { scale: 1.12, dx: 12, ax: 677, ay: 396 } as const;
+
+export const LAPTOP1_TRANSFORM =
+  `translate(${LAPTOP1.dx} 0) translate(${LAPTOP1.ax} ${LAPTOP1.ay}) ` +
+  `scale(${LAPTOP1.scale}) translate(${-LAPTOP1.ax} ${-LAPTOP1.ay})`;
+
+/** Maps a rect drawn inside that group to where it actually lands on the
+ *  desk. `DeskScene` needs this for screen 2's click target and zoom origin,
+ *  which live outside the SVG and so don't inherit the transform. */
+export function laptop1Rect(r: { x: number; y: number; w: number; h: number }) {
+  const { scale, dx, ax, ay } = LAPTOP1;
+  return {
+    x: dx + ax + (r.x - ax) * scale,
+    y: ay + (r.y - ay) * scale,
+    w: r.w * scale,
+    h: r.h * scale,
+  };
+}
+
 /** a monitor / laptop screen: opaque bezel + inset glass */
 function Screen({
   x,
@@ -552,9 +582,10 @@ export default function DeskSvg({
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
         <g>
           <Screen x={382} y={239} w={202} h={138} />
-          {/* placeholder "play" triangle marking this screen as clickable —
-              centred in the glass (392,249,182,118) */}
-          <path d="M464 282 L464 334 L518 308 Z" fill={INK} />
+          {/* The glass is left empty here: what this screen shows — the
+              schematic and 3D-viewer windows — is WebGL, so it can't live in
+              the SVG. `ProjectsMonitorScreen` draws it as an HTML layer over
+              this same glass rect (392,249,182,118) instead. */}
           {/* connecting beam — a touch longer than before */}
           <path d="M464 377 L502 377 L508 387 L458 387 Z" fill={PAPER} />
           {/* base — flat, rounded only on top, bottom flush on the desk */}
@@ -565,7 +596,11 @@ export default function DeskSvg({
         </g>
 
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
-        <g>
+        {/* Drawn at its original size and scaled up in place by `LAPTOP1` —
+            one transform over the whole laptop, so the bezel, the glass and
+            the terminal UI inside it all grow by exactly the same amount and
+            stay in register. Still smaller than screen 3, the bigger laptop. */}
+        <g transform={LAPTOP1_TRANSFORM}>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
           {/* terminal-style "SKILLS" + ▌ block cursor, over a ‹ › strip of the
               section's skill icons scrolling past — see `LaptopSkillsScreen` */}

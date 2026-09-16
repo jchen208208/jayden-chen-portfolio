@@ -5,24 +5,24 @@ import type { CSSProperties, MouseEvent, Ref } from "react";
 import { createPortal, flushSync } from "react-dom";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
 import { DESK_VIEWBOX } from "@/lib/desk";
-import DeskSvg from "./DeskSvg";
+import DeskSvg, { laptop1Rect } from "./DeskSvg";
 import DeskCardList from "./DeskCardList";
 import { SKILLS_BOX_ITEMS, SKILLS_BOX_TITLES } from "./skillItems";
+import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 
 /**
  * Each screen's glass rect, in viewBox units — must track the inset rect
  * drawn for that screen in `DeskSvg`:
  *   screen 1 — `Screen x={382} y={239} w={202} h={138}` (default inset 10)
- *   screen 2 — `Screen x={602} y={300} w={150} h={90} inset={9}`
+ *   screen 2 — `Screen x={602} y={300} w={150} h={90} inset={9}`, then scaled
+ *               up in place by `LAPTOP1` (see `laptop1Rect`)
  *   screen 3 — `Screen x={802} y={268} w={222} h={120} inset={10}`
  *   screen 4 — `Screen x={1062} y={128} w={182} h={252} inset={12}`
  *
  * First pass at the "click a screen, it takes over the screen" interaction —
- * placeholder content standing in for each real section, not wired to
- * routing yet. Screen 1 shows a triangle; screens 2–4 show short text labels
- * (screens 2 and 3 are the real "SKILLS" and "EXPERIENCE" titles; screen 4
- * is still a "Section 3" placeholder) that will become the real section
- * titles later.
+ * not wired to routing yet. Screens 1–3 carry their real section titles
+ * ("PROJECTS", "SKILLS", "EXPERIENCE"); screen 4 is still a "Section 3"
+ * placeholder that will become the real title later.
  *
  * This is an illusion, not a literal camera zoom: continuously scaling the
  * whole hand-drawn desk SVG up to fill the viewport would crop it unevenly
@@ -34,15 +34,20 @@ import { SKILLS_BOX_ITEMS, SKILLS_BOX_TITLES } from "./skillItems";
  */
 type Rect = { x: number; y: number; w: number; h: number };
 
-type ScreenDemo =
-  | { id: string; glass: Rect; kind: "shape" }
-  | { id: string; glass: Rect; kind: "text"; label: string };
+type ScreenDemo = { id: string; glass: Rect; kind: "text"; label: string };
 
 const SCREENS: ScreenDemo[] = [
-  { id: "screen1", glass: { x: 392, y: 249, w: 182, h: 118 }, kind: "shape" },
+  {
+    id: "screen1",
+    glass: { x: 392, y: 249, w: 182, h: 118 },
+    kind: "text",
+    label: "PROJECTS",
+  },
   {
     id: "screen2",
-    glass: { x: 611, y: 309, w: 132, h: 72 },
+    // drawn at 611,309,132,72 and then scaled up in place by `DeskSvg` — this
+    // layer sits outside the SVG, so it has to apply the same transform
+    glass: laptop1Rect({ x: 611, y: 309, w: 132, h: 72 }),
     kind: "text",
     label: "SKILLS",
   },
@@ -66,15 +71,16 @@ const SCREENS: ScreenDemo[] = [
 const ZOOM_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const ZOOM_MS = 900;
 
-/** the Skills screen (screen2) gets a two-stage opening sequence instead of
- *  the other screens' single zoom: one smooth, uninterrupted zoom straight
- *  from the click point to centred-fullscreen (identical timing to every
- *  other screen, so there's no hitch at a hand-off), then — once fully
- *  open — a quick glide up to sit near the top of the page, like a label
- *  growing into a full-page title that settles into a header. */
+/** The Skills screen gets a two-stage opening sequence instead of the other
+ *  screens' single zoom: one smooth, uninterrupted zoom straight from the
+ *  click point to centred-fullscreen (identical timing to every other screen,
+ *  so there's no hitch at a hand-off), then — once open — a quick glide up to
+ *  sit near the top of the page, like a label growing into a full-page title
+ *  that settles into a header, leaving the rest of the page free for its
+ *  cards. */
 type OverlayStage = "closed" | "center" | "top";
 const SKILLS_SCREEN_ID = "screen2";
-const SKILLS_STAGE_TIMING: Record<Exclude<OverlayStage, "closed">, { ms: number; ease: string }> =
+const LIFT_STAGE_TIMING: Record<Exclude<OverlayStage, "closed">, { ms: number; ease: string }> =
   {
     center: { ms: ZOOM_MS, ease: ZOOM_EASE },
     top: { ms: 400, ease: "cubic-bezier(0.4, 0, 0.2, 1)" },
@@ -83,19 +89,13 @@ const SKILLS_STAGE_TIMING: Record<Exclude<OverlayStage, "closed">, { ms: number;
  *  (it's still finishing its last bit of ease-out), so the two motions
  *  overlap slightly instead of the glide only kicking in once the zoom has
  *  come to a complete stop. */
-const SKILLS_GLIDE_DELAY_MS = 620;
-/** gap kept above the boxes (from the header) and below them (from the
- *  bottom of the screen) */
+const LIFT_GLIDE_DELAY_MS = 620;
+/** The gap above the boxes (from the header) and below them (from the bottom
+ *  of the screen) — the same number both times, so the block sits evenly
+ *  between the two. The boxes then take everything that's left. */
 const SKILLS_BOX_V_GAP = 40;
 /** how far the header glides up from the centre of the screen */
-const SKILLS_HEADER_LIFT_VH = 39;
-/** extra room left under the boxes — the header (and so the boxes' top
- *  edge) sits this much higher than it used to at 35vh, so adding the same
- *  amount underneath shifts the whole layout up without resizing the boxes */
-const SKILLS_BOX_BOTTOM_EXTRA_VH = SKILLS_HEADER_LIFT_VH - 35;
-/** every skill tile's fixed footprint — same for every item, sized so a
- *   3-column grid row reads as big, evenly spaced icons */
-const SKILL_TILE_BASE = "clamp(4.5rem, 7vw, 6.5rem)";
+const HEADER_LIFT_VH = 39;
 
 /** the three skill cards pop in with an actual macOS "genie" warp —
  *  https://harshil.net/blog/recreating-the-mac-genie-effect — all three at
@@ -206,10 +206,10 @@ function SkillsCard({
   return (
     <div
       ref={ref}
-      className={`overflow-hidden rounded-[16px] border-[3px] border-white ${className}`}
+      className={`flex flex-col overflow-hidden rounded-[16px] border-[3px] border-white ${className}`}
       style={style}
     >
-      <div className="flex items-center justify-center bg-white py-5">
+      <div className="flex shrink-0 items-center justify-center bg-white py-5">
         <span
           className="font-title text-[clamp(1.25rem,2.6vw,2.25rem)] uppercase tracking-wide"
           style={{ color: "var(--paper, #000)" }}
@@ -217,15 +217,26 @@ function SkillsCard({
           {SKILLS_BOX_TITLES[index]}
         </span>
       </div>
-      <div className="grid grid-cols-3 justify-items-center gap-x-5 gap-y-6 p-6">
+      {/* The card's height is dictated from outside (see `boxLayout`), so the
+          grid takes what's left of it and divides that into three equal rows
+          — `grid-rows-3` rather than auto rows. Sizing the tiles from the
+          viewport instead used to overflow a card that wasn't tall enough for
+          them, and `overflow-hidden` then ate the bottom row's labels. Three
+          fixed rows also keep every card's rows at the same heights, so icons
+          line up across all three. */}
+      {/* Deliberately uneven vertical padding. Each label reserves two lines'
+          worth of height (`h-9`) but most are one line, so every card ends
+          with ~18px of empty space under the last row's text that the eye
+          still reads as part of the bottom gap. Splitting that difference —
+          8px off the bottom onto the top — is what makes the space above the
+          first row of icons and below the last row's text look equal. */}
+      <div className="grid min-h-0 flex-1 grid-cols-3 grid-rows-3 justify-items-center gap-x-5 gap-y-5 px-6 pt-8 pb-4">
         {SKILLS_BOX_ITEMS[index].map((item) => (
-          <div
-            key={item.name}
-            className="flex flex-col items-center gap-2.5"
-            style={{ width: SKILL_TILE_BASE }}
-          >
+          <div key={item.name} className="flex min-h-0 w-full flex-col items-center gap-2.5">
+            {/* square, and as big as the row leaves room for once the label
+                below has taken its share */}
             <div
-              className={`flex aspect-square w-full items-center justify-center rounded-lg border-2 border-white text-white ${item.iconPadding ?? "p-3"}`}
+              className={`flex aspect-square min-h-0 flex-1 items-center justify-center rounded-lg border-2 border-white text-white ${item.iconPadding ?? "p-3"}`}
             >
               <item.Icon className="h-full w-full" />
             </div>
@@ -234,9 +245,8 @@ function SkillsCard({
                 Modelling (Fusion 360)") wraps onto extra lines and makes
                 THAT row taller than the same row in another card, throwing
                 off cross-card alignment even though every tile above it is
-                the same size. Not clamped, though: any extra line just
-                spills into the row gap below instead of being cut off. */}
-            <span className="h-8 text-center font-title text-xs uppercase leading-tight tracking-wide text-white sm:h-9 sm:text-sm">
+                the same size. */}
+            <span className="h-8 shrink-0 text-center font-title text-xs uppercase leading-tight tracking-wide text-white sm:h-9 sm:text-sm">
               {item.name}
             </span>
           </div>
@@ -264,8 +274,10 @@ type ScreenCueSpec = { label: string; centerX: number; top: number };
 const SCREEN_CUES: ScreenCueSpec[] = [
   // screen 1 (382,239,202,138) — the "Projects" play-button screen
   { label: "Click", centerX: 382 + 202 / 2, top: 185 },
-  // screen 2 (602,300,150,90) — "Skills"
-  { label: "Click", centerX: 602 + 150 / 2, top: 246 },
+  // screen 2 — "Skills". Follows the laptop's scaled-up position, and sits a
+  // little higher than it used to: the laptop grew upward, so the gap between
+  // the bookshelf (bottom at y=226) and the bezel is tighter than before.
+  { label: "Click", centerX: SCREENS[1].glass.x + SCREENS[1].glass.w / 2, top: 240 },
   // screen 3 (802,268,222,120) — "Experience"
   { label: "Click", centerX: 802 + 222 / 2, top: 214 },
   // screen 4 (1062,128,182,252) — sits highest on the desk, so its cue gets
@@ -355,6 +367,9 @@ export default function DeskScene({ className }: { className?: string }) {
   // warp has landed exactly on the card's resting layout, so swapping the
   // canvas frame for the real card is seamless.
   const genieCanvasRef = useRef<HTMLCanvasElement>(null);
+  // the element carrying the zoom/glide transform — watched for
+  // `transitionend` so the boxes are measured against a settled header
+  const liftRef = useRef<HTMLDivElement>(null);
   // the real (resting) cards and the overlay they sit in — measured to get
   // each warp's exact end rect and pinch point
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -404,7 +419,7 @@ export default function DeskScene({ className }: { className?: string }) {
       // One smooth zoom straight to centred-fullscreen (same timing as
       // every other screen), then — just before it's fully settled — glide
       // up to the header spot.
-      stageTimers.current.push(window.setTimeout(() => setStage("top"), SKILLS_GLIDE_DELAY_MS));
+      stageTimers.current.push(window.setTimeout(() => setStage("top"), LIFT_GLIDE_DELAY_MS));
     }
   }, [clearStageTimers]);
 
@@ -420,14 +435,13 @@ export default function DeskScene({ className }: { className?: string }) {
 
   const zoomed = openId !== null;
   const isSkills = content?.id === SKILLS_SCREEN_ID;
-
   // The Skills screen steps through its own scale per stage; every other
   // screen just flips between its start size and fullscreen.
   const overlayTransform =
     stage === "closed"
       ? `scale(${startScale})`
       : stage === "top"
-        ? `scale(1) translateY(-${SKILLS_HEADER_LIFT_VH}vh)` // glide up to sit high on the page
+        ? `scale(1) translateY(-${HEADER_LIFT_VH}vh)` // glide up to sit high on the page
         : "scale(1)";
   // Skills pivots on the viewport centre once it's open (so the glide-up
   // stays centred horizontally); every other screen keeps pivoting on the
@@ -435,7 +449,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const overlayOrigin =
     isSkills && stage !== "closed" ? "50% 50%" : `${origin.x}% ${origin.y}%`;
   const overlayTiming =
-    isSkills && stage !== "closed" ? SKILLS_STAGE_TIMING[stage] : { ms: ZOOM_MS, ease: ZOOM_EASE };
+    isSkills && stage !== "closed" ? LIFT_STAGE_TIMING[stage] : { ms: ZOOM_MS, ease: ZOOM_EASE };
   // Wait for the header's own glide-up transition to actually finish, then
   // measure its real (responsive) resting position so the boxes below it
   // can use an equal gap above and below by construction. Once that's
@@ -455,11 +469,9 @@ export default function DeskScene({ className }: { className?: string }) {
       if (!header || !canvas) return;
       const headerBottom = header.getBoundingClientRect().bottom;
       const top = headerBottom + SKILLS_BOX_V_GAP;
-      const height =
-        window.innerHeight -
-        top -
-        SKILLS_BOX_V_GAP -
-        (window.innerHeight * SKILLS_BOX_BOTTOM_EXTRA_VH) / 100;
+      // equal gap above and below: whatever is left between the header and
+      // the bottom of the screen is the boxes'
+      const height = window.innerHeight - top - SKILLS_BOX_V_GAP;
       // `flushSync` commits the new layout to the DOM right now, so the
       // (still invisible) real cards can be measured at their actual final
       // rects below. Each warp then ends exactly where its card already
@@ -524,9 +536,30 @@ export default function DeskScene({ className }: { className?: string }) {
       rafId = requestAnimationFrame(frame);
     };
 
-    const t = window.setTimeout(run, SKILLS_STAGE_TIMING.top.ms);
+    // Wait for the glide to ACTUALLY finish before measuring. A bare
+    // `setTimeout(LIFT_STAGE_TIMING.top.ms)` fired while the header was still
+    // most of the way down the screen — the transition doesn't necessarily
+    // begin on the same tick this effect is scheduled — and the boxes were
+    // then sized against a header position they'd never rest at, which left
+    // them hundreds of px too short and squashed the icons. `transitionend`
+    // is the only thing that actually knows; the timeout stays as a fallback
+    // in case the transition is interrupted or never fires at all.
+    const lift = liftRef.current;
+    let started = false;
+    const start = () => {
+      if (started || cancelled) return;
+      started = true;
+      lift?.removeEventListener("transitionend", onEnd);
+      void run();
+    };
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === lift && e.propertyName === "transform") start();
+    };
+    lift?.addEventListener("transitionend", onEnd);
+    const t = window.setTimeout(start, LIFT_STAGE_TIMING.top.ms + 600);
     return () => {
       cancelled = true;
+      lift?.removeEventListener("transitionend", onEnd);
       window.clearTimeout(t);
       cancelAnimationFrame(rafId);
       // don't leave a half-drawn frame behind for the next time Skills opens
@@ -552,6 +585,11 @@ export default function DeskScene({ className }: { className?: string }) {
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
           <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} />
+          {/* screen 1's contents — a little desktop with the board turning in
+              a window. Sits between the desk art and the click targets below,
+              and is `pointer-events-none`, so its own screen's button still
+              takes the click. */}
+          <ProjectsMonitorScreen />
           <button
             type="button"
             aria-label={lampOn ? "Turn lamp off" : "Turn lamp on"}
@@ -618,6 +656,7 @@ export default function DeskScene({ className }: { className?: string }) {
                 swap underneath it. See the note on `content` above for why
                 that split matters. */}
             <div
+              ref={liftRef}
               className="flex h-full w-full items-center justify-center"
               style={{
                 transform: overlayTransform,
@@ -628,16 +667,7 @@ export default function DeskScene({ className }: { className?: string }) {
               {/* fresh, purpose-built fullscreen view — not a scaled copy of
                   the desk SVG, so it stays crisp and correctly proportioned
                   at any viewport size */}
-              {content?.kind === "shape" && (
-                <svg
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="xMidYMid meet"
-                  className="h-full w-full"
-                >
-                  <polygon points="38,28 38,72 68,50" fill="var(--ink, #f4f6f8)" />
-                </svg>
-              )}
-              {content?.kind === "text" && (
+              {content && (
                 <div
                   ref={isSkills ? headerRef : undefined}
                   className={

@@ -25,8 +25,12 @@ import { SKILLS_BOX_ITEMS } from "./skillItems";
 const INK = "var(--ink, #f4f6f8)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
-/** the laptop's glass — must track `Screen x={602} y={300} w={150} h={90}
- *  inset={9}` in `DeskSvg` (and `SCREENS` in `DeskScene`) */
+/** The laptop's glass — must track `Screen x={602} y={300} w={150} h={90}
+ *  inset={9}` in `DeskSvg`. These stay the ORIGINAL, unscaled coordinates:
+ *  `DeskSvg` wraps this whole laptop in one `LAPTOP1_TRANSFORM`, so
+ *  everything here is scaled up along with the bezel around it and nothing in
+ *  this file needs to know about it. (`SCREENS` in `DeskScene` does, because
+ *  its click target sits outside the SVG — see `laptop1Rect`.) */
 const GLASS = { x: 611, y: 309, w: 132, h: 72 };
 const CENTER_X = GLASS.x + GLASS.w / 2;
 
