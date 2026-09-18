@@ -729,15 +729,15 @@ export default function DeskSvg({
           <rect x={794} y={588} width={12} height={16} fill={PAPER} />
           {/* the column branches into three legs — a little thickness, feet on the floor */}
           <rect x={795} y={602} width={10} height={38} fill={PAPER} />
-          <path d="M799 600 L727 610 L723 615 L723 640 L733 640 L733 618 L803 608 Z" fill={PAPER} />
-          <path d="M801 600 L873 610 L877 615 L877 640 L867 640 L867 618 L797 608 Z" fill={PAPER} />
+          <path d="M799 600 L711 610 L707 615 L707 640 L717 640 L717 618 L803 608 Z" fill={PAPER} />
+          <path d="M801 600 L889 610 L893 615 L893 640 L883 640 L883 618 L797 608 Z" fill={PAPER} />
           {/* centre caster — a rounded bar */}
           <rect x={791} y={636} width={18} height={26} rx={9} fill={PAPER} />
           {/* side casters — a circle with an inset circle */}
-          <circle cx={728} cy={650} r={12} fill={PAPER} />
-          <circle cx={728} cy={650} r={5} />
-          <circle cx={872} cy={650} r={12} fill={PAPER} />
-          <circle cx={872} cy={650} r={5} />
+          <circle cx={712} cy={650} r={12} fill={PAPER} />
+          <circle cx={712} cy={650} r={5} />
+          <circle cx={888} cy={650} r={12} fill={PAPER} />
+          <circle cx={888} cy={650} r={5} />
         </g>
       </g>
     </svg>
