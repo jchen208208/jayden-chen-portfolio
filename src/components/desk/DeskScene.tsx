@@ -20,9 +20,9 @@ import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
  *   screen 4 — `Screen x={1062} y={128} w={182} h={252} inset={12}`
  *
  * First pass at the "click a screen, it takes over the screen" interaction —
- * not wired to routing yet. Screens 1–3 carry their real section titles
- * ("PROJECTS", "SKILLS", "EXPERIENCE"); screen 4 is still a "Section 3"
- * placeholder that will become the real title later.
+ * not wired to routing yet. Every screen now carries its real section title:
+ * "PROJECTS", "SKILLS", "EXPERIENCE", and — on the portrait monitor, which
+ * plays a tennis point through to a podium — "PERSONAL & AWARDS".
  *
  * This is an illusion, not a literal camera zoom: continuously scaling the
  * whole hand-drawn desk SVG up to fill the viewport would crop it unevenly
@@ -61,7 +61,7 @@ const SCREENS: ScreenDemo[] = [
     id: "screen4",
     glass: { x: 1074, y: 140, w: 158, h: 228 },
     kind: "text",
-    label: "Section 3",
+    label: "PERSONAL & AWARDS",
   },
 ];
 
@@ -280,8 +280,8 @@ const SCREEN_CUES: ScreenCueSpec[] = [
   { label: "Click", centerX: SCREENS[1].glass.x + SCREENS[1].glass.w / 2, top: 240 },
   // screen 3 (802,268,222,120) — "Experience"
   { label: "Click", centerX: 802 + 222 / 2, top: 214 },
-  // screen 4 (1062,128,182,252) — sits highest on the desk, so its cue gets
-  // the least headroom
+  // screen 4 (1062,128,182,252) — the portrait monitor. Sits highest on the
+  // desk, so its cue gets the least headroom
   { label: "Click", centerX: 1062 + 182 / 2, top: 74 },
 ];
 

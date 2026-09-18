@@ -170,6 +170,50 @@ body {
   animation: none;
 }
 
+/* portrait monitor on the desk (`PortraitMonitorScreen`): one generated
+   timeline runs a tennis rally, a winning shot, a celebration and a podium
+   slideshow. Each element's animation name and duration are set inline by the
+   component; the shared playback lives here so hovering that screen's click
+   target can pause the whole sequence at once.
+
+   `linear` is load-bearing: a timing function applies to every keyframe
+   INTERVAL, so anything eased here would ease in and out of each of the
+   ball's sampled positions and it would visibly stall at the net. The arc
+   lives in the sampled coordinates instead, and individual keyframes opt into
+   `step-end` where a cut is wanted. */
+.pa-play {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* resting frames, shown whenever the animations are off (see the
+   reduced-motion block below) — never leave an animated element without one,
+   or killing its animation drops it at the desk viewBox's origin */
+.pa-ball {
+  transform-origin: 0 0;
+  transform: translate(1153px, 342px) scale(0.939);
+}
+
+.pa-arm-up,
+.pa-pod1,
+.pa-pod2,
+.pa-pod3 {
+  opacity: 0;
+}
+
+.pa-court {
+  opacity: 0.85;
+  transition: opacity 200ms ease-out;
+}
+
+[data-desk]:has([data-screen="screen4"]:is(:hover, :focus-visible)) .pa-play {
+  animation-play-state: paused;
+}
+
+[data-desk]:has([data-screen="screen4"]:is(:hover, :focus-visible)) .pa-court {
+  opacity: 1;
+}
+
 /* mid-flight blur that hides pixel interpolation during the screen morph */
 @keyframes vt-blur {
   30% {
@@ -234,7 +278,8 @@ body {
   .skills-strip-track,
   .skills-caret,
   .exp-type,
-  .exp-cursor {
+  .exp-cursor,
+  .pa-play {
     animation: none !important;
   }
   ::view-transition-old(*),

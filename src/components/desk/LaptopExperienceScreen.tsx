@@ -260,7 +260,7 @@ export default function LaptopExperienceScreen() {
         stroke="none"
       >
         <tspan>#</tspan>
-        {" EXPERIENCES"}
+        <tspan dx={-3}> EXPERIENCES</tspan>
       </text>
 
       {/* code block */}

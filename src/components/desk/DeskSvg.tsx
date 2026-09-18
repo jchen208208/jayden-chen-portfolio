@@ -2,6 +2,7 @@ import { DESK_VIEWBOX } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
 import LaptopExperienceScreen from "./LaptopExperienceScreen";
 import LaptopSkillsScreen from "./LaptopSkillsScreen";
+import PortraitMonitorScreen from "./PortraitMonitorScreen";
 
 /**
  * "The Desk" — a clean-line trace of Jayden's setup, in the flat style of
@@ -624,20 +625,10 @@ export default function DeskSvg({
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
         <g>
           <Screen x={1062} y={128} w={182} h={252} r={10} inset={12} />
-          {/* placeholder label marking this screen as clickable — centred in
-              the glass (1074,140,158,228) */}
-          <text
-            x={1153}
-            y={254}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={15}
-            fontFamily="var(--font-jetbrains-mono), monospace"
-            fill={INK}
-            stroke="none"
-          >
-            Section 3
-          </text>
+          {/* the glass (1074,140,158,228) under a PERSONAL & AWARDS ribbon: a
+              tennis point played through to a podium; see
+              `PortraitMonitorScreen` */}
+          <PortraitMonitorScreen />
           {/* two legs — connect the screen down to the base */}
           <path d="M1140 380 L1150 380 L1146 388 L1136 388 Z" fill={PAPER} />
           <path d="M1156 380 L1166 380 L1170 388 L1160 388 Z" fill={PAPER} />
