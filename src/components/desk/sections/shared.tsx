@@ -15,7 +15,21 @@ export type CardOptions = {
   active: boolean;
 };
 
-export type SectionCard = { key: string; title: string; body: ReactNode };
+export type SectionCard = {
+  key: string;
+  /** empty for a card with no title strip */
+  title: string;
+  body: ReactNode;
+  /** caps the row's width in the desktop overlay (the first card's value is
+   *  used) — a single wide card reads better centred than edge to edge */
+  maxWidth?: string;
+  /** render without the card's own frame (see `ScreenCard`'s `bare`) */
+  bare?: boolean;
+  /** size the row to its content instead of filling the view — the open
+   *  view then scrolls as a page when the content runs long (first card's
+   *  value is used) */
+  fitContent?: boolean;
+};
 
 /** the scrolling text body most cards use — mono, one consistent padding */
 export function CardBody({ children, className = "" }: { children: ReactNode; className?: string }) {

@@ -9,12 +9,16 @@ import type { CSSProperties, ReactNode, Ref } from "react";
  * the fill rather than sitting on top of it. `overflow-hidden` clips the
  * strip's square corners to the card's rounded ones.
  *
+ * An empty `title` drops the strip altogether, and `bare` drops the frame
+ * too — for a section that draws its own boxes (Experience).
+ *
  * The genie warp in `DeskScene` animates a snapshot of this exact element, so
  * the animated card is literally the same markup as the one that lands.
  */
 export default function ScreenCard({
   title,
   monoTitle = false,
+  bare = false,
   children,
   className = "",
   style,
@@ -23,6 +27,8 @@ export default function ScreenCard({
   title: string;
   /** set the title in the site monospace instead of the display face */
   monoTitle?: boolean;
+  /** no border, no background — the content supplies its own boxes */
+  bare?: boolean;
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -32,26 +38,30 @@ export default function ScreenCard({
     <div
       ref={ref}
       data-screen-card
-      className={`flex min-h-0 flex-col overflow-hidden rounded-[16px] border-[3px] border-white bg-paper ${className}`}
+      className={`flex min-h-0 flex-col ${
+        bare ? "" : "overflow-hidden rounded-[16px] border-[3px] border-white bg-paper"
+      } ${className}`}
       style={style}
     >
       {/* one line, always — a name that wrapped made its strip taller than
           its neighbours' and knocked the card bodies out of line across the
           row, so a long one is cut with an ellipsis instead (full name in
           the tooltip) */}
-      <div className="flex shrink-0 items-center justify-center bg-white px-4 py-5">
-        <span
-          title={title}
-          className={`min-w-0 truncate text-center uppercase leading-tight ${
-            monoTitle
-              ? "font-mono text-[clamp(1.1rem,2.1vw,1.85rem)] font-semibold"
-              : "font-title text-[clamp(1.25rem,2.6vw,2.25rem)] tracking-wide"
-          }`}
-          style={{ color: "var(--paper, #000)" }}
-        >
-          {title}
-        </span>
-      </div>
+      {title && (
+        <div className="flex shrink-0 items-center justify-center bg-white px-4 py-5">
+          <span
+            title={title}
+            className={`min-w-0 truncate text-center uppercase leading-tight ${
+              monoTitle
+                ? "font-mono text-[clamp(1.1rem,2.1vw,1.85rem)] font-semibold"
+                : "font-title text-[clamp(1.25rem,2.6vw,2.25rem)] tracking-wide"
+            }`}
+            style={{ color: "var(--paper, #000)" }}
+          >
+            {title}
+          </span>
+        </div>
+      )}
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );

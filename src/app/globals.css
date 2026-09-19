@@ -226,6 +226,32 @@ body {
   background-size: 4px 4px;
 }
 
+/* scrolls, but draws no scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Experience rows (`sections/experience.tsx`) open by animating the grid
+   track from 0fr to 1fr, which reaches the content's real height without
+   measuring it. The triangle turns with it. */
+.exp-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms ease-out;
+}
+
+.exp-reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.exp-caret {
+  transition: transform 250ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -237,5 +263,9 @@ body {
   .exp-cursor,
   .pa-play {
     animation: none !important;
+  }
+  .exp-reveal,
+  .exp-caret {
+    transition: none !important;
   }
 }

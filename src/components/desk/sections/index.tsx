@@ -46,7 +46,12 @@ export function SectionCardStack({ id }: { id: SectionId }) {
   return (
     <div className="flex flex-col gap-5">
       {sectionCards(id, { layout: "stack", active: true }).map((card) => (
-        <ScreenCard key={card.key} title={card.title} monoTitle={hasSwappedTitleFonts(id)}>
+        <ScreenCard
+          key={card.key}
+          title={card.title}
+          monoTitle={hasSwappedTitleFonts(id)}
+          bare={card.bare}
+        >
           {card.body}
         </ScreenCard>
       ))}

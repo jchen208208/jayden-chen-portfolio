@@ -1,13 +1,11 @@
-import { PROFILE, TIMELINE } from "@/lib/site";
+import { AWARDS, PROFILE } from "@/lib/site";
 import { PodiumStill } from "../PortraitMonitorScreen";
 import { CardBody, CardLink, Meta, type SectionCard } from "./shared";
 
 /** Tennis, Awards, About — what the portrait monitor's story is about. Copy
  *  marked TODO is placeholder. */
 export function personalCards(): SectionCard[] {
-  const awards = TIMELINE.filter((e) => e.kind === "award").sort((a, b) =>
-    b.date.localeCompare(a.date),
-  );
+  const awards = [...AWARDS].sort((a, b) => b.date.localeCompare(a.date));
   return [
     {
       key: "tennis",

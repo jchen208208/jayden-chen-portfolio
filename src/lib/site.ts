@@ -130,45 +130,112 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-/* ── experience + awards (one merged timeline) ──────────────────────────────── */
+/* ── experience ─────────────────────────────────────────────────────────────── */
 
-export type TimelineEntry = {
-  /** ISO date (YYYY-MM-DD) — used for sort + the fake commit hash */
-  date: string;
-  kind: "role" | "award";
-  /** company / school / competition */
-  org: string;
-  title: string;
-  summary?: string;
-  details?: string[];
+export type Role = {
+  slug: string;
+  /** the title held, exactly as the résumé has it — the row's label */
+  role: string;
+  /** one line under the title while the row is collapsed; names the project,
+   *  since two research roles share a title */
+  blurb: string;
+  /** where, and under whom — shown once the row is opened */
+  place?: string;
+  /** display dates, as the résumé writes them */
+  start: string;
+  end: string;
+  stack?: string[];
+  bullets: string[];
 };
 
-// TODO — user: replace with real roles + awards.
-export const TIMELINE: TimelineEntry[] = [
+/** In résumé order, lead role first. Bullets are the résumé's own words. */
+export const EXPERIENCE: Role[] = [
   {
-    date: "2025-05-01",
-    kind: "role",
-    org: "Company Name",
-    title: "Software Engineering Intern",
-    summary: "One line on what the team did and what you owned.",
-    details: [
-      "A specific thing you shipped or improved.",
-      "A number, if you have one.",
+    slug: "claim-verification",
+    blurb: "Financial claim verification: a multi-agent pipeline that matches cloud-only accuracy at about half the cost",
+    role: "Lead Student Researcher/First Author",
+    place: "Supervised by Prof. Zhen Bi, Huzhou Normal University",
+    start: "June 2026",
+    end: "Present",
+    stack: ["Python", "Ollama", "DeepSeek API", "NumPy", "LaTeX"],
+    bullets: [
+      "Designed and built a multi-agent pipeline for automated financial claim verification on the FinDVer benchmark, matching cloud-only accuracy at ~50% of inference cost across 1,700 held-out claims.",
+      "Architected the routing system and run loop that decide whether each claim goes to a local 3B/7B model or a cloud API call.",
+      "Created two custom verification skills for the pipeline that further cut cloud calls by 20% while continuing to tie cloud-only accuracy.",
+      "Built a BM25 retriever that retrieves 75.2% of gold evidence, 5.4 points above the best published retrieval model on FinDVer.",
     ],
   },
   {
+    slug: "trace",
+    blurb: "TRACE: text-to-image steering that cuts attack success by nearly half at about 1% latency",
+    role: "Research Assistant/Co-author",
+    place: "Under Prof. Zhen Bi, Huzhou Normal University",
+    start: "May 2026",
+    end: "Present",
+    stack: ["PyTorch", "scikit-learn", "NumPy", "LlamaGuard/XGuard", "Hugging Face Diffusers"],
+    bullets: [
+      "Co-developed TRACE, a text-to-image steering framework triggering sparse-autoencoder steering only at high-risk denoising steps.",
+      "Cut attack success rate by nearly 50% on two test models at ~1% latency overhead, using only 48 MB of added weights.",
+      "Trained 50+ per-layer linear risk probes and selected the most predictable layer by AUPRC score and SAE reconstruction error (FVU).",
+      "Built the projection and mean-pooling, compressing activations 256× (512 KB → 2 KB), enabling a single-pass sweep across all layers.",
+    ],
+  },
+  {
+    slug: "c3m",
+    blurb: "C3M: a multimodal memory framework for long-horizon AI agents",
+    role: "Research Assistant/Co-author",
+    place: "Under Prof. Zhen Bi, Huzhou Normal University",
+    start: "August 2026",
+    end: "Present",
+    stack: ["Python", "PyTorch", "Hugging Face Transformers", "NumPy"],
+    bullets: [
+      "Co-developed C3M, a multimodal memory framework maintaining a 36-entry, 6,144-token active index for long-horizon AI agents.",
+      "Achieved 73%/68% accuracy on the MemLens benchmark at 32K/64K token histories, beating the next best baseline by 9/3%.",
+      "Built the evaluation pipeline that feeds MemLens' 789 questions in session order, testing 5 task types across 3 context lengths.",
+      "Implemented the confidence-thresholded rule deciding if new memories merge, update, or stay separate from existing entries.",
+    ],
+  },
+  {
+    slug: "it-technician",
+    blurb: "Hardware and software support for a ~2,000-student school",
+    role: "IT Technician",
+    place: "Burnaby South Secondary, BC",
+    start: "Sept 2025",
+    end: "June 2026",
+    bullets: [
+      "Resolved 100+ hardware and software issues at a ~2,000-student school over 9 months; issues ranged from printer connectivity problems, login and authentication failures, corrupted file recovery, and physical repairs including broken monitor arms.",
+    ],
+  },
+  {
+    slug: "private-tutor",
+    blurb: "Python, C++, math and science for 6+ students in Grades 5 to 12",
+    role: "Private Tutor",
+    start: "Oct 2024",
+    end: "Present",
+    bullets: [
+      "Taught Python and C++ fundamentals alongside math and science to 6+ students in Grades 5–12, breaking down technical concepts for students with no prior programming background.",
+    ],
+  },
+];
+
+/* ── awards ──────────────────────────────────────────────────────────────────── */
+
+export type Award = {
+  /** ISO date (YYYY-MM-DD) — sorts the list; its year is shown */
+  date: string;
+  /** competition / organiser */
+  org: string;
+  title: string;
+  summary?: string;
+};
+
+// TODO — user: replace with real awards.
+export const AWARDS: Award[] = [
+  {
     date: "2024-11-01",
-    kind: "award",
     org: "Hackathon Name",
     title: "Placeholder Award",
     summary: "What it was for.",
-  },
-  {
-    date: "2024-09-01",
-    kind: "role",
-    org: "University of Waterloo",
-    title: "Started Computer Engineering",
-    summary: "Class of 2031 (co-op stream).",
   },
 ];
 

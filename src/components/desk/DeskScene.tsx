@@ -279,6 +279,8 @@ export default function DeskScene({ className }: { className?: string }) {
         Math.max(0.03, Math.min(box.width / window.innerWidth, box.height / window.innerHeight)),
       );
       setContent(s.id);
+      // a long section may have been left scrolled down last time
+      overlayRef.current?.scrollTo(0, 0);
       setOpenId(s.id);
 
       clearStageTimers();
@@ -306,6 +308,8 @@ export default function DeskScene({ className }: { className?: string }) {
   const cards = content ? sectionCards(content, { layout: "row", active: zoomed }) : [];
   const cardCount = cards.length;
   const columns = Math.min(cardCount, MAX_CARDS_PER_ROW);
+  const rowMaxWidth = cards[0]?.maxWidth;
+  const rowFitsContent = cards[0]?.fitContent ?? false;
 
   const overlayTransform =
     stage === "closed"
@@ -517,7 +521,14 @@ export default function DeskScene({ className }: { className?: string }) {
             role="dialog"
             aria-label={content ? SECTIONS[content].deskLabel : undefined}
             onClick={close}
-            className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center"
+            // A section sized to its content (Experience) can run past the
+            // bottom of the screen, so the view itself scrolls like a page —
+            // no scrollbar drawn. The desk page runs Lenis, which listens for
+            // wheel events on the whole window; `data-lenis-prevent` hands
+            // this element's scrolling back to the browser, and
+            // `overscroll-contain` stops it chaining to the desk behind.
+            data-lenis-prevent
+            className="no-scrollbar fixed inset-0 z-50 flex cursor-pointer items-center justify-center overflow-y-auto overscroll-contain"
             style={{
               backgroundColor: "var(--paper, #000)",
               opacity: zoomed ? 1 : 0,
@@ -533,7 +544,7 @@ export default function DeskScene({ className }: { className?: string }) {
                 close();
               }}
               aria-label="Close and return to the desk"
-              className="absolute right-4 top-4 z-10 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
+              className="fixed right-4 top-4 z-10 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
             >
               esc ✕
             </button>
@@ -581,10 +592,17 @@ export default function DeskScene({ className }: { className?: string }) {
               className="absolute inset-x-[3vw] grid gap-[3vw]"
               style={{
                 gridTemplateColumns: `repeat(${Math.max(columns, 1)}, minmax(0, 1fr))`,
-                gridAutoRows: "minmax(0, 1fr)",
+                gridAutoRows: rowFitsContent ? "auto" : "minmax(0, 1fr)",
+                // absolutely placed between two insets, so a max width plus
+                // auto side margins centres the row
+                ...(rowMaxWidth && { maxWidth: rowMaxWidth, marginInline: "auto" }),
                 pointerEvents: cardsRevealed ? "auto" : "none",
                 ...(boxLayout
-                  ? { top: boxLayout.top, height: boxLayout.height }
+                  ? rowFitsContent
+                    ? // as tall as its content, with the usual gap kept
+                      // below it when the view scrolls to the end
+                      { top: boxLayout.top, paddingBottom: CARD_V_GAP }
+                    : { top: boxLayout.top, height: boxLayout.height }
                   : { top: "60%", height: "30vh", transform: "translateY(-50%)" }),
               }}
             >
@@ -596,6 +614,7 @@ export default function DeskScene({ className }: { className?: string }) {
                   }}
                   title={card.title}
                   monoTitle={hasSwappedTitleFonts(content!)}
+                  bare={card.bare}
                   className="relative cursor-auto"
                   style={{ opacity: cardsRevealed ? 1 : 0 }}
                 >
