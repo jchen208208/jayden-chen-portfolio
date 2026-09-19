@@ -1,23 +1,18 @@
 import {
   SiAutodesk,
-  SiBlender,
   SiC,
   SiCplusplus,
-  SiDocker,
-  SiFirebase,
   SiGithub,
   SiHtml5,
   SiJavascript,
   SiKicad,
-  SiMysql,
   SiNextdotjs,
-  SiNodedotjs,
+  SiNumpy,
+  SiPostgresql,
   SiPython,
-  SiReact,
-  SiTailwindcss,
-  SiVercel,
+  SiPytorch,
+  SiSupabase,
 } from "react-icons/si";
-import { FaJava } from "react-icons/fa6";
 import { TbSql } from "react-icons/tb";
 import type { IconBaseProps, IconType } from "react-icons";
 import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
@@ -62,7 +57,7 @@ export function SolderingIcon({ className, size, title, color, ...rest }: IconBa
 }
 
 /** one subtitle per card, left to right */
-export const SKILLS_BOX_TITLES = ["Languages", "Tools & Frameworks", "Hardware & Design"];
+export const SKILLS_BOX_TITLES = ["Languages", "Frameworks & Tools", "Hardware & Design"];
 
 export type SkillItem = {
   name: string;
@@ -84,25 +79,20 @@ export const SKILLS_BOX_ITEMS: SkillItem[][] = [
     { name: "C", Icon: SiC },
     { name: "C++", Icon: SiCplusplus },
     { name: "JavaScript", Icon: SiJavascript },
-    { name: "Java", Icon: FaJava },
     { name: "SQL", Icon: TbSql },
     { name: "HTML/CSS", Icon: SiHtml5 },
   ],
   [
     { name: "Git/GitHub", Icon: SiGithub },
-    { name: "MySQL", Icon: SiMysql },
-    { name: "Docker", Icon: SiDocker },
-    { name: "Node.js", Icon: SiNodedotjs },
-    { name: "React", Icon: SiReact },
     { name: "Next.js", Icon: SiNextdotjs },
-    { name: "Vercel", Icon: SiVercel },
-    { name: "Firebase", Icon: SiFirebase },
-    { name: "Tailwind CSS", Icon: SiTailwindcss },
+    { name: "PostgreSQL", Icon: SiPostgresql },
+    { name: "Supabase", Icon: SiSupabase },
+    { name: "PyTorch", Icon: SiPytorch },
+    { name: "NumPy", Icon: SiNumpy },
   ],
   [
     { name: "Soldering", Icon: SolderingIcon, iconPadding: "p-1" },
     { name: "PCB Design (KiCad)", Icon: SiKicad },
-    { name: "CAD Modelling (Fusion 360)", Icon: SiAutodesk },
-    { name: "3D Graphics Design", Icon: SiBlender },
+    { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
   ],
 ];
