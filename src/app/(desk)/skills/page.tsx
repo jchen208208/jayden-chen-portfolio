@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import FocusFrame from "@/components/focus/FocusFrame";
-import SkillsApp from "@/components/apps/SkillsApp";
+import { SectionCardStack } from "@/components/desk/sections";
 
 export const metadata: Metadata = { title: "Skills — Jayden Chen" };
 
 export default function SkillsPage() {
   return (
     <FocusFrame id="skills">
-      <SkillsApp />
+      <SectionCardStack id="skills" />
     </FocusFrame>
   );
 }

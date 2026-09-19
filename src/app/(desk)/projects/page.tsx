@@ -1,16 +1,13 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import FocusFrame from "@/components/focus/FocusFrame";
-import ProjectsApp from "@/components/apps/ProjectsApp";
+import { SectionCardStack } from "@/components/desk/sections";
 
 export const metadata: Metadata = { title: "Projects — Jayden Chen" };
 
 export default function ProjectsPage() {
   return (
     <FocusFrame id="projects">
-      <Suspense fallback={null}>
-        <ProjectsApp />
-      </Suspense>
+      <SectionCardStack id="projects" />
     </FocusFrame>
   );
 }

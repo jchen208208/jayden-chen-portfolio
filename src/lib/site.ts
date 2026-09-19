@@ -23,14 +23,13 @@ export type SectionId = "projects" | "experience" | "skills" | "about";
 export type SectionMeta = {
   id: SectionId;
   route: `/${SectionId}`;
-  /** short label on the desk / mobile card */
+  /** short label on the mobile card */
   deskLabel: string;
-  /** titlebar text of the themed "app" window */
-  appName: string;
+  /** the title every screen wears — in the white strip on the desk glass,
+   *  and as the header the opened section grows into. Uppercase, mono. */
+  screenLabel: string;
   /** one-line description under the mobile card */
   blurb: string;
-  /** CSS custom property name for this section's accent */
-  accentVar: string;
 };
 
 export const SECTIONS: Record<SectionId, SectionMeta> = {
@@ -38,33 +37,29 @@ export const SECTIONS: Record<SectionId, SectionMeta> = {
     id: "projects",
     route: "/projects",
     deskLabel: "Projects",
-    appName: "projects — editor",
+    screenLabel: "PROJECTS",
     blurb: "Things I've built, software and otherwise.",
-    accentVar: "--accent-projects",
   },
   experience: {
     id: "experience",
     route: "/experience",
     deskLabel: "Experience",
-    appName: "experience — git log",
-    blurb: "Roles, teams, and awards along the way.",
-    accentVar: "--accent-experience",
+    screenLabel: "EXPERIENCE",
+    blurb: "Roles and teams along the way.",
   },
   skills: {
     id: "skills",
     route: "/skills",
     deskLabel: "Skills",
-    appName: "skills — zsh",
+    screenLabel: "SKILLS",
     blurb: "Languages, tools, and the hardware bench.",
-    accentVar: "--accent-skills",
   },
   about: {
     id: "about",
     route: "/about",
-    deskLabel: "About",
-    appName: "about — notes",
-    blurb: "Who's behind the desk.",
-    accentVar: "--accent-about",
+    deskLabel: "Personal & Awards",
+    screenLabel: "PERSONAL & AWARDS",
+    blurb: "Who's behind the desk, on and off the court.",
   },
 };
 
@@ -87,10 +82,27 @@ export type Project = {
   highlights: string[];
   repo?: string;
   demo?: string;
+  /** true for the ESP32 board: its card shows the real KiCad design turning
+   *  in 3D (the same viewer as the Projects monitor on the desk) */
+  hasBoardViewer?: boolean;
 };
 
-// TODO — user: replace with real projects.
+// The ESP32 board is real. TODO — user: replace the rest with real projects.
 export const PROJECTS: Project[] = [
+  {
+    slug: "esp32-usb",
+    name: "ESP32-S3 USB Dongle",
+    period: "2025",
+    blurb:
+      "A thumb-sized ESP32-S3-WROOM-1 board that plugs straight into a USB-A port — designed, hand-assembled and brought up from scratch.",
+    tags: ["KiCad", "ESP32-S3", "SMD"],
+    highlights: [
+      "2-layer board, 20 × 35 mm, with the module's antenna overhanging the edge for range.",
+      "USB edge fingers on the board itself — no connector to solder.",
+      "AMS1117 regulator, boot button, status LED; every part hand-placed and reflowed.",
+    ],
+    hasBoardViewer: true,
+  },
   {
     slug: "placeholder-web",
     name: "Placeholder Project",
@@ -157,91 +169,6 @@ export const TIMELINE: TimelineEntry[] = [
     org: "University of Waterloo",
     title: "Started Computer Engineering",
     summary: "Class of 2031 (co-op stream).",
-  },
-];
-
-/* ── skills ─────────────────────────────────────────────────────────────────── */
-
-export const SKILLS = {
-  languages: ["Python", "C", "C++", "JavaScript", "SQL", "HTML/CSS"],
-  // TODO — user: frameworks / libraries / platforms
-  frameworksTools: ["React", "Next.js", "Node.js", "Git", "Linux"],
-  hardware: ["PCB design", "SMD soldering"],
-} as const;
-
-/** proficiency buckets for the optional htop-style view — coarse on purpose */
-export type SkillLevel = "core" | "working" | "learning";
-export const SKILL_LEVELS: Record<string, SkillLevel> = {
-  Python: "core",
-  C: "core",
-  "C++": "working",
-  JavaScript: "core",
-  SQL: "working",
-  "HTML/CSS": "core",
-  React: "working",
-  "Next.js": "working",
-  "Node.js": "working",
-  Git: "core",
-  Linux: "working",
-  "PCB design": "working",
-  "SMD soldering": "working",
-};
-
-/* ── about / personal notes ────────────────────────────────────────────────── */
-
-export type Note = {
-  slug: string;
-  title: string;
-  /** minimal markdown: # / ## headings, **bold**, `code`, - lists, [text](url) */
-  body: string;
-};
-
-// TODO — user: replace with real copy.
-export const ABOUT_NOTES: Note[] = [
-  {
-    slug: "about",
-    title: "about.md",
-    body: `# About
-
-I'm a Computer Engineering student at the University of Waterloo who likes
-building things that sit on the line between **software and hardware** — a
-web app, a PCB, and the firmware in between.
-
-Replace this with a few real paragraphs: what you care about, how you work,
-what you're looking for.`,
-  },
-  {
-    slug: "now",
-    title: "now.md",
-    body: `# Now
-
-- Studying: first-year Computer Engineering
-- Building: (current project)
-- Learning: (current rabbit hole)
-
-_Last updated: replace me._`,
-  },
-  {
-    slug: "colophon",
-    title: "colophon.md",
-    body: `# Colophon
-
-This site is a hand-built 2D desk. Each screen is a small themed UI.
-
-Built with **Next.js**, **Tailwind**, and \`motion\`. No page builder, no
-templates — the desk is drawn in SVG and the section transitions use the
-browser's View Transitions API.`,
-  },
-  {
-    slug: "contact",
-    title: "contact.md",
-    body: `# Contact
-
-- Email: [${PROFILE.email}](mailto:${PROFILE.email})
-- GitHub: [@${PROFILE.githubUser}](${PROFILE.github})
-- LinkedIn: [profile](${PROFILE.linkedin})
-
-Résumé lives at [/resume](/resume).`,
   },
 ];
 

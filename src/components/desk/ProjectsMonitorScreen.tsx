@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { percentBox, screenById } from "@/lib/desk";
+import ScreenTitleBar, { titleBarHeight } from "./ScreenTitleBar";
 
 /** three.js plus the board's own geometry is by far the heaviest thing on this
  *  page, and none of it is needed until someone has scrolled to the desk — so
@@ -11,13 +13,13 @@ const PcbViewer = dynamic(() => import("./pcb/PcbViewer"), { ssr: false });
 
 /**
  * What the monitor (screen 1) shows while it sits on the desk: the section's
- * name across the top and the real ESP32 board turning below it, filling the
- * glass.
+ * name across the top and two of Jayden's real boards turning side by side
+ * below it — the ESP32-S3 USB dongle on the left, SPARC on the right.
  *
  * Unlike screens 2 and 3, whose contents are drawn straight into `DeskSvg`,
  * this one can't live in the SVG: the board is WebGL. So it's an HTML layer
  * positioned over the same glass rect instead, in `%` of the desk viewBox so
- * it stays glued there at every width. The title bar is still SVG — drawn in
+ * it stays glued there at every width. The title strip (`ScreenTitleBar`) is still SVG, drawn in
  * glass-local units, so it scales with the desk exactly like the rest of the
  * line art — and only the board is a separate positioned div.
  *
@@ -25,24 +27,12 @@ const PcbViewer = dynamic(() => import("./pcb/PcbViewer"), { ssr: false });
  * sibling in `DeskScene` and has to keep receiving the clicks.
  */
 
-const INK = "var(--ink, #f4f6f8)";
-const PAPER = "var(--paper, #000)";
-const MONO = "var(--font-mono), ui-monospace, monospace";
-
-/** the monitor's glass — must track `Screen x={382} y={239} w={202} h={138}`
- *  (default inset 10) in `DeskSvg`, and `SCREENS` in `DeskScene` */
-export const MONITOR_GLASS = { x: 392, y: 249, w: 182, h: 118 };
-/** the glass's own corner radius, so the title bar's top corners can follow it
- *  instead of poking out square */
+const MONITOR_GLASS = screenById("projects").glass;
+/** the glass's own corner radius (`max(2, r - 4)` for the default `r={8}`) */
 const GLASS_R = 4;
 
-/** Matches the "SKILLS" and "# EXPERIENCE" headings on screens 2 and 3 — all
- *  three sections name themselves at the same size, in the same units. */
-const TITLE_SIZE = 20;
-/** deep enough to give `TITLE_SIZE` room to breathe */
-const TITLE_H = 27;
-
-/** everything under the title bar is the board */
+const TITLE_H = titleBarHeight(1);
+/** everything under the title strip is the boards */
 const BODY = {
   x: 0,
   y: TITLE_H,
@@ -70,49 +60,26 @@ export default function ProjectsMonitorScreen() {
     return () => io.disconnect();
   }, []);
 
-  const { x, y, w, h } = MONITOR_GLASS;
+  const { w, h } = MONITOR_GLASS;
 
   return (
     <div
       ref={ref}
       aria-hidden
       className="pointer-events-none absolute"
-      style={{
-        left: pct(x, 1600),
-        top: pct(y, 740),
-        width: pct(w, 1600),
-        height: pct(h, 740),
-      }}
+      style={percentBox(MONITOR_GLASS)}
     >
       <svg
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
         className="absolute inset-0 h-full w-full"
       >
-        {/* Title bar, edge to edge. Rounded along the top so it sits inside
-            the glass's own corners, square along the bottom where it meets
-            the board. */}
-        <path
-          d={`M0 ${GLASS_R} A${GLASS_R} ${GLASS_R} 0 0 1 ${GLASS_R} 0
-              L${w - GLASS_R} 0 A${GLASS_R} ${GLASS_R} 0 0 1 ${w} ${GLASS_R}
-              L${w} ${TITLE_H} L0 ${TITLE_H} Z`}
-          fill={INK}
-        />
-        <text
-          x={w / 2}
-          y={TITLE_H / 2}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={TITLE_SIZE}
-          fontFamily={MONO}
-          fill={PAPER}
-        >
-          PROJECTS
-        </text>
+        <ScreenTitleBar x={0} y={0} w={w} r={GLASS_R} lines={["PROJECTS"]} />
       </svg>
 
       {/* the turning board, filling the rest of the glass */}
       <PcbViewer
+        boards={["esp32", "sparc"]}
         running={inView}
         className="absolute"
         style={{

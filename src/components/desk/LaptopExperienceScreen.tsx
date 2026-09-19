@@ -1,22 +1,16 @@
 /**
- * What the larger laptop (screen 3) shows while it sits on the desk: a code
- * editor open on `experience.md` in Markdown live-preview, the way Obsidian /
- * Typora / VS Code's preview render it —
+ * What the larger laptop (screen 3) shows while it sits on the desk: the
+ * shared title strip over a code block typing itself in —
  *
- *   ●●●  experience.md
- *   ·  # EXPERIENCE          ← same monospace, drawn large, like a rendered heading
+ *   ┃        EXPERIENCE        ┃
  *   ·  ```ts
  *   ·  ▬▬▬▬▬ ▬▬▬▬ = [{        ← code as bars: real glyphs would be ~4px tall
  *   ·    ▬▬▬▬▬ ▬▬▬▬▬▬▬▬▬,
  *   ·  }];▌                  ← typed in one character at a time, block cursor
  *
- * Coloured like VS Code's default Dark Modern theme (including its bracket
- * pair colours), with macOS window buttons in the tab bar.
- * One editor font throughout (Fira Code for the heading, JetBrains Mono for
- * the rest); the heading earns its size the way a Markdown heading does in a
- * real editor, so the section name stays obvious while everything below still
- * reads as code. The code is shaped like one job entry (`role`, `company`,
- * `dates`) — a preview of what the section opens to.
+ * Monochrome like the rest of the desk: tokens are told apart by three ink
+ * weights rather than a syntax palette. The code is shaped like one job entry
+ * (`role`, `company`, `dates`) — a preview of what the section opens to.
  *
  * Typing is pure CSS: each token bar grows `steps(chars)` over its own slice
  * of one shared cycle, and the cursor jumps along with it. Those keyframes
@@ -28,56 +22,53 @@
  * Everything is in desk viewBox units, drawn inside `DeskSvg`'s outer `<g>`.
  */
 
-const INK = "var(--ink, #f4f6f8)";
-const MONO = "var(--font-mono), ui-monospace, monospace";
-const FIRA = "var(--font-fira-code), monospace";
+import { screenById } from "@/lib/desk";
+import ScreenTitleBar, { titleBarHeight } from "./ScreenTitleBar";
 
-/** the glass — must track `Screen x={802} y={268} w={222} h={120} inset={10}`
- *  in `DeskSvg` (and `SCREENS` in `DeskScene`) */
-const GLASS = { x: 812, y: 278, w: 202, h: 100 };
+const INK = "var(--ink, #f4f6f8)";
+const INK_SOFT = "var(--ink-soft, rgba(255,255,255,0.62))";
+const INK_FAINT = "var(--ink-faint, rgba(255,255,255,0.4))";
+const MONO = "var(--font-mono), ui-monospace, monospace";
+
+const GLASS = screenById("experience").glass;
+/** the glass's own corner radius (`max(2, r - 4)` for `r={6}`) */
+const GLASS_R = 2;
 
 /* ── editor chrome ─────────────────────────────────────────────────────── */
-const TAB_BAR_H = 12;
-const TAB_TEXT_SIZE = 6.5;
+const FENCE_TEXT_SIZE = 6.5;
 const GUTTER_MARK_X = GLASS.x + 4;
-
-/* ── heading ───────────────────────────────────────────────────────────── */
 const TEXT_X = GLASS.x + 18;
-const HEADING_BASELINE = 311;
-const HEADING_SIZE = 20;
 
 /* ── code block ────────────────────────────────────────────────────────── */
-const BLOCK = { x: TEXT_X - 4, y: 316, w: 176, h: 57 };
+/** the block fills what the title strip leaves, with a small margin */
+const BLOCK_TOP = GLASS.y + titleBarHeight(1) + 6;
+const BLOCK = { x: TEXT_X - 4, y: BLOCK_TOP, w: 176, h: GLASS.y + GLASS.h - 5 - BLOCK_TOP };
 const CODE_X = TEXT_X;
 /** one monospace cell of the (imaginary) code font */
 const CH = 3.2;
 const ROW_PITCH = 8.8;
-const FENCE_ROW_Y = 322;
+const FENCE_ROW_Y = BLOCK_TOP + 7;
 const BAR_H = 3;
 /** gap left between neighbouring tokens' bars, so `"…"` and `,` don't merge */
 const BAR_INSET = 0.8;
 const CURSOR_W = CH / 2;
 const CURSOR_H = 6.5;
 
-/** colours from VS Code's default dark theme (Dark Modern) */
+/** three ink weights stand in for a syntax palette: names bright, strings
+ *  softer, punctuation faintest — enough to read as structured code */
 const THEME = {
-  keyword: "#569cd6", // const
-  constant: "#4fc1ff", // jobs
-  operator: "#cccccc", // =
-  property: "#9cdcfe", // role
-  string: "#ce9178", // "…"
-  punct: "#cccccc", // : , ;
-  bracket1: "#ffd700", // [ ]  — bracket pair colourisation, depth 1
-  bracket2: "#da70d6", // { }  — depth 2
-  heading: "#569cd6", // # EXPERIENCE
-  fence: "#cccccc", // ```ts
-  lineNumber: "#6e7681",
-  cursor: "#aeafad",
-  activeTab: "#0078d4",
+  keyword: INK, // const
+  constant: INK, // jobs
+  operator: INK_FAINT, // =
+  property: INK, // role
+  string: INK_SOFT, // "…"
+  punct: INK_FAINT, // : , ;
+  bracket1: INK_SOFT, // [ ]
+  bracket2: INK_SOFT, // { }
+  fence: INK_FAINT, // ```ts
+  lineNumber: INK_FAINT,
+  cursor: INK,
 } as const;
-
-/** macOS window buttons: close, minimise, zoom */
-const WINDOW_BUTTONS = ["#ff5f57", "#febc2e", "#28c840"];
 
 type Tone =
   | "keyword"
@@ -204,43 +195,13 @@ const typeAnimation = (name: string) => ({
 });
 
 export default function LaptopExperienceScreen() {
-  const rows = [HEADING_BASELINE - HEADING_SIZE * 0.36, FENCE_ROW_Y, ...CODE.map((_, r) => rowY(r))];
+  const rows = [FENCE_ROW_Y, ...CODE.map((_, r) => rowY(r))];
 
   return (
     <g key={TIMELINE_KEY}>
       <style>{TYPING_CSS}</style>
 
-      {/* tab bar: window buttons, the open file, and a rule under the bar */}
-      <g stroke="none" fill={INK}>
-        <rect x={GLASS.x} y={GLASS.y} width={GLASS.w} height={TAB_BAR_H} opacity={0.08} />
-        {WINDOW_BUTTONS.map((color, i) => (
-          <circle
-            key={color}
-            cx={GLASS.x + 6 + i * 5.5}
-            cy={GLASS.y + TAB_BAR_H / 2}
-            r={1.6}
-            fill={color}
-          />
-        ))}
-        <text
-          x={GLASS.x + 26}
-          y={GLASS.y + TAB_BAR_H / 2}
-          dominantBaseline="central"
-          fontSize={TAB_TEXT_SIZE}
-          fontFamily={MONO}
-          opacity={0.75}
-        >
-          experience.md
-        </text>
-        {/* active-tab marker under the filename */}
-        <rect
-          x={GLASS.x + 24}
-          y={GLASS.y + TAB_BAR_H - 1.2}
-          width={55}
-          height={1.2}
-          fill={THEME.activeTab}
-        />
-      </g>
+      <ScreenTitleBar x={GLASS.x} y={GLASS.y} w={GLASS.w} r={GLASS_R} lines={["EXPERIENCE"]} />
 
       {/* gutter: a dim tick where each line number would be */}
       <g stroke="none" fill={THEME.lineNumber}>
@@ -248,20 +209,6 @@ export default function LaptopExperienceScreen() {
           <rect key={y} x={GUTTER_MARK_X} y={y - 1.1} width={5} height={2.2} rx={1.1} />
         ))}
       </g>
-
-      {/* the rendered heading — the one thing on this screen at full size */}
-      <text
-        x={TEXT_X}
-        y={HEADING_BASELINE}
-        fontSize={HEADING_SIZE}
-        fontFamily={FIRA}
-        fontWeight={600}
-        fill={THEME.heading}
-        stroke="none"
-      >
-        <tspan>#</tspan>
-        <tspan dx={-3}> EXPERIENCES</tspan>
-      </text>
 
       {/* code block */}
       <rect
@@ -279,7 +226,7 @@ export default function LaptopExperienceScreen() {
           x={CODE_X}
           y={FENCE_ROW_Y}
           dominantBaseline="central"
-          fontSize={TAB_TEXT_SIZE}
+          fontSize={FENCE_TEXT_SIZE}
           fontFamily={MONO}
           fill={THEME.fence}
         >

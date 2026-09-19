@@ -4,16 +4,19 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import ViewTransition from "@/components/motion/ViewTransition";
-import AppWindow from "@/components/apps/AppWindow";
 
 /**
- * Fullscreen overlay that hosts one section's "app", morphing out of the desk
- * screen it was opened from. Rendered by each section `page.tsx` on top of the
- * still-mounted desk (which lives in the `(desk)` layout).
+ * A section as its own page — what a phone gets when it taps a card on the
+ * stacked desk, and what a deep link (`/skills`, …) shows on any screen. The
+ * same header and the same `ScreenCard`s as the desktop overlay in
+ * `DeskScene`, just stacked one under another and scrolled normally.
  *
- * - `Esc`, the close button, and a click on the dimmed gutter all return to `/`.
- * - Page scroll is locked while open; the section scrolls inside `AppWindow`.
+ * Rendered by each section `page.tsx` on top of the still-mounted desk (which
+ * lives in the `(desk)` layout).
+ *
+ * - `Esc`, the close button, and a click on the ground around the cards all
+ *   return to `/`.
+ * - Page scroll is locked while open; the frame scrolls itself.
  * - Focus is trapped and returned to the opener on close.
  */
 export default function FocusFrame({
@@ -31,8 +34,6 @@ export default function FocusFrame({
   useScrollLock(true);
 
   const close = useCallback(() => {
-    // Navigating to "/" pairs this panel's <ViewTransition> with the desk screen
-    // of the same name, so the morph reverses for free.
     router.push("/");
   }, [router]);
 
@@ -74,45 +75,37 @@ export default function FocusFrame({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-paper"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <ViewTransition name={`screen-${id}`} share="morph" fallback="none">
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label={meta.appName}
-          tabIndex={-1}
-          className="focus-panel m-auto flex h-full w-full max-w-[1100px] flex-col outline-none sm:h-[min(88vh,760px)] sm:rounded-xl sm:shadow-2xl"
-          style={{ ["--accent" as string]: `var(${meta.accentVar})` }}
-        >
-          <AppWindow
-            appName={meta.appName}
-            onClose={
-              <button
-                type="button"
-                onClick={close}
-                className="rounded px-2 py-0.5 font-mono text-xs text-[color:var(--app-fg-soft)] ring-1 ring-inset ring-white/10 transition-colors hover:text-[color:var(--app-fg)]"
-                aria-label="Close and return to the desk"
-              >
-                esc ✕
-              </button>
-            }
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="section-title"
+        tabIndex={-1}
+        className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 outline-none sm:py-12"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h1
+            id="section-title"
+            className="font-mono text-[clamp(1.75rem,8vw,3.5rem)] font-semibold uppercase leading-none text-ink"
           >
-            <ViewTransition
-              name={`screen-${id}-body`}
-              enter="auto"
-              exit="auto"
-              fallback="none"
-            >
-              <div className="h-full">{children}</div>
-            </ViewTransition>
-          </AppWindow>
+            {meta.screenLabel}
+          </h1>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close and return to the desk"
+            className="mt-1 shrink-0 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
+          >
+            esc ✕
+          </button>
         </div>
-      </ViewTransition>
+        {children}
+      </div>
     </div>
   );
 }

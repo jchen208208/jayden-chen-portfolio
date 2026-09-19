@@ -12,7 +12,7 @@
  * normalised x/y — see `buildBoardMeshes`.
  */
 
-import { BOARD, PCB, type Side } from "./board";
+import { PALETTE, type BoardModel, type Side } from "./board";
 
 /** Texture resolution. The board is drawn on the desk monitor at roughly
  *  130 x 65 CSS px, so even this is several times what's ever sampled — kept
@@ -33,7 +33,8 @@ function uprightAngle(deg: number) {
   return a > 90 && a <= 270 ? a - 180 : a;
 }
 
-export function paintLayer(side: Side): HTMLCanvasElement {
+export function paintLayer(board: BoardModel, side: Side): HTMLCanvasElement {
+  const BOARD = board.data;
   const { x1, y1, x2, y2 } = BOARD.bounds;
   const w = x2 - x1;
   const h = y2 - y1;
@@ -49,11 +50,11 @@ export function paintLayer(side: Side): HTMLCanvasElement {
   const silkLayer = side === "F" ? "F.SilkS" : "B.SilkS";
 
   // 1. bare soldermask over the whole board
-  ctx.fillStyle = PCB.mask;
+  ctx.fillStyle = PALETTE.mask;
   ctx.fillRect(x1, y1, w, h);
 
   // 2. the ground pour — mask over solid copper is a shade lighter
-  ctx.fillStyle = PCB.maskOverCu;
+  ctx.fillStyle = PALETTE.maskOverCu;
   for (const z of BOARD.zones) {
     if (z.layer !== cu || z.pts.length < 3) continue;
     ctx.beginPath();
@@ -63,7 +64,7 @@ export function paintLayer(side: Side): HTMLCanvasElement {
   }
 
   // 3. signal traces
-  ctx.strokeStyle = PCB.maskOverTrace;
+  ctx.strokeStyle = PALETTE.maskOverTrace;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   for (const t of BOARD.traces) {
@@ -83,7 +84,7 @@ export function paintLayer(side: Side): HTMLCanvasElement {
     ctx.translate(p.x, p.y);
     // KiCad angles are counter-clockwise on a Y-down canvas, so negate
     ctx.rotate((-p.rot * Math.PI) / 180);
-    ctx.fillStyle = PCB.gold;
+    ctx.fillStyle = PALETTE.gold;
     ctx.beginPath();
     if (p.shape === "circle" || p.shape === "oval") {
       ctx.ellipse(0, 0, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
@@ -93,25 +94,25 @@ export function paintLayer(side: Side): HTMLCanvasElement {
     }
     ctx.fill();
     ctx.lineWidth = 0.05;
-    ctx.strokeStyle = PCB.goldDark;
+    ctx.strokeStyle = PALETTE.goldDark;
     ctx.stroke();
     ctx.restore();
   }
 
   // 5. vias — plated ring with the drill barrel dark in the middle
   for (const v of BOARD.vias) {
-    ctx.fillStyle = PCB.gold;
+    ctx.fillStyle = PALETTE.gold;
     ctx.beginPath();
     ctx.arc(v.x, v.y, v.d / 2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#20160c";
+    ctx.fillStyle = "#0a0b0d";
     ctx.beginPath();
     ctx.arc(v.x, v.y, v.drill / 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // 6. silkscreen outlines
-  ctx.strokeStyle = PCB.silk;
+  ctx.strokeStyle = PALETTE.silk;
   for (const s of BOARD.silk) {
     if (s.layer !== silkLayer) continue;
     ctx.lineWidth = s.w;
@@ -126,7 +127,7 @@ export function paintLayer(side: Side): HTMLCanvasElement {
   //    which the viewer sees mirrored once the board turns round. Geometry
   //    doesn't care, but lettering does, so back-side glyphs are reflected
   //    here to cancel that out and leave "U2" reading the right way round.
-  ctx.fillStyle = PCB.silk;
+  ctx.fillStyle = PALETTE.silk;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (const t of BOARD.texts) {

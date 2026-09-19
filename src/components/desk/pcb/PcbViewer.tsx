@@ -6,15 +6,16 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { BOARD_H, BOARD_W, PCB } from "./board";
-import { buildBoard } from "./buildBoard";
+import { BOARDS, PALETTE, type BoardId } from "./board";
+import { buildBoard, type BuiltBoard } from "./buildBoard";
 
 /** a full turn every ~14s — slow enough to read the silkscreen as it passes */
 const SPIN_RPS = 1 / 14;
 /** Tipped well back towards horizontal — a flat-on board reads as a picture
  *  of a board, where a pitched one reads as an object with things standing
- *  off its face. ~50°. */
-const TILT = -0.88;
+ *  off its face. ~40° — eased up from ~50° so both boards sit a little more
+ *  upright. */
+const TILT = -0.7;
 /** A board is a flat thing, so a plain Y-spin passes dead edge-on twice a
  *  turn and all but vanishes. Rocking the tilt on its own slow clock means
  *  those crossings almost never coincide with a level board, so there's
@@ -28,32 +29,48 @@ const BOB = 0.5;
  *  below) — so at full zoom it's being stretched by that much. Rendering at a
  *  matching multiple of the device pixel ratio stops it going soft there. */
 const DESK_MAX_ZOOM = 1.35;
-/** Half-depth of everything standing off the laminate: the 3.1mm WROOM module
- *  on the back plus half the board. Tilted this far back, depth projects into
- *  the board's on-screen height, so the fit has to know about it. */
-const HALF_DEPTH = 4;
+/** the air left between neighbouring boards at their widest, in mm */
+const BOARD_GAP = 15;
+/** Drawn larger than true scale. The dongle is much smaller than SPARC, and
+ *  side by side at real size it read as the lesser board. */
+const BOARD_SCALE: Partial<Record<BoardId, number>> = { esp32: 1.2 };
 
-function Board({ still }: { still: boolean }) {
+/** One board: placed at `x` along the row, then tilted back, rocked, bobbed
+ *  and spun exactly like every other board in the scene — they share one
+ *  clock, so they always hold the same orientation. */
+function Board({
+  built,
+  x,
+  scale,
+  still,
+}: {
+  built: BuiltBoard;
+  x: number;
+  scale: number;
+  still: boolean;
+}) {
   const tilt = useRef<THREE.Group>(null);
   const spin = useRef<THREE.Group>(null);
-  const { group, dispose } = useMemo(() => buildBoard(), []);
-  useEffect(() => dispose, [dispose]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (!spin.current || !tilt.current) return;
     if (still) return;
-    spin.current.rotation.y += delta * SPIN_RPS * Math.PI * 2;
     const t = state.clock.elapsedTime;
+    // driven off the shared clock (not accumulated per frame) so every board
+    // sits at exactly the same angle on every frame
+    spin.current.rotation.y = t * SPIN_RPS * Math.PI * 2;
     tilt.current.rotation.x = TILT + Math.sin(t * TILT_RPS * Math.PI * 2) * TILT_ROCK;
     // a shallow bob, out of phase with both, so the silhouette keeps changing
     // instead of repeating exactly once per turn
-    tilt.current.position.y = Math.sin(t * 0.6) * 0.5;
+    tilt.current.position.y = Math.sin(t * 0.6) * BOB;
   });
 
   return (
-    <group ref={tilt} rotation={[TILT, 0, 0]}>
-      <group ref={spin}>
-        <primitive object={group} />
+    <group position={[x, 0, 0]} scale={scale}>
+      <group ref={tilt} rotation={[TILT, 0, 0]}>
+        <group ref={spin}>
+          <primitive object={built.group} />
+        </group>
       </group>
     </group>
   );
@@ -77,23 +94,24 @@ function StudioEnv() {
 }
 
 /**
- * Backs the camera off far enough that the board stays wholly inside its
- * window through every frame of the animation — not just the frame it happens
- * to be on when this runs.
+ * How much room one board needs so it stays wholly inside the window through
+ * every frame of the animation — not just the frame it happens to be on.
  *
  * The board's on-screen size is never its flat width and height: it's a box
- * (`BOARD_W` × `BOARD_H` × depth) being spun about Y and rocked about X, and
- * both rotations feed depth into the silhouette. So the worst case is derived
+ * (`w` × `h` × depth) being spun about Y and rocked about X, and both
+ * rotations feed depth into the silhouette. So the worst case is derived
  * rather than guessed — spinning can grow the width to the board's own
  * diagonal with depth, and the tilt trades height for depth, which is checked
  * at both ends of the rock since neither end is reliably the wider one.
+ * `halfDepth` comes from the built board, so a board with tall parts (SPARC's
+ * 7 mm JST headers) gets the extra room it needs.
  */
-function fitHalfExtents() {
-  const hw = BOARD_W / 2;
-  const hh = BOARD_H / 2;
+function fitHalfExtents(w: number, h: number, halfDepth: number) {
+  const hw = w / 2;
+  const hh = h / 2;
   // Rotation about Y mixes width and depth; the peak over a full turn is the
   // hypotenuse, and it's also the deepest the board can be side-on.
-  const spun = Math.hypot(hw, HALF_DEPTH);
+  const spun = Math.hypot(hw, halfDepth);
   // Rotation about X then mixes that depth into height. Evaluate the rock's
   // extremes: the shallow end keeps more of the board's own height, the steep
   // end converts more depth into it.
@@ -105,7 +123,8 @@ function fitHalfExtents() {
   return { halfW: spun, halfH: halfH + BOB };
 }
 
-function FitCamera() {
+/** Backs the camera off far enough to hold the whole row of boards. */
+function FitCamera({ halfW, halfH }: { halfW: number; halfH: number }) {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
   // Layout effect, not a passive one: a passive effect lands after the first
@@ -113,7 +132,6 @@ function FitCamera() {
   // distance — far too big for the monitor — before snapping into place.
   useLayoutEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
-    const { halfW, halfH } = fitHalfExtents();
     const vFov = (cam.fov * Math.PI) / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * cam.aspect);
     const dist = Math.max(halfH / Math.tan(vFov / 2), halfW / Math.tan(hFov / 2));
@@ -121,15 +139,59 @@ function FitCamera() {
     cam.position.set(0, 0, dist * 1.05);
     cam.lookAt(0, 0, 0);
     cam.updateProjectionMatrix();
-  }, [camera, size]);
+  }, [camera, size, halfW, halfH]);
   return null;
 }
 
+/** Builds every board once and lays them out left to right, each given the
+ *  width its own worst-case silhouette needs plus `BOARD_GAP` between. */
+function layoutRow(ids: BoardId[]) {
+  const items: { id: BoardId; built: BuiltBoard; x: number; scale: number; halfH: number }[] = [];
+  let cursor = 0;
+  for (const id of ids) {
+    const board = BOARDS[id];
+    const built = buildBoard(board);
+    const scale = BOARD_SCALE[id] ?? 1;
+    const fit = fitHalfExtents(board.w, board.h, built.halfDepth);
+    const halfW = fit.halfW * scale;
+    items.push({ id, built, x: cursor + halfW, scale, halfH: fit.halfH * scale });
+    cursor += halfW * 2 + BOARD_GAP;
+  }
+  const total = cursor - BOARD_GAP;
+  return {
+    items: items.map((it) => ({ ...it, x: it.x - total / 2 })),
+    halfW: total / 2,
+    halfH: Math.max(...items.map((it) => it.halfH)),
+  };
+}
+
+function useBoardRow(ids: BoardId[]) {
+  const key = ids.join(",");
+  const row = useMemo(() => layoutRow(key.split(",") as BoardId[]), [key]);
+  useEffect(() => () => row.items.forEach((it) => it.built.dispose()), [row]);
+  return row;
+}
+
+function Boards({ ids, still }: { ids: BoardId[]; still: boolean }) {
+  const row = useBoardRow(ids);
+  return (
+    <>
+      <FitCamera halfW={row.halfW} halfH={row.halfH} />
+      {row.items.map((it) => (
+        <Board key={it.id} built={it.built} x={it.x} scale={it.scale} still={still} />
+      ))}
+    </>
+  );
+}
+
 export default function PcbViewer({
+  boards = ["esp32"],
   className,
   style,
   running = true,
 }: {
+  /** the boards to show, left to right, all turning together */
+  boards?: BoardId[];
   className?: string;
   style?: CSSProperties;
   /** false parks the render loop entirely — this lives on the landing page,
@@ -162,7 +224,6 @@ export default function PcbViewer({
         // needs to carry the board itself
         style={{ background: "transparent" }}
       >
-        <FitCamera />
         <StudioEnv />
         {/* Lit above the usual 1-ish intensities: the board is a dark object
             on a black page and the renderer's filmic tone mapping pulls the
@@ -172,12 +233,12 @@ export default function PcbViewer({
         <ambientLight intensity={0.8} />
         {/* key light from the upper left, the way the desk lamp falls */}
         <directionalLight position={[-14, 18, 26]} intensity={2.3} />
-        {/* warm rim in the Projects accent, picking out the board's edge */}
-        <directionalLight position={[16, -6, -18]} intensity={1.9} color={PCB.accent} />
-        {/* cool fill from the front so the back of the board isn't a void
-            when it turns past the camera */}
-        <directionalLight position={[10, 4, 20]} intensity={0.7} color="#9fd8ff" />
-        <Board still={still} />
+        {/* rim light picking out the board's edge */}
+        <directionalLight position={[16, -6, -18]} intensity={1.9} color={PALETTE.accent} />
+        {/* fill from the front so the back of the board isn't a void when it
+            turns past the camera */}
+        <directionalLight position={[10, 4, 20]} intensity={0.7} />
+        <Boards ids={boards} still={still} />
       </Canvas>
     </div>
   );

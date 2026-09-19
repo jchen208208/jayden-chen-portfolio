@@ -1,11 +1,13 @@
 "use client";
 
 import { useId } from "react";
+import { screenById } from "@/lib/desk";
+import ScreenTitleBar from "./ScreenTitleBar";
 
 /**
  * Screen 4 — the portrait monitor, the only tall screen on the desk.
  *
- * A title ribbon over one looping story:
+ * The shared title strip over one looping story:
  *
  *   rally (5 crossings) → winner → celebration → podium slideshow → repeat
  *
@@ -33,15 +35,7 @@ import { useId } from "react";
 const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
-/** an actual tennis ball's optic yellow-green, not a flat white dot */
-const BALL_COLOR = "#d5e544";
-/** medal gold, with a darker rim so the disc still reads on black glass */
-const GOLD = "#d4af37";
-const GOLD_DARK = "#8a6a1a";
-
-/** the monitor's glass — must track `Screen x={1062} y={128} w={182} h={252}`
- *  with `inset={12}` in `DeskSvg`, and `SCREENS` in `DeskScene` */
-export const PORTRAIT_GLASS = { x: 1074, y: 140, w: 158, h: 228 };
+const PORTRAIT_GLASS = screenById("about").glass;
 /** the glass's own corner radius (`max(2, r - 4)` for `r={10}`) */
 const GLASS_R = 6;
 
@@ -50,14 +44,13 @@ const GLASS_R = 6;
 const LINE = 1.4;
 const FIG = 1.8;
 
-/* ── title ribbon ──────────────────────────────────────────────────────────
- * A ribbon only reads as a ribbon if its tails, notches and folds are visible,
- * so the whole banner fits INSIDE the 158-unit glass, and the title has to fit
- * inside the front panel between the tails. Splitting it as "PERSONAL" /
- * "& AWARDS" makes both lines 8 characters — the longest line is what limits
- * the size, and evening them out is what lets it sit at 18.
+/* ── title ──────────────────────────────────────────────────────────────────
+ * "PERSONAL & AWARDS" is too long for a 158-unit glass at the shared title
+ * size, so the strip takes two lines — split as "PERSONAL" / "& AWARDS" so
+ * both are 8 characters. It ends at y≈188, above the court (226); the far
+ * player's head (≈195) sits just under its edge.
  */
-const TITLE_SIZE = 18;
+const TITLE_LINES = ["PERSONAL", "& AWARDS"];
 
 /* ── court ─────────────────────────────────────────────────────────────────
  * Deliberately only three lines across — baseline, net, baseline. A real
@@ -404,7 +397,7 @@ export default function PortraitMonitorScreen() {
 
           <g className="pa-ball-fade pa-play" style={anim("pa-ball-fade")}>
             <g className="pa-ball pa-play" style={anim("pa-ball")}>
-              <circle cx={0} cy={0} r={BALL_R} fill={BALL_COLOR} stroke="none" />
+              <circle cx={0} cy={0} r={BALL_R} fill={INK} stroke="none" />
             </g>
           </g>
         </g>
@@ -465,9 +458,15 @@ export default function PortraitMonitorScreen() {
           <Medal cy={256} />
         </g>
 
-        {/* the title ribbon sits over everything, opaque, so the court can run
+        {/* the title strip sits over everything, opaque, so the court can run
             up behind it */}
-        <Banner uid={clipId} />
+        <ScreenTitleBar
+          x={PORTRAIT_GLASS.x}
+          y={PORTRAIT_GLASS.y}
+          w={PORTRAIT_GLASS.w}
+          r={GLASS_R}
+          lines={TITLE_LINES}
+        />
       </g>
     </g>
   );
@@ -475,16 +474,41 @@ export default function PortraitMonitorScreen() {
 
 /**
  * A medal — small against the head (at the size of a head it read as a second
- * one), but a SOLID disc. The earlier hollow black ring vanished against the
- * black glass, especially beside the official's solid hand. The dark centre
+ * one), but a SOLID disc. A hollow ring vanished against the black glass, especially beside the official's solid hand. The dark centre
  * keeps it reading as a medal rather than another dot.
  */
 function Medal({ cx = 1153, cy }: { cx?: number; cy: number }) {
   return (
     <>
-      <circle cx={cx} cy={cy} r={4.5} fill={GOLD} stroke={GOLD_DARK} strokeWidth={0.8} />
-      <circle cx={cx} cy={cy} r={1.6} fill={GOLD_DARK} stroke="none" />
+      <circle cx={cx} cy={cy} r={4.5} fill={INK} stroke="none" />
+      <circle cx={cx} cy={cy} r={1.6} fill={PAPER} stroke="none" />
     </>
+  );
+}
+
+/** The story's last frame on its own — on the top step, both arms up, medal
+ *  on — for the Tennis card in the opened section. Its own `<svg>`, framed
+ *  on the podium's corner of the desk viewBox. */
+export function PodiumStill({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="1040 212 226 164"
+      className={className}
+      aria-hidden
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <Podium />
+      <Winner />
+      <g stroke={INK} strokeWidth={FIG} fill="none">
+        <path d="M1153 249 L1133 224" />
+        <path d="M1153 249 L1173 224" />
+        <path d="M1149 247 L1152 252" />
+        <path d="M1157 247 L1154 252" />
+      </g>
+      <Medal cy={256} />
+    </svg>
   );
 }
 
@@ -525,80 +549,5 @@ function Winner() {
       </g>
       <circle cx={1153} cy={236} r={7} fill={INK} stroke="none" />
     </>
-  );
-}
-
-/**
- * The title on a ribbon banner, built the way a drawn ribbon is:
- *
- *            ╭───── front panel, arched ─────╮
- *     ◁▔▔▔▔▔┤          PERSONAL             ├▔▔▔▔▔▷
- *     tail  │          & AWARDS             │  tail
- *     ◁▁▁▁▁▁◣ ╰─────────────────────────────╯ ◢▁▁▁▁▁▷
- *           fold                             fold
- *
- * The tails sit BEHIND the panel's ends and hang lower than it, each cut with
- * a swallowtail notch; the solid fold triangles show where the ribbon turns
- * back on itself. The text follows the arch on a `textPath`, and a stitched
- * border runs round the inside of the panel.
- *
- * Everything stays inside the glass (1074–1232). The first version ran its
- * tails off both edges, and the clip cut away exactly the notches that made
- * it a ribbon — leaving a plain box.
- */
-function Banner({ uid }: { uid: string }) {
-  const line1 = `${uid}-title-1`;
-  const line2 = `${uid}-title-2`;
-  return (
-    <g>
-      <defs>
-        {/* baselines for the two lines of text, following the panel's arch */}
-        <path id={line1} d="M1100 168 Q1153 158 1206 168" />
-        <path id={line2} d="M1100 185 Q1153 175 1206 185" />
-      </defs>
-
-      {/* tails, behind the panel, hanging lower than it, notched */}
-      <g stroke={INK} strokeWidth={FIG} fill={PAPER} strokeLinejoin="round">
-        <path d="M1106 158 L1078 160 L1090 180 L1078 200 L1106 204 Z" />
-        <path d="M1200 158 L1228 160 L1216 180 L1228 200 L1200 204 Z" />
-      </g>
-
-      {/* folds, where the ribbon turns back from the panel to each tail */}
-      <g fill={INK} stroke="none">
-        <path d="M1098 194 L1106 194 L1106 204 Z" />
-        <path d="M1208 194 L1200 194 L1200 204 Z" />
-      </g>
-
-      {/* front panel */}
-      <path
-        d="M1098 146 Q1153 136 1208 146 L1208 194 Q1153 184 1098 194 Z"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth={FIG}
-        strokeLinejoin="round"
-      />
-      {/* stitching */}
-      <path
-        d="M1102 150 Q1153 140 1204 150 L1204 190 Q1153 180 1102 190 Z"
-        fill="none"
-        stroke={INK}
-        strokeWidth={0.7}
-        strokeDasharray="2 1.6"
-        opacity={0.7}
-      />
-
-      <g fill={INK} stroke="none" fontFamily={MONO} fontSize={TITLE_SIZE} fontWeight={600}>
-        <text textAnchor="middle">
-          <textPath href={`#${line1}`} startOffset="50%">
-            PERSONAL
-          </textPath>
-        </text>
-        <text textAnchor="middle">
-          <textPath href={`#${line2}`} startOffset="50%">
-            &amp; AWARDS
-          </textPath>
-        </text>
-      </g>
-    </g>
   );
 }

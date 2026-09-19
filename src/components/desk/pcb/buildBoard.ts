@@ -1,5 +1,5 @@
 /**
- * Builds the board as three.js objects: the FR-4 slab with its painted copper
+ * Builds a board as three.js objects: the FR-4 slab with its painted copper
  * layers, plus a body for every populated component.
  *
  * Everything is built once, imperatively, and handed to R3F as a single
@@ -8,27 +8,18 @@
  */
 
 import * as THREE from "three";
-import {
-  BOARD,
-  BOARD_T,
-  PCB,
-  partLocalPadBounds,
-  rad,
-  toX,
-  toY,
-  type Part,
-} from "./board";
+import { BOARD_T, PALETTE, partLocalPads, rad, type BoardModel, type Part } from "./board";
 import { paintLayer } from "./paintLayer";
 
 /** how far the painted artwork floats above the laminate — enough to beat
  *  z-fighting at this camera distance, far too little to see */
 const ART_LIFT = 0.006;
 
-function boardShape() {
+function boardShape(board: BoardModel) {
   const shape = new THREE.Shape();
-  BOARD.outline.forEach(([x, y], i) => {
-    const px = toX(x);
-    const py = toY(y);
+  board.data.outline.forEach(([x, y], i) => {
+    const px = board.toX(x);
+    const py = board.toY(y);
     if (i === 0) shape.moveTo(px, py);
     else shape.lineTo(px, py);
   });
@@ -52,8 +43,8 @@ function fitUvsToBounds(geo: THREE.BufferGeometry) {
   geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 }
 
-function layerTexture(side: "F" | "B") {
-  const tex = new THREE.CanvasTexture(paintLayer(side));
+function layerTexture(board: BoardModel, side: "F" | "B") {
+  const tex = new THREE.CanvasTexture(paintLayer(board, side));
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   return tex;
@@ -62,7 +53,7 @@ function layerTexture(side: "F" | "B") {
 /* ---------- component bodies ---------- */
 
 const mat = {
-  ceramic: new THREE.MeshStandardMaterial({ color: "#c2a276", roughness: 0.55 }),
+  ceramic: new THREE.MeshStandardMaterial({ color: "#8a8f96", roughness: 0.55 }),
   resistor: new THREE.MeshStandardMaterial({ color: "#1b1c20", roughness: 0.5 }),
   termination: new THREE.MeshStandardMaterial({
     color: "#a8aeb6",
@@ -80,10 +71,14 @@ const mat = {
     metalness: 0.3,
   }),
   substrate: new THREE.MeshStandardMaterial({ color: "#14181b", roughness: 0.7 }),
+  // JST XH housings are moulded nylon — cream in real life, a pale grey here
+  housing: new THREE.MeshStandardMaterial({ color: "#b8bec6", roughness: 0.65 }),
+  // the dark mouth of a connector housing, where the mating plug goes
+  socket: new THREE.MeshStandardMaterial({ color: "#0e1013", roughness: 0.9 }),
   button: new THREE.MeshStandardMaterial({ color: "#2b2e33", roughness: 0.4 }),
   led: new THREE.MeshStandardMaterial({
-    color: PCB.accent,
-    emissive: new THREE.Color(PCB.accent),
+    color: PALETTE.accent,
+    emissive: new THREE.Color(PALETTE.accent),
     // bright enough to read as lit, low enough to keep its colour instead
     // of clipping to white
     emissiveIntensity: 1.2,
@@ -121,7 +116,7 @@ function antennaTexture() {
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = "#14181b";
   ctx.fillRect(0, 0, c.width, c.height);
-  ctx.strokeStyle = "#c98a4a";
+  ctx.strokeStyle = "#b8bec6";
   ctx.lineWidth = 8;
   ctx.lineJoin = "miter";
   ctx.beginPath();
@@ -141,21 +136,32 @@ function antennaTexture() {
   return tex;
 }
 
-function buildPart(p: Part): THREE.Group | null {
+/** JST XH geometry, from its datasheet: pins on a 2.5 mm pitch, the housing
+ *  2.45 mm past the outer pins at each end, 5.75 mm deep with the pin row
+ *  0.525 mm off its centre, 7 mm tall */
+const XH = { pitch: 2.5, endMargin: 2.45, depth: 5.75, rowOffset: 0.525, height: 7 } as const;
+
+function buildPart(board: BoardModel, p: Part): THREE.Group | null {
   const g = new THREE.Group();
   const dir = p.side === "F" ? 1 : -1;
   const b = p.box;
 
-  // ESP32-S3-WROOM-1 — substrate, RF shield can, and the antenna at whichever
-  // end carries no pads (derived from the footprint rather than assumed)
-  if (p.lib.includes("ESP32-S3-WROOM")) {
+  // ESP32 WROOM modules (the S3-WROOM-1 on the USB dongle, the WROOM-32 on
+  // SPARC) — substrate, RF shield can, and the antenna at whichever end
+  // carries no pads (derived from the footprint rather than assumed)
+  if (p.lib.includes("WROOM")) {
     const w = b?.w ?? 18;
     const h = b?.h ?? 25.5;
-    slab(g, mat.substrate, w, h, 0.8, dir);
+    // the package box's centre, in the body's Y-up frame (KiCad's is Y-down)
+    const bx = b?.cx ?? 0;
+    const by = -(b?.cy ?? 0);
+    slab(g, mat.substrate, w, h, 0.8, dir, bx, by);
 
-    const padY = partLocalPadBounds(p);
-    const lowGap = padY ? padY.lo - -h / 2 : 7.5;
-    const highGap = padY ? h / 2 - padY.hi : 0;
+    const pads = partLocalPads(board, p);
+    const lo = pads.length ? Math.min(...pads.map((q) => q.y)) - by : null;
+    const hi = pads.length ? Math.max(...pads.map((q) => q.y)) - by : null;
+    const lowGap = lo !== null ? lo - -h / 2 : 7.5;
+    const highGap = hi !== null ? h / 2 - hi : 0;
     const antennaAtLow = lowGap >= highGap;
     const antLen = Math.max(5, Math.min(9, antennaAtLow ? lowGap : highGap));
     const antCenter = antennaAtLow ? -h / 2 + antLen / 2 : h / 2 - antLen / 2;
@@ -163,15 +169,38 @@ function buildPart(p: Part): THREE.Group | null {
     // shield can fills what's left, inset from the substrate edges
     const canLen = h - antLen - 0.4;
     const canCenter = antennaAtLow ? h / 2 - canLen / 2 - 0.2 : -h / 2 + canLen / 2 + 0.2;
-    slab(g, mat.shield, w - 2.2, canLen, 2.3, dir, 0, canCenter, 0.8);
+    slab(g, mat.shield, w - 2.2, canLen, 2.3, dir, bx, by + canCenter, 0.8);
 
     const ant = new THREE.Mesh(
       new THREE.PlaneGeometry(w - 2, antLen - 0.6),
       new THREE.MeshStandardMaterial({ map: antennaTexture(), roughness: 0.5 }),
     );
-    ant.position.set(0, antCenter, dir * (0.8 + 0.01));
+    ant.position.set(bx, by + antCenter, dir * (0.8 + 0.01));
     if (dir < 0) ant.rotation.y = Math.PI;
     g.add(ant);
+    return g;
+  }
+
+  // JST XH vertical header — a tall housing around its pin row, with a dark
+  // mouth on top. Sized from the pins, not the footprint's F.Fab box (which
+  // on these footprints is only the pin-1 marker).
+  if (p.lib.includes("JST_XH")) {
+    const pads = partLocalPads(board, p);
+    if (pads.length === 0) return null;
+    const x0 = Math.min(...pads.map((q) => q.x));
+    const x1 = Math.max(...pads.map((q) => q.x));
+    const rowY = pads[0].y;
+    const w = x1 - x0 + XH.endMargin * 2;
+    const cx = (x0 + x1) / 2;
+    const cy = rowY - XH.rowOffset;
+    slab(g, mat.housing, w, XH.depth, XH.height, dir, cx, cy);
+    slab(g, mat.socket, w - 1.4, XH.depth - 1.8, 0.05, dir, cx, cy + 0.2, XH.height);
+    return g;
+  }
+
+  // SOT-23-5 regulator — a small black body
+  if (p.lib.includes("SOT-23")) {
+    slab(g, mat.plastic, b?.w ?? 1.6, b?.h ?? 2.9, 1.1, dir, b?.cx ?? 0, -(b?.cy ?? 0));
     return g;
   }
 
@@ -228,9 +257,17 @@ function buildPart(p: Part): THREE.Group | null {
 
 /* ---------- the whole thing ---------- */
 
-export function buildBoard(): { group: THREE.Group; dispose: () => void } {
+export type BuiltBoard = {
+  group: THREE.Group;
+  /** how far the board reaches off its mid-plane on its deeper side, parts
+   *  included — the viewer needs it to keep the board in frame as it turns */
+  halfDepth: number;
+  dispose: () => void;
+};
+
+export function buildBoard(board: BoardModel): BuiltBoard {
   const group = new THREE.Group();
-  const shape = boardShape();
+  const shape = boardShape(board);
   const disposables: { dispose: () => void }[] = [];
 
   // FR-4 slab. ExtrudeGeometry groups the flat caps (0) separately from the
@@ -239,8 +276,8 @@ export function buildBoard(): { group: THREE.Group; dispose: () => void } {
   const slabGeo = new THREE.ExtrudeGeometry(shape, { depth: BOARD_T, bevelEnabled: false });
   slabGeo.translate(0, 0, -BOARD_T / 2);
   const slabMesh = new THREE.Mesh(slabGeo, [
-    new THREE.MeshStandardMaterial({ color: PCB.mask, roughness: 0.75 }),
-    new THREE.MeshStandardMaterial({ color: "#9a8b56", roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ color: PALETTE.mask, roughness: 0.75 }),
+    new THREE.MeshStandardMaterial({ color: "#3a3f47", roughness: 0.85 }),
   ]);
   group.add(slabMesh);
   disposables.push(slabGeo);
@@ -249,7 +286,7 @@ export function buildBoard(): { group: THREE.Group; dispose: () => void } {
   for (const side of ["F", "B"] as const) {
     const geo = new THREE.ShapeGeometry(shape);
     fitUvsToBounds(geo);
-    const tex = layerTexture(side);
+    const tex = layerTexture(board, side);
     const material = new THREE.MeshStandardMaterial({
       map: tex,
       roughness: 0.42,
@@ -265,10 +302,10 @@ export function buildBoard(): { group: THREE.Group; dispose: () => void } {
     disposables.push(geo, material, tex);
   }
 
-  for (const p of BOARD.parts) {
-    const g = buildPart(p);
+  for (const p of board.data.parts) {
+    const g = buildPart(board, p);
     if (!g) continue;
-    g.position.set(toX(p.x), toY(p.y), (p.side === "F" ? 1 : -1) * (BOARD_T / 2));
+    g.position.set(board.toX(p.x), board.toY(p.y), (p.side === "F" ? 1 : -1) * (BOARD_T / 2));
     g.rotation.z = rad(p.rot);
     group.add(g);
     g.traverse((o) => {
@@ -276,8 +313,10 @@ export function buildBoard(): { group: THREE.Group; dispose: () => void } {
     });
   }
 
+  const bb = new THREE.Box3().setFromObject(group);
   return {
     group,
+    halfDepth: Math.max(Math.abs(bb.min.z), Math.abs(bb.max.z)),
     dispose: () => disposables.forEach((d) => d.dispose()),
   };
 }

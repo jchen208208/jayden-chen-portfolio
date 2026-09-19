@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 /*
-  "The Desk" — a black room, a desk, four screens. One light key, no color on the
-  page except each section's accent.
+  "The Desk" — a black room, a desk, four screens. Ink on black, no colour.
 */
 :root {
   /* surfaces */
@@ -18,16 +17,6 @@
   /* legacy accent kept as a fallback for <Accent> */
   --ember: #e6a15c;
 
-  /* per-section accents */
-  --accent-projects: #e6a15c;
-  --accent-experience: #5fb98f;
-  --accent-skills: #5cc8e6;
-  --accent-about: #a98cf0;
-
-  /* themed-app surface (same for all four; only --accent varies) */
-  --app-bg: #0b0d10;
-  --app-fg: #e9edf2;
-  --app-fg-soft: #9aa3ad;
 }
 
 @theme inline {
@@ -98,9 +87,9 @@ body {
 }
 
 /* laptop screen on the desk (`LaptopSkillsScreen`): skill icons slide left
-   one full list-length per loop, and a ▌ block cursor blinks after "SKILLS".
-   Hovering (or keyboard-focusing) that screen's click target brightens the
-   strip and holds the cursor solid — the "yes, this one's live" answer. */
+   one full list-length per loop. Hovering (or keyboard-focusing) that
+   screen's click target brightens the strip — the "yes, this one's live"
+   answer. */
 @keyframes skills-strip {
   to {
     transform: translateX(var(--skills-strip-loop));
@@ -116,22 +105,14 @@ body {
   transition: opacity 200ms ease-out;
 }
 
-@keyframes skills-caret {
+@keyframes caret-blink {
   50% {
     opacity: 0;
   }
 }
 
-.skills-caret {
-  animation: skills-caret 1.1s steps(1, end) infinite;
-}
-
-[data-desk]:has([data-screen="screen2"]:is(:hover, :focus-visible)) .skills-strip {
+[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) .skills-strip {
   opacity: 1;
-}
-
-[data-desk]:has([data-screen="screen2"]:is(:hover, :focus-visible)) .skills-caret {
-  animation: none;
 }
 
 /* larger laptop on the desk (`LaptopExperienceScreen`): code types itself
@@ -155,18 +136,18 @@ body {
 }
 
 .exp-cursor {
-  animation: skills-caret 1.1s steps(1, end) infinite;
+  animation: caret-blink 1.1s steps(1, end) infinite;
 }
 
-[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-type {
+[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) .exp-type {
   animation-play-state: paused;
 }
 
-[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-code {
+[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) .exp-code {
   opacity: 1;
 }
 
-[data-desk]:has([data-screen="screen3"]:is(:hover, :focus-visible)) .exp-cursor {
+[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) .exp-cursor {
   animation: none;
 }
 
@@ -206,19 +187,12 @@ body {
   transition: opacity 200ms ease-out;
 }
 
-[data-desk]:has([data-screen="screen4"]:is(:hover, :focus-visible)) .pa-play {
+[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) .pa-play {
   animation-play-state: paused;
 }
 
-[data-desk]:has([data-screen="screen4"]:is(:hover, :focus-visible)) .pa-court {
+[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) .pa-court {
   opacity: 1;
-}
-
-/* mid-flight blur that hides pixel interpolation during the screen morph */
-@keyframes vt-blur {
-  30% {
-    filter: blur(3px);
-  }
 }
 
 /* --------------------------------------------------------------------------- */
@@ -252,23 +226,6 @@ body {
   background-size: 4px 4px;
 }
 
-/* --------------------------------------------------------------------------- */
-/*  View Transitions (progressive enhancement — the site works without them)    */
-/* --------------------------------------------------------------------------- */
-
-/* let clicks through the transition overlay onto the live page */
-::view-transition {
-  pointer-events: none;
-}
-
-::view-transition-group(.morph) {
-  animation-duration: 380ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-::view-transition-image-pair(.morph) {
-  animation-name: vt-blur;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -276,16 +233,9 @@ body {
   .scroll-cue,
   .bounce-cue,
   .skills-strip-track,
-  .skills-caret,
   .exp-type,
   .exp-cursor,
   .pa-play {
     animation: none !important;
-  }
-  ::view-transition-old(*),
-  ::view-transition-new(*),
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
   }
 }

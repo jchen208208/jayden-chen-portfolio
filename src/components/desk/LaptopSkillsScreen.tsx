@@ -1,52 +1,41 @@
 "use client";
 
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useId } from "react";
+import { LAPTOP1, SKILLS_GLASS_LOCAL } from "@/lib/desk";
 import { SKILLS_BOX_ITEMS } from "./skillItems";
+import ScreenTitleBar, { titleBarHeight } from "./ScreenTitleBar";
 
 /**
- * What the laptop (screen 2) shows while it sits on the desk, styled like a
- * terminal prompt:
+ * What the laptop (screen 2) shows while it sits on the desk:
  *
- *      SKILLS▌
+ *    ┃      SKILLS      ┃   ← the shared white title strip
  *    ‹ 🐍 ⚛ 🐳 ⎇ ▲ ›
  *
- * "SKILLS" in the site's monospace (JetBrains Mono) with a blinking ▌ block
- * cursor after it, and underneath, every skill icon from the opened section
- * scrolling slowly left between a pair of ‹ › chevrons — so the screen reads
- * as switched on, says what's inside, and still names the section plainly.
+ * Under the strip, every skill icon from the opened section scrolls slowly
+ * left between a pair of ‹ › chevrons — so the screen reads as switched on
+ * and shows what's inside.
  *
  * Everything is in desk viewBox units and drawn inside `DeskSvg`'s outer
- * `<g>`. Motion lives in globals.css (`.skills-strip-track`,
- * `.skills-caret`), which also brightens the strip and holds the cursor
- * steady while the screen's click target is hovered, and stops both under
- * `prefers-reduced-motion`.
+ * `<g>`. Motion lives in globals.css (`.skills-strip-track`), which also
+ * brightens the strip while the screen's click target is hovered, and stops
+ * it under `prefers-reduced-motion`.
  */
 
 const INK = "var(--ink, #f4f6f8)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
-/** The laptop's glass — must track `Screen x={602} y={300} w={150} h={90}
- *  inset={9}` in `DeskSvg`. These stay the ORIGINAL, unscaled coordinates:
- *  `DeskSvg` wraps this whole laptop in one `LAPTOP1_TRANSFORM`, so
- *  everything here is scaled up along with the bezel around it and nothing in
- *  this file needs to know about it. (`SCREENS` in `DeskScene` does, because
- *  its click target sits outside the SVG — see `laptop1Rect`.) */
-const GLASS = { x: 611, y: 309, w: 132, h: 72 };
-const CENTER_X = GLASS.x + GLASS.w / 2;
+/** The laptop's glass at its ORIGINAL, unscaled coordinates: `DeskSvg` wraps
+ *  this whole laptop in one `LAPTOP1_TRANSFORM`, so everything here is scaled
+ *  up along with the bezel around it. The title strip is the one thing that
+ *  has to know — it's drawn `1/LAPTOP1.scale` smaller so it lands at the same
+ *  on-screen size as the strips on the other three screens. */
+const GLASS = SKILLS_GLASS_LOCAL;
+/** the glass's own corner radius (`max(2, r - 4)` for `r={6}`) */
+const GLASS_R = 2;
+const BODY_TOP = GLASS.y + titleBarHeight(1, LAPTOP1.scale);
 
-/** "SKILLS", set on its alphabetic baseline */
-const LABEL_BASELINE = 338;
-const LABEL_SIZE = 20;
-
-/** ▌ — a left-half block: half a monospace cell wide (cells are 0.6em),
- *  spanning the full line-height of the text so it matches a real terminal
- *  block cursor (ascender to descender) */
-const CURSOR_W = LABEL_SIZE * 0.3;
-const CURSOR_TOP = LABEL_BASELINE - LABEL_SIZE * 0.92;
-const CURSOR_BOTTOM = LABEL_BASELINE + LABEL_SIZE * 0.3;
-
-/** icon row: square icons between ‹ and › */
-const STRIP_CENTER_Y = 358;
+/** icon row: square icons between ‹ and ›, centred in what's left under the strip */
+const STRIP_CENTER_Y = (BODY_TOP + GLASS.y + GLASS.h) / 2;
 const ICON_SIZE = 14;
 const ICON_GAP = 10;
 const ICON_PITCH = ICON_SIZE + ICON_GAP;
@@ -64,26 +53,6 @@ const LOOP_W = ICONS.length * ICON_PITCH;
 
 export default function LaptopSkillsScreen() {
   const fadeId = useId();
-  const labelRef = useRef<SVGTextElement>(null);
-  // width of "SKILLS" as actually rendered — the cursor sits right after it,
-  // and the font's metrics are only known once it's loaded
-  const [labelW, setLabelW] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    let cancelled = false;
-    const measure = () => {
-      if (!cancelled && labelRef.current) setLabelW(labelRef.current.getComputedTextLength());
-    };
-    measure();
-    document.fonts?.ready.then(measure);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // label + cursor are centred as one unit
-  const labelX = CENTER_X - CURSOR_W / 2;
-
   const chevron = (x: number, glyph: string) => (
     <text
       x={x}
@@ -129,30 +98,14 @@ export default function LaptopSkillsScreen() {
         </mask>
       </defs>
 
-      <text
-        ref={labelRef}
-        x={labelX}
-        y={LABEL_BASELINE}
-        textAnchor="middle"
-        fontSize={LABEL_SIZE}
-        fontFamily='"Consolas", "Courier New", monospace'
-        fontWeight={600}
-        fill={INK}
-        stroke="none"
-      >
-        SKILLS
-      </text>
-      {labelW !== null && (
-        <rect
-          className="skills-caret"
-          x={labelX + labelW / 2}
-          y={CURSOR_TOP}
-          width={CURSOR_W}
-          height={CURSOR_BOTTOM - CURSOR_TOP}
-          fill={INK}
-          stroke="none"
-        />
-      )}
+      <ScreenTitleBar
+        x={GLASS.x}
+        y={GLASS.y}
+        w={GLASS.w}
+        r={GLASS_R}
+        lines={["SKILLS"]}
+        scale={LAPTOP1.scale}
+      />
 
       <g className="skills-strip" style={{ color: INK }}>
         {chevron(CHEVRON_L_X, "‹")}
