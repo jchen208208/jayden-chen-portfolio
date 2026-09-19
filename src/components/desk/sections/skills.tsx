@@ -1,26 +1,76 @@
+import type { CSSProperties } from "react";
 import { SKILLS_BOX_ITEMS, SKILLS_BOX_TITLES, type SkillItem } from "../skillItems";
 import type { CardOptions, SectionCard } from "./shared";
 
-/** every card gets as many rows as the longest list needs, three to a row,
- *  so rows are the same height in all three cards and icons line up across
- *  them — a shorter list simply leaves its last rows empty */
-const COLUMNS = 3;
-const ROWS = Math.ceil(Math.max(...SKILLS_BOX_ITEMS.map((items) => items.length)) / COLUMNS);
-
 /**
- * Row layout: the card's height is dictated from outside, so the grid takes
- * what's left of it and divides that into `ROWS` equal rows, and each icon
- * tile is as big as its cell leaves room for — the largest square that fits
- * both the cell's width and what's left of its height once the label has
- * taken its share (`min(100cqw, 100cqh)` against a size container).
+ * Each Skills card is a grid of icon tiles, three across, filling the card.
  *
- * The vertical padding is deliberately uneven: each label reserves two lines
- * (`h-8`) but most use one, and moving 8px from the
- * bottom to the top is what makes the gap above the first row and below the
- * last row's text look equal.
+ * Row layout: the card body is a size container, and everything is sized from
+ * it. Tiles sit exactly `--g` apart, and `--g` in from the card's sides and
+ * bottom (`TOP_GAPS` times that from its top, so the grid sits well clear of
+ * the title), and
+ * the tile is the largest square that allows while still fitting the longest
+ * list's rows (`ROWS`) and labels. That keeps all three cards' tiles the same
+ * size. The grid is pinned to the top of the card, so a shorter list, like
+ * Hardware's single row, leaves its spare space at the bottom. If the card is
+ * too short for width-sized tiles, they shrink to fit and the row centres
+ * itself, so the side margins grow rather than the gaps.
  *
  * Stack layout has no outside height to divide, so tiles get a fixed size.
  */
+const COLUMNS = 3;
+const ROWS = Math.ceil(Math.max(...SKILLS_BOX_ITEMS.map((items) => items.length)) / COLUMNS);
+/** how many `--g`s of space above the first row */
+const TOP_GAPS = 3.5;
+/** default icon inset inside its tile, as a fraction of the tile */
+const ICON_INSET = 0.18;
+
+const gridVars = {
+  // the spacing between tiles, and between the tiles and the border
+  "--g": "clamp(0.75rem, 4cqw, 1.5rem)",
+  // label type grows with the card, within reason
+  "--fs": "clamp(11px, 3.6cqw, 16px)",
+  // a label's block: gap above it plus room for two lines
+  "--lab": "calc(0.75rem + var(--fs) * 2.5)",
+  "--tile": `min(calc((100cqw - ${COLUMNS + 1} * var(--g)) / ${COLUMNS}), calc((100cqh - ${ROWS + TOP_GAPS} * var(--g)) / ${ROWS} - var(--lab)))`,
+  gridTemplateColumns: `repeat(${COLUMNS}, var(--tile))`,
+  gridAutoRows: "calc(var(--tile) + var(--lab))",
+  columnGap: "var(--g)",
+  rowGap: "var(--g)",
+  padding: `calc(var(--g) * ${TOP_GAPS}) var(--g) var(--g)`,
+  justifyContent: "center",
+  alignContent: "start",
+} as CSSProperties;
+
+function RowTile({ item }: { item: SkillItem }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div
+        className="flex shrink-0 items-center justify-center rounded-lg border-2 border-white text-white"
+        style={{
+          width: "var(--tile)",
+          height: "var(--tile)",
+          padding: `calc(var(--tile) * ${item.iconInset ?? ICON_INSET})`,
+        }}
+      >
+        <item.Icon className="h-full w-full" />
+      </div>
+      {/* wider than the tile (it may use the spacing either side), and two
+          lines tall whether it needs them or not, so every row is the same */}
+      <span
+        className="mt-3 shrink-0 text-center font-mono uppercase leading-[1.25] tracking-wide text-white"
+        style={{
+          fontSize: "var(--fs)",
+          height: "calc(var(--fs) * 2.5)",
+          width: "calc(var(--tile) + var(--g))",
+        }}
+      >
+        {item.name}
+      </span>
+    </div>
+  );
+}
+
 function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions["layout"] }) {
   if (layout === "stack") {
     return (
@@ -28,7 +78,8 @@ function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions[
         {items.map((item) => (
           <div key={item.name} className="flex flex-col items-center gap-2">
             <div
-              className={`flex h-16 w-16 items-center justify-center rounded-lg border-2 border-white text-white ${item.iconPadding ?? "p-3"}`}
+              className="flex size-16 items-center justify-center rounded-lg border-2 border-white text-white"
+              style={{ padding: `${(item.iconInset ?? ICON_INSET) * 4}rem` }}
             >
               <item.Icon className="h-full w-full" />
             </div>
@@ -41,30 +92,12 @@ function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions[
     );
   }
   return (
-    <div
-      className="grid min-h-0 flex-1 grid-cols-3 justify-items-center gap-x-5 gap-y-5 px-6 pt-8 pb-4"
-      style={{ gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))` }}
-    >
-      {items.map((item) => (
-        <div key={item.name} className="flex min-h-0 w-full flex-col items-center gap-2.5">
-          <div
-            className="flex min-h-0 w-full flex-1 items-center justify-center"
-            style={{ containerType: "size" }}
-          >
-            <div
-              className={`flex aspect-square items-center justify-center rounded-lg border-2 border-white text-white ${item.iconPadding ?? "p-3"}`}
-              style={{ width: "min(100cqw, 100cqh)" }}
-            >
-              <item.Icon className="h-full w-full" />
-            </div>
-          </div>
-          {/* fixed two-line height, so a long name can't make its row taller
-              than the same row in the next card */}
-          <span className="h-8 shrink-0 text-center font-mono text-xs uppercase leading-tight tracking-wide text-white">
-            {item.name}
-          </span>
-        </div>
-      ))}
+    <div className="min-h-0 flex-1" style={{ containerType: "size" }}>
+      <div className="grid h-full w-full" style={gridVars}>
+        {items.map((item) => (
+          <RowTile key={item.name} item={item} />
+        ))}
+      </div>
     </div>
   );
 }

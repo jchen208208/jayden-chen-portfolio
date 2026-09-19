@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { headerFontClass } from "@/components/desk/sections";
 
 /**
  * A section as its own page — what a phone gets when it taps a card on the
@@ -91,7 +92,7 @@ export default function FocusFrame({
         <div className="flex items-start justify-between gap-4">
           <h1
             id="section-title"
-            className="font-mono text-[clamp(1.75rem,8vw,3.5rem)] font-semibold uppercase leading-none text-ink"
+            className={`text-[clamp(1.75rem,8vw,3.5rem)] uppercase leading-none text-ink ${headerFontClass(id)}`}
           >
             {meta.screenLabel}
           </h1>

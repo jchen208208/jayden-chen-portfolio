@@ -14,12 +14,15 @@ import type { CSSProperties, ReactNode, Ref } from "react";
  */
 export default function ScreenCard({
   title,
+  monoTitle = false,
   children,
   className = "",
   style,
   ref,
 }: {
   title: string;
+  /** set the title in the site monospace instead of the display face */
+  monoTitle?: boolean;
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -39,7 +42,11 @@ export default function ScreenCard({
       <div className="flex shrink-0 items-center justify-center bg-white px-4 py-5">
         <span
           title={title}
-          className="min-w-0 truncate text-center font-title text-[clamp(1.25rem,2.6vw,2.25rem)] uppercase leading-tight tracking-wide"
+          className={`min-w-0 truncate text-center uppercase leading-tight ${
+            monoTitle
+              ? "font-mono text-[clamp(1.1rem,2.1vw,1.85rem)] font-semibold"
+              : "font-title text-[clamp(1.25rem,2.6vw,2.25rem)] tracking-wide"
+          }`}
           style={{ color: "var(--paper, #000)" }}
         >
           {title}

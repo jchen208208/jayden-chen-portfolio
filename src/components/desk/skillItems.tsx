@@ -62,10 +62,11 @@ export const SKILLS_BOX_TITLES = ["Languages", "Frameworks & Tools", "Hardware &
 export type SkillItem = {
   name: string;
   Icon: IconType;
-  /** overrides the icon box's default padding — used for `SolderingIcon`,
-   *  whose landscape drawing needs a lot less inset than a square brand
-   *  logo to read as similarly large inside the same square tile */
-  iconPadding?: string;
+  /** the icon's inset inside its tile, as a fraction of the tile — tiles
+   *  scale with the card, so the padding has to as well. Overridden for
+   *  `SolderingIcon`, whose landscape drawing needs far less inset than a
+   *  square brand logo to read as similarly large. Default 0.18. */
+  iconInset?: number;
 };
 
 /** the actual skills inside each card, matched to `SKILLS_BOX_TITLES` by
@@ -91,7 +92,7 @@ export const SKILLS_BOX_ITEMS: SkillItem[][] = [
     { name: "NumPy", Icon: SiNumpy },
   ],
   [
-    { name: "Soldering", Icon: SolderingIcon, iconPadding: "p-1" },
+    { name: "Soldering", Icon: SolderingIcon, iconInset: 0.05 },
     { name: "PCB Design (KiCad)", Icon: SiKicad },
     { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
   ],

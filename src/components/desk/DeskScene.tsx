@@ -11,7 +11,7 @@ import DeskSvg from "./DeskSvg";
 import DeskCardList from "./DeskCardList";
 import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
-import { sectionCards } from "./sections";
+import { hasSwappedTitleFonts, headerFontClass, sectionCards } from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -58,10 +58,17 @@ const LIFT_STAGE_TIMING: Record<Exclude<OverlayStage, "closed">, { ms: number; e
  *  overlap slightly instead of the glide only kicking in once the zoom has
  *  come to a complete stop. */
 const LIFT_GLIDE_DELAY_MS = 620;
-/** The gap above the cards (from the header) and below them (from the bottom
- *  of the screen) — the same number both times, so the row sits evenly
- *  between the two. The cards then take everything that's left. */
+/** The minimum gap above the cards (from the header) and below them (from the
+ *  bottom of the screen). The cards take `CARD_HEIGHT_SCALE` of what's left
+ *  between the two, so the gap below ends up a little larger. */
 const CARD_V_GAP = 40;
+/** the cards take this share of the height left between the header gap and
+ *  the bottom gap, leaving the rest as extra room under the row */
+const CARD_HEIGHT_SCALE = 0.88;
+/** how far the whole row (cards and everything in them) is moved down from
+ *  just under the header, in px — never more than the spare room under the
+ *  row, so the bottom gap never drops below `CARD_V_GAP` */
+const CARD_TOP_SHIFT = 28;
 /** how far the header glides up from the centre of the screen */
 const HEADER_LIFT_VH = 39;
 /** more cards than this wrap onto a second row */
@@ -330,10 +337,12 @@ export default function DeskScene({ className }: { className?: string }) {
       const header = headerRef.current;
       if (!header || !canvas) return;
       const headerBottom = header.getBoundingClientRect().bottom;
-      const top = headerBottom + CARD_V_GAP;
-      // equal gap above and below: whatever is left between the header and
-      // the bottom of the screen is the cards'
-      const height = window.innerHeight - top - CARD_V_GAP;
+      const baseTop = headerBottom + CARD_V_GAP;
+      // most of what's left between the header gap and the bottom gap is the
+      // cards' — see `CARD_HEIGHT_SCALE`
+      const available = window.innerHeight - baseTop - CARD_V_GAP;
+      const height = available * CARD_HEIGHT_SCALE;
+      const top = baseTop + Math.min(CARD_TOP_SHIFT, available - height);
       // `flushSync` commits the new layout to the DOM right now, so the
       // (still invisible) real cards can be measured at their actual final
       // rects below. Each warp then ends exactly where its card already
@@ -546,7 +555,7 @@ export default function DeskScene({ className }: { className?: string }) {
               {content && (
                 <div
                   ref={headerRef}
-                  className="px-8 text-center font-mono font-semibold uppercase leading-none"
+                  className={`px-8 text-center uppercase leading-none ${headerFontClass(content)}`}
                   style={{ fontSize: "clamp(2rem, 8vw, 6rem)", color: "var(--ink, #f4f6f8)" }}
                 >
                   {SECTIONS[content].screenLabel}
@@ -586,6 +595,7 @@ export default function DeskScene({ className }: { className?: string }) {
                     cardRefs.current[i] = el;
                   }}
                   title={card.title}
+                  monoTitle={hasSwappedTitleFonts(content!)}
                   className="relative cursor-auto"
                   style={{ opacity: cardsRevealed ? 1 : 0 }}
                 >
