@@ -241,13 +241,36 @@ export type Award = {
   summary?: string;
 };
 
-// TODO — user: replace with real awards.
 export const AWARDS: Award[] = [
   {
-    date: "2024-11-01",
-    org: "Hackathon Name",
-    title: "Placeholder Award",
-    summary: "What it was for.",
+    date: "2025-04-01",
+    org: "AAPT",
+    title: "PhysicsBowl",
+    summary: "Top 80 worldwide, 1st regionally.",
+  },
+  {
+    date: "2025-05-01",
+    org: "Waterloo CEMC",
+    title: "Canadian Computing Competition",
+    summary: "Top 20 nationally, Junior division.",
+  },
+  {
+    date: "2025-02-01",
+    org: "Waterloo CEMC",
+    title: "Fermat Mathematics Contest",
+    summary: "Top 10 regionally.",
+  },
+  {
+    date: "2026-04-01",
+    org: "Waterloo CEMC",
+    title: "Euclid Mathematics Contest",
+    summary: "Top 25%.",
+  },
+  {
+    date: "2025-06-01",
+    org: "Academic",
+    title: "AP Scholar with Distinction",
+    summary: "Also on the Principal's List.",
   },
 ];
 
