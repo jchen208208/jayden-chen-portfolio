@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { MouseEvent } from "react";
 import { createPortal, flushSync } from "react-dom";
+import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
 import { DESK_VIEWBOX, SCREENS, percentBox, type Rect, type ScreenSpec } from "@/lib/desk";
 import { SECTIONS, type SectionId } from "@/lib/site";
@@ -238,6 +239,7 @@ export default function DeskScene({ className }: { className?: string }) {
   // the element carrying the zoom/glide transform — watched for
   // `transitionend` so the cards are measured against a settled header
   const liftRef = useRef<HTMLDivElement>(null);
+  const cardGridRef = useRef<HTMLDivElement>(null);
   // the real (resting) cards and the overlay they sit in — measured to get
   // each warp's exact end rect and pinch point
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -305,6 +307,32 @@ export default function DeskScene({ className }: { className?: string }) {
   const toggleLamp = useCallback(() => setLampOn((v) => !v), []);
 
   const zoomed = openId !== null;
+  // Experience can run past the screen's bottom, so its overlay scrolls, and
+  // gets its own Lenis to smooth it. `data-lenis-prevent` comes off for it —
+  // that attribute is read from the whole event path by *every* Lenis, so
+  // leaving it on would mute this instance too; the wheel handler below keeps
+  // the events off the page-level Lenis instead.
+  const smoothOverlay = zoomed && content === "experience" && !reduced;
+  useEffect(() => {
+    const wrapper = overlayRef.current;
+    const grid = cardGridRef.current;
+    if (!smoothOverlay || !wrapper || !grid) return;
+    const lenis = new Lenis({ wrapper, content: grid, autoRaf: true });
+    // Lenis measures the scroll limit once and prevents the wheel's default
+    // whatever that limit is, so a stale zero leaves the view frozen. The
+    // overlay's own box never resizes (it is fixed inset-0) — the card grid
+    // is what grows as entries open, so its size is what we watch, and it is
+    // re-measured as the open animation runs rather than after it.
+    const ro = new ResizeObserver(() => lenis.resize());
+    ro.observe(grid);
+    const stopPageLenis = (e: WheelEvent) => e.stopPropagation();
+    wrapper.addEventListener("wheel", stopPageLenis);
+    return () => {
+      ro.disconnect();
+      wrapper.removeEventListener("wheel", stopPageLenis);
+      lenis.destroy();
+    };
+  }, [smoothOverlay]);
   const cards = content ? sectionCards(content, { layout: "row", active: zoomed }) : [];
   const cardCount = cards.length;
   const columns = Math.min(cardCount, MAX_CARDS_PER_ROW);
@@ -534,7 +562,7 @@ export default function DeskScene({ className }: { className?: string }) {
             // wheel events on the whole window; `data-lenis-prevent` hands
             // this element's scrolling back to the browser, and
             // `overscroll-contain` stops it chaining to the desk behind.
-            data-lenis-prevent
+            data-lenis-prevent={smoothOverlay ? undefined : true}
             className="no-scrollbar fixed inset-0 z-50 flex cursor-pointer items-center justify-center overflow-y-auto overscroll-contain"
             style={{
               backgroundColor: "var(--paper, #000)",
@@ -597,6 +625,7 @@ export default function DeskScene({ className }: { className?: string }) {
                 so it plays as the cards appear rather than behind the
                 still-zooming overlay. */}
             <div
+              ref={cardGridRef}
               aria-hidden={!cardsRevealed}
               data-cards-revealed={cardsRevealed}
               onClick={(e) => {

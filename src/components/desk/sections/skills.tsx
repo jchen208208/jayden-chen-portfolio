@@ -58,7 +58,7 @@ function RowTile({ item }: { item: SkillItem }) {
       {/* wider than the tile (it may use the spacing either side), and two
           lines tall whether it needs them or not, so every row is the same */}
       <span
-        className="mt-3 line-clamp-2 shrink-0 text-center font-title uppercase leading-[1.25] tracking-wide text-white"
+        className="mt-3 line-clamp-2 shrink-0 text-center font-[Consolas,Lucida_Console,DejaVu_Sans_Mono,Menlo,monospace] uppercase leading-[1.25] tracking-wide text-white"
         style={{
           fontSize: "var(--fs)",
           height: "calc(var(--fs) * 2.5)",
@@ -83,7 +83,7 @@ function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions[
             >
               <item.Icon className="h-full w-full" />
             </div>
-            <span className="line-clamp-2 text-center font-title text-xs uppercase leading-tight tracking-wide text-white">
+            <span className="line-clamp-2 text-center font-[Consolas,Lucida_Console,DejaVu_Sans_Mono,Menlo,monospace] text-xs uppercase leading-tight tracking-wide text-white">
               {item.name}
             </span>
           </div>

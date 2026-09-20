@@ -23,9 +23,9 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   about: personalCards,
 };
 
-/** Skills sets its header in the display face (Mileast); every other section
+/** Skills and Experience set their header in the display face (Mileast); the others
  *  uses the site monospace. Card titles are the display face throughout. */
-const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills"]);
+const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills", "experience"]);
 
 /** the section header's font classes (the big title above the cards) */
 export function headerFontClass(id: SectionId) {
