@@ -11,7 +11,7 @@ import DeskSvg from "./DeskSvg";
 import DeskCardList from "./DeskCardList";
 import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
-import { hasSwappedTitleFonts, headerFontClass, sectionCards } from "./sections";
+import { headerFontClass, sectionCards } from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -613,7 +613,6 @@ export default function DeskScene({ className }: { className?: string }) {
                     cardRefs.current[i] = el;
                   }}
                   title={card.title}
-                  monoTitle={hasSwappedTitleFonts(content!)}
                   bare={card.bare}
                   className="relative cursor-auto"
                   style={{ opacity: cardsRevealed ? 1 : 0 }}

@@ -23,18 +23,13 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   about: personalCards,
 };
 
-/**
- * Skills swaps the two title fonts: its header is set in the display face
- * (Mileast) and its card titles in the site monospace — the reverse of every
- * other section. One list, read by the desktop overlay, the mobile page and
- * the cards themselves.
- */
-const SWAPPED_TITLE_FONTS: ReadonlySet<SectionId> = new Set(["skills"]);
-export const hasSwappedTitleFonts = (id: SectionId) => SWAPPED_TITLE_FONTS.has(id);
+/** Skills sets its header in the display face (Mileast); every other section
+ *  uses the site monospace. Card titles are the display face throughout. */
+const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills"]);
 
 /** the section header's font classes (the big title above the cards) */
 export function headerFontClass(id: SectionId) {
-  return hasSwappedTitleFonts(id) ? "font-title tracking-wide" : "font-mono font-semibold";
+  return DISPLAY_FACE_HEADERS.has(id) ? "font-title tracking-wide" : "font-mono font-semibold";
 }
 
 export function sectionCards(id: SectionId, opts: CardOptions): SectionCard[] {
@@ -46,12 +41,7 @@ export function SectionCardStack({ id }: { id: SectionId }) {
   return (
     <div className="flex flex-col gap-5">
       {sectionCards(id, { layout: "stack", active: true }).map((card) => (
-        <ScreenCard
-          key={card.key}
-          title={card.title}
-          monoTitle={hasSwappedTitleFonts(id)}
-          bare={card.bare}
-        >
+        <ScreenCard key={card.key} title={card.title} bare={card.bare}>
           {card.body}
         </ScreenCard>
       ))}

@@ -1,7 +1,7 @@
 /**
  * The one title treatment every desk screen wears: a white strip across the
- * top of the glass with the section's name knocked out of it in the site
- * monospace. Same size on all four screens — `TITLE_SIZE` desk units — so the
+ * top of the glass with the section's name knocked out of it in the hero's
+ * display face (Mileast). Same size on all four screens — `TITLE_SIZE` desk units — so the
  * four sections name themselves identically, and the opened section's header
  * is visibly this same label grown large.
  *
@@ -18,11 +18,12 @@
 
 const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
-const MONO = "var(--font-mono), ui-monospace, monospace";
+/** the hero's display face — the same one the name is set in */
+const TITLE_FONT = "var(--font-mileast), Georgia, serif";
 
-export const TITLE_SIZE = 20;
+export const TITLE_SIZE = 19;
 /** strip height for a one-line title — deep enough for `TITLE_SIZE` to breathe */
-export const TITLE_H = 27;
+export const TITLE_H = 29;
 /** extra height per additional line */
 const LINE_PITCH = 21;
 
@@ -65,7 +66,13 @@ export default function ScreenTitleBar({
             L${x + w} ${y + h} L${x} ${y + h} Z`}
         fill={INK}
       />
-      <g fontFamily={MONO} fontSize={size} fontWeight={600} fill={PAPER} textAnchor="middle">
+      <g
+        fontFamily={TITLE_FONT}
+        fontSize={size}
+        fill={PAPER}
+        textAnchor="middle"
+        letterSpacing={size * 0.03}
+      >
         {lines.map((line, i) => (
           <text key={line} x={x + w / 2} y={firstY + i * pitch} dominantBaseline="central">
             {line}

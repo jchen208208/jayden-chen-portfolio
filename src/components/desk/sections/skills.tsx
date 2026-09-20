@@ -28,8 +28,8 @@ const ICON_INSET = 0.18;
 const gridVars = {
   // the spacing between tiles, and between the tiles and the border
   "--g": "clamp(0.75rem, 4cqw, 1.5rem)",
-  // label type grows with the card, within reason
-  "--fs": "clamp(11px, 3.6cqw, 16px)",
+  // label type — grows with the card, up from the old flat text-xs/text-sm
+  "--fs": "clamp(16px, 3.8cqw, 23px)",
   // a label's block: gap above it plus room for two lines
   "--lab": "calc(0.75rem + var(--fs) * 2.5)",
   "--tile": `min(calc((100cqw - ${COLUMNS + 1} * var(--g)) / ${COLUMNS}), calc((100cqh - ${ROWS + TOP_GAPS} * var(--g)) / ${ROWS} - var(--lab)))`,
@@ -58,7 +58,7 @@ function RowTile({ item }: { item: SkillItem }) {
       {/* wider than the tile (it may use the spacing either side), and two
           lines tall whether it needs them or not, so every row is the same */}
       <span
-        className="mt-3 shrink-0 text-center font-mono uppercase leading-[1.25] tracking-wide text-white"
+        className="mt-3 line-clamp-2 shrink-0 text-center font-title uppercase leading-[1.25] tracking-wide text-white"
         style={{
           fontSize: "var(--fs)",
           height: "calc(var(--fs) * 2.5)",
@@ -83,7 +83,7 @@ function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions[
             >
               <item.Icon className="h-full w-full" />
             </div>
-            <span className="text-center font-mono text-[11px] uppercase leading-tight tracking-wide text-white">
+            <span className="line-clamp-2 text-center font-title text-xs uppercase leading-tight tracking-wide text-white">
               {item.name}
             </span>
           </div>
