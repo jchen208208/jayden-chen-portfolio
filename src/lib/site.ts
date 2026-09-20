@@ -16,6 +16,21 @@ export const PROFILE = {
   resume: "/resume",
 } as const;
 
+/**
+ * The résumé PDF, served straight out of `public/`. The file on disk is named
+ * as it should appear in a visitor's Downloads folder and in the browser tab —
+ * the URL's last segment is the only thing that controls that when the PDF is
+ * opened rather than downloaded.
+ */
+export const RESUME_PDF = {
+  href: "/jayden_chen_resume.pdf",
+  /** filename for the download; matches the file so both paths agree */
+  filename: "jayden_chen_resume.pdf",
+  /** shown under the heading — bump when the PDF is replaced */
+  updated: "September 2026",
+  pageAspect: "8.5 / 11",
+} as const;
+
 /* ── sections → screens ─────────────────────────────────────────────────────── */
 
 export type SectionId = "projects" | "experience" | "skills" | "about";

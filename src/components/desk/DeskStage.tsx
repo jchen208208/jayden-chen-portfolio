@@ -158,7 +158,7 @@ function NextSection({
         id="after-desk"
         className="font-title text-[clamp(2.5rem,7vw,5rem)] leading-none text-white"
       >
-        Hi!
+        Hi! Let&apos;s build something! #opentowork
       </h2>
     </section>
   );
