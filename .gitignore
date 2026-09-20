@@ -53,8 +53,5 @@ CLAUDE.md
 .agents/
 
 # non-source: keep repo to essential source only
-/public
 /scripts
 /designs
-package.json
-package-lock.json
