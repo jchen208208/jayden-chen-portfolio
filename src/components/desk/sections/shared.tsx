@@ -51,9 +51,11 @@ export function Meta({ children }: { children: ReactNode }) {
   return <div className="shrink-0 text-xs uppercase tracking-wide text-white/60">{children}</div>;
 }
 
-export function Bullets({ items }: { items: string[] }) {
+export function Bullets({ items, large = false }: { items: string[]; large?: boolean }) {
   return (
-    <ul className="shrink-0 space-y-1.5 text-xs leading-relaxed text-white/75">
+    <ul
+      className={`shrink-0 space-y-1.5 leading-relaxed text-white/75 ${large ? "text-base" : "text-xs"}`}
+    >
       {items.map((item) => (
         <li key={item} className="flex gap-2">
           <span aria-hidden className="text-white/40">

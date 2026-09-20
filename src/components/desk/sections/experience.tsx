@@ -61,7 +61,7 @@ function Row({
         className="flex w-full items-center gap-6 bg-white px-8 py-4 text-left text-black outline-none transition-colors hover:bg-white/90 focus-visible:bg-white/85"
       >
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-          <span className="font-mono text-xl font-semibold">{role.role}</span>
+          <span className="font-title text-3xl uppercase tracking-wide">{role.role}</span>
           <span className="font-mono text-sm uppercase tracking-wide text-black/55">
             {role.start} – {role.end}
           </span>

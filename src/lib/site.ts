@@ -75,57 +75,69 @@ export const SECTION_ORDER: SectionId[] = [
 export type Project = {
   slug: string;
   name: string;
+  /** display dates, as the résumé writes them */
   period: string;
-  /** short one/two sentence summary */
-  blurb: string;
+  /** languages and tools, in résumé order */
   tags: string[];
+  /** the résumé's bullets, in its own words */
   highlights: string[];
   repo?: string;
   demo?: string;
-  /** true for the ESP32 board: its card shows the real KiCad design turning
+  /** true for the SPARC board: its box shows the real KiCad design turning
    *  in 3D (the same viewer as the Projects monitor on the desk) */
   hasBoardViewer?: boolean;
 };
 
-// The ESP32 board is real. TODO — user: replace the rest with real projects.
 export const PROJECTS: Project[] = [
   {
-    slug: "esp32-usb",
-    name: "ESP32-S3 USB Dongle",
-    period: "2025",
-    blurb:
-      "A thumb-sized ESP32-S3-WROOM-1 board that plugs straight into a USB-A port — designed, hand-assembled and brought up from scratch.",
-    tags: ["KiCad", "ESP32-S3", "SMD"],
+    slug: "sparc",
+    name: "Gesture-Controlled Audio Device (SPARC)",
+    period: "May 2026 – Present",
+    tags: ["Embedded C++", "Python", "PCB Design", "CAD Modelling", "Soldering"],
     highlights: [
-      "2-layer board, 20 × 35 mm, with the module's antenna overhanging the edge for range.",
-      "USB edge fingers on the board itself — no connector to solder.",
-      "AMS1117 regulator, boot button, status LED; every part hand-placed and reflowed.",
+      "Developing an embedded-system device mapping hand gestures to audio playback controls using a light sensor with an ESP32 MCU.",
+      "Designed a custom 2-layer PCB in KiCad and a 3D-printed enclosure in Fusion 360, advancing the project through many stages from breadboard components to now a working and tested MVP ready for production and scaling.",
     ],
     hasBoardViewer: true,
   },
   {
-    slug: "placeholder-web",
-    name: "Placeholder Project",
-    period: "2025",
-    blurb:
-      "A short description of what this project is and why it exists. Replace this entry with a real one.",
-    tags: ["TypeScript", "Next.js"],
+    slug: "shell",
+    name: "Custom Unix Shell",
+    period: "June – Sept 2026",
+    tags: ["C", "CMake", "POSIX", "termios", "Valgrind", "Electron", "React"],
     highlights: [
-      "A concrete result or interesting technical detail.",
-      "Another highlight worth calling out.",
+      "Built a Unix shell in C with standard built-in commands, custom built-ins, process forking, and manual memory management with no memory leaks using Valgrind.",
+      "Designed a Pokémon-themed frontend with various animation features that creates an interactive environment for the shell's user.",
     ],
-    repo: "https://github.com/jchen208208",
   },
   {
-    slug: "placeholder-hardware",
-    name: "Placeholder Hardware Build",
-    period: "2024",
-    blurb:
-      "A hardware/PCB project — what it does, what you designed, what you learned.",
-    tags: ["KiCad", "Embedded C"],
+    slug: "catapult",
+    name: "Catapult Physics Simulator",
+    period: "August – September 2026",
+    tags: ["Python", "JavaScript", "HTML/CSS"],
     highlights: [
-      "Designed a 2-layer board, hand-assembled and brought up.",
-      "Firmware in bare-metal C on the target MCU.",
+      "Wrote a projectile physics engine from scratch; models launch mechanics, velocity, gravity/drag with real-time trajectory rendering.",
+      "Adopted by 2 of my high school physics teachers who use it in their classes to demonstrate projectile motion.",
+    ],
+  },
+  {
+    slug: "tictactoe",
+    name: "Tic-Tac-Toe Engine → Neural Network",
+    period: "March – May 2026",
+    tags: ["C++", "Python", "PyTorch"],
+    highlights: [
+      "Implemented depth-weighted minimax algo with alpha-beta pruning in C++, verified unbeatable across all 681 possible game lines.",
+      "Generated a labelled dataset of 4,520 positions from the solver's move evaluations to train a neural network reproducing optimal play without search at ~1,000× lower inference latency.",
+    ],
+  },
+  {
+    slug: "minesweeper",
+    name: "Minesweeper Neural Network",
+    period: "August 2026 – Present",
+    tags: ["Python", "PyTorch"],
+    highlights: [
+      "Building a convolutional neural network (CNN) that treats the Minesweeper board as an image, using convolutional layers so the model learns local number-to-mine patterns rather than memorizing board positions.",
+      "Built a graphical board interface that shows the network's predictions in real time.",
     ],
   },
 ];
