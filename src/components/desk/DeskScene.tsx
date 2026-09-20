@@ -310,6 +310,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const columns = Math.min(cardCount, MAX_CARDS_PER_ROW);
   const rowMaxWidth = cards[0]?.maxWidth;
   const rowFitsContent = cards[0]?.fitContent ?? false;
+  const rowOwnEntrance = cards[0]?.ownEntrance ?? false;
 
   const overlayTransform =
     stage === "closed"
@@ -355,6 +356,12 @@ export default function DeskScene({ className }: { className?: string }) {
       // px: `vw` and `window.innerWidth` both count the page scrollbar, but
       // this fixed overlay's width doesn't.
       flushSync(() => setBoxLayout({ top, height }));
+      // a section that animates itself in (Experience's rows drop one after
+      // another) just wants to be shown, now that it has its final layout
+      if (rowOwnEntrance) {
+        flushSync(() => setCardsRevealed(true));
+        return;
+      }
       if (reduced) {
         flushSync(() => setCardsRevealed(true));
         return;
@@ -452,7 +459,7 @@ export default function DeskScene({ className }: { className?: string }) {
       // don't leave a half-drawn frame behind for the next open
       canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
     };
-  }, [content, stage, cardCount, reduced]);
+  }, [content, stage, cardCount, reduced, rowOwnEntrance]);
 
   useEffect(() => {
     if (!zoomed) return;
@@ -583,9 +590,15 @@ export default function DeskScene({ className }: { className?: string }) {
                 below, drawn from snapshots of these same cards) reaches its
                 last frame, then take over at the exact position/size the
                 warp settled into. Clicks inside a card don't close the
-                overlay — only the ground around them does. */}
+                overlay — only the ground around them does.
+
+                `data-cards-revealed` is the cue a self-animating section
+                waits for: its own CSS entrance only runs once this flips,
+                so it plays as the cards appear rather than behind the
+                still-zooming overlay. */}
             <div
               aria-hidden={!cardsRevealed}
+              data-cards-revealed={cardsRevealed}
               onClick={(e) => {
                 if ((e.target as Element).closest("[data-screen-card]")) e.stopPropagation();
               }}

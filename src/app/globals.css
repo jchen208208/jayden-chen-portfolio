@@ -235,6 +235,39 @@ body {
   display: none;
 }
 
+/* Experience opens like a chain of rungs falling: each entry hangs from its
+   own top edge and swings down, a beat after the one above it, overshooting
+   a touch before it settles. It waits for `data-cards-revealed`, which the
+   overlay flips once the header has settled, so the chain plays as the
+   section appears rather than behind the still-zooming overlay. */
+@keyframes exp-drop {
+  0% {
+    opacity: 0;
+    transform: perspective(900px) rotateX(-78deg);
+  }
+  55% {
+    opacity: 1;
+  }
+  70% {
+    transform: perspective(900px) rotateX(7deg);
+  }
+  88% {
+    transform: perspective(900px) rotateX(-2.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(900px) rotateX(0deg);
+  }
+}
+
+[data-cards-revealed="true"] .exp-row {
+  transform-origin: top center;
+  backface-visibility: hidden;
+  animation: exp-drop 620ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  /* each rung starts after the one above it has begun to fall */
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+
 /* Experience rows (`sections/experience.tsx`) open by animating the grid
    track from 0fr to 1fr, which reaches the content's real height without
    measuring it. The triangle turns with it. */
@@ -267,5 +300,8 @@ body {
   .exp-reveal,
   .exp-caret {
     transition: none !important;
+  }
+  [data-cards-revealed="true"] .exp-row {
+    animation: none !important;
   }
 }

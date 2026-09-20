@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import type { CSSProperties } from "react";
 import { EXPERIENCE, type Role } from "@/lib/site";
 import type { CardOptions, SectionCard } from "./shared";
 
@@ -13,6 +14,10 @@ import type { CardOptions, SectionCard } from "./shared";
  *
  * It sits in the page, not in a window of its own: the card is as tall as the
  * list, and the open view scrolls as a whole when entries run long.
+ *
+ * Opening the section doesn't use the genie warp the other three do: the
+ * entries hinge down one after another, like a ladder unrolling (`ownEntrance`
+ * on the card, `.exp-row` in globals.css).
  */
 
 /** wide enough for a description on one line, narrow enough to read */
@@ -30,10 +35,22 @@ function Triangle({ open }: { open: boolean }) {
   );
 }
 
-function Row({ role, open, onToggle }: { role: Role; open: boolean; onToggle: () => void }) {
+function Row({
+  role,
+  index,
+  open,
+  onToggle,
+}: {
+  role: Role;
+  index: number;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const bodyId = useId();
   return (
-    <li className="group flex flex-col">
+    // `--i` is this entry's place in the chain; the CSS turns it into the
+    // delay before this rung swings down (see `.exp-row` in globals.css)
+    <li className="exp-row group flex flex-col" style={{ "--i": index } as CSSProperties}>
       {/* the label is the one real control; the description line below is
           also clickable, as a convenience for the mouse */}
       <button
@@ -115,10 +132,11 @@ function ExperienceList({ active }: CardOptions) {
   // way the page around it does the scrolling.
   return (
     <ul className="flex flex-col overflow-hidden rounded-[16px]">
-      {EXPERIENCE.map((role) => (
+      {EXPERIENCE.map((role, i) => (
         <Row
           key={role.slug}
           role={role}
+          index={i}
           open={open.has(role.slug)}
           onToggle={() => toggle(role.slug)}
         />
@@ -136,6 +154,7 @@ export function experienceCards(opts: CardOptions): SectionCard[] {
       maxWidth: LIST_MAX_WIDTH,
       bare: true,
       fitContent: true,
+      ownEntrance: true,
     },
   ];
 }

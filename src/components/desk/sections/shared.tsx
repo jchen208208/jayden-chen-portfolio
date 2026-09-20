@@ -29,6 +29,10 @@ export type SectionCard = {
    *  view then scrolls as a page when the content runs long (first card's
    *  value is used) */
   fitContent?: boolean;
+  /** the card animates itself in instead of being unfurled by the genie
+   *  warp — it is simply revealed once the header has settled, and its own
+   *  CSS takes it from there (first card's value is used) */
+  ownEntrance?: boolean;
 };
 
 /** the scrolling text body most cards use — mono, one consistent padding */
