@@ -9,6 +9,10 @@ import { Icon } from "@/components/site/icons";
 export default function Hero() {
   return (
     <div className="flex flex-col items-center px-6 text-center">
+      <p className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] py-1.5 pr-3.5 pl-3 font-mono text-[10px] uppercase tracking-[0.25em] text-white/75 sm:text-[11px]">
+        <Icon name="hardHat" size={15} className="text-white" />
+        Under construction
+      </p>
       <h1 className="font-title text-[clamp(2.75rem,9vw,6rem)] leading-[0.95] tracking-tight text-white">
         {PROFILE.name}
       </h1>

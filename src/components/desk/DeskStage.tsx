@@ -130,7 +130,7 @@ export default function DeskStage() {
         {/* title — sits over the desk, lifts away on scroll */}
         <div
           ref={heroRef}
-          className="absolute inset-x-0 top-0 flex justify-center pt-[11vh] will-change-transform sm:pt-[13vh]"
+          className="absolute inset-x-0 top-0 flex justify-center pt-[6vh] will-change-transform sm:pt-[7vh]"
         >
           <Hero />
         </div>
