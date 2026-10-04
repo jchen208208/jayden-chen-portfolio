@@ -3,6 +3,13 @@ import { PROFILE } from "@/lib/site";
 import { Icon } from "@/components/site/icons";
 import ContributionName from "./ContributionName";
 
+/** the résumé button's hover sweep: dark, mid, then pale amber (see `.sweep-bar`) */
+const SWEEP_BARS = [
+  { left: "0%", delay: "0ms", background: "color-mix(in srgb, var(--glow, #ffbe5c) 55%, #000)" },
+  { left: "29%", delay: "150ms", background: "var(--glow, #ffbe5c)" },
+  { left: "58%", delay: "300ms", background: "color-mix(in srgb, var(--glow, #ffbe5c) 55%, #fff)" },
+];
+
 /**
  * The title card: name, tagline, résumé, socials. This is the site's only
  * contact surface — there is no separate contact section.
@@ -16,17 +23,11 @@ export default function Hero() {
       </p>
       {/* the name, spelled out in squares like a GitHub contribution graph */}
       <ContributionName />
-      <p className="mt-6 font-mono text-xs uppercase tracking-[0.3em] text-white/65 sm:text-sm">
+      <p className="mt-8 font-mono text-sm uppercase tracking-[0.3em] text-white/65 sm:text-base">
         {PROFILE.tagline}
       </p>
 
-      <div className="mt-9 flex items-center gap-4">
-        <Link
-          href={PROFILE.resume}
-          className="rounded-full border border-white/20 px-5 py-2 font-title text-sm text-white transition-colors hover:border-white/60"
-        >
-          Résumé
-        </Link>
+      <div className="mt-7 flex items-center gap-4">
         <a
           href={PROFILE.github}
           target="_blank"
@@ -34,8 +35,23 @@ export default function Hero() {
           aria-label="GitHub"
           className="text-white/50 transition-colors hover:text-white"
         >
-          <Icon name="github" />
+          <Icon name="github" size={22} />
         </a>
+        <Link
+          href={PROFILE.resume}
+          className="sweep-btn rounded-full border-2 border-white/65 px-5 py-2 font-title text-sm text-white/65 transition-colors hover:border-white"
+        >
+          <span className="sweep-label">Résumé</span>
+          <span aria-hidden className="pointer-events-none absolute inset-0">
+            {SWEEP_BARS.map((bar) => (
+              <span
+                key={bar.left}
+                className="sweep-bar"
+                style={{ left: bar.left, background: bar.background, transitionDelay: bar.delay }}
+              />
+            ))}
+          </span>
+        </Link>
         <a
           href={PROFILE.linkedin}
           target="_blank"
@@ -43,7 +59,7 @@ export default function Hero() {
           aria-label="LinkedIn"
           className="text-white/50 transition-colors hover:text-white"
         >
-          <Icon name="linkedin" />
+          <Icon name="linkedin" size={22} />
         </a>
       </div>
 

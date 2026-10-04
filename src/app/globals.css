@@ -87,6 +87,35 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
+/* the résumé button's hover sweep: three skewed bars in shades of the glow
+   wait off the left edge, run right across the button (staggered by their
+   inline `transition-delay`) and out the far side, then run back when the
+   hover ends. The label sits above them. */
+.sweep-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.sweep-label {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.sweep-bar {
+  position: absolute;
+  top: -20%;
+  z-index: 1;
+  width: 42%;
+  height: 140%;
+  transform: translateX(-260%) skewX(-14deg);
+  transition: transform 1.67s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sweep-btn:is(:hover, :focus-visible) .sweep-bar {
+  transform: translateX(320%) skewX(-14deg);
+}
+
 /* desk screens: the hover spotlight. Hovering (or keyboard-focusing) a
    screen — its glass or its neon sign, which share `data-screen` — keeps
    that screen's light on and dims the other three, which is what says "these
@@ -502,7 +531,8 @@ body {
     animation: none !important;
   }
   .exp-reveal,
-  .exp-caret {
+  .exp-caret,
+  .sweep-bar {
     transition: none !important;
   }
   [data-cards-revealed="true"] .exp-row {
