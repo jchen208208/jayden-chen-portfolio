@@ -40,8 +40,8 @@ export type SectionMeta = {
   route: `/${SectionId}`;
   /** short label on the mobile card */
   deskLabel: string;
-  /** the title every screen wears — in the white strip on the desk glass,
-   *  and as the header the opened section grows into. Uppercase, mono. */
+  /** the header the opened section grows into. Uppercase. (On the desk, each
+   *  screen's neon sign spells it out — `SCREENS[].sign`.) */
   screenLabel: string;
   /** one-line description under the mobile card */
   blurb: string;
@@ -72,8 +72,8 @@ export const SECTIONS: Record<SectionId, SectionMeta> = {
   about: {
     id: "about",
     route: "/about",
-    deskLabel: "Personal & Awards",
-    screenLabel: "PERSONAL & AWARDS",
+    deskLabel: "About",
+    screenLabel: "ABOUT",
     blurb: "Who's behind the desk, on and off the court.",
   },
 };

@@ -3,6 +3,7 @@ import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
 import LaptopExperienceScreen from "./LaptopExperienceScreen";
 import LaptopSkillsScreen from "./LaptopSkillsScreen";
 import PortraitMonitorScreen from "./PortraitMonitorScreen";
+import NeonSigns from "./NeonSigns";
 
 /**
  * "The Desk" — a clean-line trace of Jayden's setup, in the flat style of
@@ -264,7 +265,9 @@ export default function DeskSvg({
         {/* ── wall shelf (bookshelf), behind screens 1 & 2; centred over
             screen 2 — the tool wall that used to sit beside it has moved
             above the soldering station ─────────────────────────────── */}
-        <g transform="translate(105 -20)">
+        {/* raised 42 from where it first hung, to leave room under it for
+            the SKILLS sign and the pin it hangs from */}
+        <g transform="translate(105 -62)">
           {/* bookshelf carcass — same inset-rect framing */}
           <rect x={584} y={100} width={140} height={146} rx={4} fill={PAPER} />
           <rect x={592} y={108} width={124} height={130} rx={2} fill={PAPER} />
@@ -550,6 +553,9 @@ export default function DeskSvg({
           <circle cx={998} cy={118} r={6} fill={PAPER} />
         </g>
 
+        {/* ── a neon sign over each screen, naming it ──────────────────── */}
+        <NeonSigns />
+
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
         <g>
           <Screen x={382} y={239} w={202} h={138} />
@@ -573,8 +579,8 @@ export default function DeskSvg({
             stay in register. Still smaller than screen 3, the bigger laptop. */}
         <g transform={LAPTOP1_TRANSFORM}>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* SKILLS title strip over a ‹ › strip of the section's skill
-              icons scrolling past — see `LaptopSkillsScreen` */}
+          {/* a ‹ › strip of the section's skill icons scrolling past — see
+              `LaptopSkillsScreen` */}
           <LaptopSkillsScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
@@ -584,7 +590,7 @@ export default function DeskSvg({
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
-          {/* EXPERIENCE title strip over code typing itself in — see `LaptopExperienceScreen` */}
+          {/* code typing itself in — see `LaptopExperienceScreen` */}
           <LaptopExperienceScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               wider than the screen, sides slanting inward slightly toward the desk */}
@@ -594,9 +600,8 @@ export default function DeskSvg({
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
         <g>
           <Screen x={1062} y={128} w={182} h={252} r={10} inset={12} />
-          {/* the glass (1074,140,158,228) under a PERSONAL & AWARDS title strip: a
-              tennis point played through to a podium; see
-              `PortraitMonitorScreen` */}
+          {/* the glass (1074,140,158,228): a tennis point played through to
+              a podium; see `PortraitMonitorScreen` */}
           <PortraitMonitorScreen />
           {/* two legs — connect the screen down to the base */}
           <path d="M1140 380 L1150 380 L1146 388 L1136 388 Z" fill={PAPER} />

@@ -53,7 +53,7 @@ function RowTile({ item }: { item: SkillItem }) {
           padding: `calc(var(--tile) * ${item.iconInset ?? ICON_INSET})`,
         }}
       >
-        <item.Icon className="h-full w-full" />
+        <item.Icon className="h-full w-full" color={item.color} />
       </div>
       {/* wider than the tile (it may use the spacing either side), and two
           lines tall whether it needs them or not, so every row is the same */}
@@ -81,7 +81,7 @@ function SkillGrid({ items, layout }: { items: SkillItem[]; layout: CardOptions[
               className="flex size-16 items-center justify-center rounded-lg border-2 border-white text-white"
               style={{ padding: `${(item.iconInset ?? ICON_INSET) * 4}rem` }}
             >
-              <item.Icon className="h-full w-full" />
+              <item.Icon className="h-full w-full" color={item.color} />
             </div>
             <span className="line-clamp-2 text-center font-[Consolas,Lucida_Console,DejaVu_Sans_Mono,Menlo,monospace] text-xs uppercase leading-tight tracking-wide text-white">
               {item.name}

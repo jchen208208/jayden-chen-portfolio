@@ -67,6 +67,11 @@ export type SkillItem = {
    *  `SolderingIcon`, whose landscape drawing needs far less inset than a
    *  square brand logo to read as similarly large. Default 0.18. */
   iconInset?: number;
+  /** the logo's brand colour — icons are screen content, so they're lit in
+   *  colour (see the colour rule at the top of globals.css). Lightened where
+   *  the real brand colour is too dark to read on black; left out for brands
+   *  that are black themselves, which stay ink. */
+  color?: string;
 };
 
 /** the actual skills inside each card, matched to `SKILLS_BOX_TITLES` by
@@ -76,24 +81,24 @@ export type SkillItem = {
  *  the desk — instead of a `react-icons` glyph. */
 export const SKILLS_BOX_ITEMS: SkillItem[][] = [
   [
-    { name: "Python", Icon: SiPython },
-    { name: "C", Icon: SiC },
-    { name: "C++", Icon: SiCplusplus },
-    { name: "JavaScript", Icon: SiJavascript },
-    { name: "SQL", Icon: TbSql },
-    { name: "HTML/CSS", Icon: SiHtml5 },
+    { name: "Python", Icon: SiPython, color: "#4b8bbe" },
+    { name: "C", Icon: SiC, color: "#a8b9cc" },
+    { name: "C++", Icon: SiCplusplus, color: "#659ad2" },
+    { name: "JavaScript", Icon: SiJavascript, color: "#f7df1e" },
+    { name: "SQL", Icon: TbSql, color: "#f29111" },
+    { name: "HTML/CSS", Icon: SiHtml5, color: "#e34f26" },
   ],
   [
     { name: "Git/GitHub", Icon: SiGithub },
     { name: "Next.js", Icon: SiNextdotjs },
-    { name: "PostgreSQL", Icon: SiPostgresql },
-    { name: "Supabase", Icon: SiSupabase },
-    { name: "PyTorch", Icon: SiPytorch },
-    { name: "NumPy", Icon: SiNumpy },
+    { name: "PostgreSQL", Icon: SiPostgresql, color: "#6b8fe8" },
+    { name: "Supabase", Icon: SiSupabase, color: "#3ecf8e" },
+    { name: "PyTorch", Icon: SiPytorch, color: "#ee4c2c" },
+    { name: "NumPy", Icon: SiNumpy, color: "#4dabcf" },
   ],
   [
     { name: "Soldering", Icon: SolderingIcon, iconInset: 0.05 },
-    { name: "PCB Design (KiCad)", Icon: SiKicad },
-    { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
+    { name: "PCB Design (KiCad)", Icon: SiKicad, color: "#6a82e0" },
+    { name: "CAD Modelling (Fusion)", Icon: SiAutodesk, color: "#f58220" },
   ],
 ];

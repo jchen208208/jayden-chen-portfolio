@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono, Tilt_Neon } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -32,10 +32,17 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Tilt Neon — monoline, drawn to look like bent tubes: the desk's neon signs.
+const tiltNeon = Tilt_Neon({
+  variable: "--font-neon",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Jayden Chen — Portfolio",
   description:
-    "Jayden Chen — Computer Engineering @ Waterloo. A portfolio built around the desk: four screens, one each for projects, skills, experience, and personal & awards.",
+    "Jayden Chen — Computer Engineering @ Waterloo. A portfolio built around the desk: four screens, one each for projects, skills, experience, and about.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -44,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} ${tiltNeon.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}

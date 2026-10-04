@@ -2,12 +2,12 @@
 
 import { useId } from "react";
 import { screenById } from "@/lib/desk";
-import ScreenTitleBar from "./ScreenTitleBar";
 
 /**
  * Screen 4 — the portrait monitor, the only tall screen on the desk.
  *
- * The shared title strip over one looping story:
+ * One looping story, filling the glass (the screen's name is on the neon
+ * sign above it, `NeonSigns`):
  *
  *   rally (5 crossings) → winner → celebration → podium slideshow → repeat
  *
@@ -34,6 +34,12 @@ import ScreenTitleBar from "./ScreenTitleBar";
  */
 const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
+/** what's on the glass is lit, so it's in colour (see the colour rule at the
+ *  top of globals.css): a hard court, an optic-yellow ball, a gold medal. The
+ *  figures and the podium stay ink — they're the drawing, not the light. */
+const COURT_FILL = "#2f5d8c";
+const BALL = "#dfff4f";
+const GOLD = "#e3b341";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 const PORTRAIT_GLASS = screenById("about").glass;
 /** the glass's own corner radius (`max(2, r - 4)` for `r={10}`) */
@@ -44,13 +50,19 @@ const GLASS_R = 6;
 const LINE = 1.4;
 const FIG = 1.8;
 
-/* ── title ──────────────────────────────────────────────────────────────────
- * "PERSONAL & AWARDS" is too long for a 158-unit glass at the shared title
- * size, so the strip takes two lines — split as "PERSONAL" / "& AWARDS" so
- * both are 8 characters. It ends at y≈188, above the court (226); the far
- * player's head (≈195) sits just under its edge.
- */
-const TITLE_LINES = ["PERSONAL", "& AWARDS"];
+/** The whole picture was laid out for the glass below a two-line title strip
+ *  (y≈188 down), which has since gone. Rather than re-place every coordinate,
+ *  the scene is scaled up by this much about the glass's bottom-centre: it
+ *  grows to fill the taller glass, and what ran off the bottom edge (the near
+ *  player, the podium) still does. */
+const SCENE_SCALE = 1.2;
+const SCENE_ANCHOR = {
+  x: PORTRAIT_GLASS.x + PORTRAIT_GLASS.w / 2,
+  y: PORTRAIT_GLASS.y + PORTRAIT_GLASS.h,
+};
+const SCENE_TRANSFORM =
+  `translate(${SCENE_ANCHOR.x} ${SCENE_ANCHOR.y}) scale(${SCENE_SCALE}) ` +
+  `translate(${-SCENE_ANCHOR.x} ${-SCENE_ANCHOR.y})`;
 
 /* ── court ─────────────────────────────────────────────────────────────────
  * Deliberately only three lines across — baseline, net, baseline. A real
@@ -311,7 +323,7 @@ export default function PortraitMonitorScreen() {
   const clipId = useId();
 
   return (
-    <g key={TIMELINE_KEY} aria-hidden>
+    <g key={TIMELINE_KEY} aria-hidden className="screen-light" data-light="about">
       <style>{SEQUENCE_CSS}</style>
       <defs>
         <clipPath id={clipId}>
@@ -326,147 +338,140 @@ export default function PortraitMonitorScreen() {
       </defs>
 
       <g clipPath={`url(#${clipId})`}>
-        {/* the match. `pa-scene` fades the lot out for the podium; `pa-court`
-            inside it carries the hover brighten, because an element already
-            running an opacity animation can't also be lit by a hover rule. */}
-        <g className="pa-scene pa-play" style={anim("pa-scene")}>
-          <g className="pa-court">
-            <g stroke={INK} strokeWidth={LINE} fill="none">
-              <path
-                d={`M${COURT.farL} ${COURT.farY} L${COURT.farR} ${COURT.farY}
-                    L${COURT.nearR} ${COURT.nearY} L${COURT.nearL} ${COURT.nearY} Z`}
-              />
-              <path d={`M${NET_POST_L} ${NET_CORD_Y} L${NET_POST_R} ${NET_CORD_Y}`} />
-              <path d={`M${net.l} ${NET_BASE_Y} L${net.r} ${NET_BASE_Y}`} />
-              <path d={`M${NET_POST_L} ${NET_CORD_Y} L${NET_POST_L} ${NET_BASE_Y + 4}`} />
-              <path d={`M${NET_POST_R} ${NET_CORD_Y} L${NET_POST_R} ${NET_BASE_Y + 4}`} />
-              <g strokeWidth={0.7} opacity={0.7}>
-                {NET_MESH.map((x) => (
-                  <path
-                    key={x}
-                    d={`M${x.toFixed(1)} ${NET_CORD_Y} L${x.toFixed(1)} ${NET_BASE_Y}`}
-                  />
-                ))}
+        <g transform={SCENE_TRANSFORM}>
+          {/* the match. `pa-scene` fades the lot out for the podium; `pa-court`
+              inside it carries the hover brighten, because an element already
+              running an opacity animation can't also be lit by a hover rule. */}
+          <g className="pa-scene pa-play" style={anim("pa-scene")}>
+            <g className="pa-court">
+              <g stroke={INK} strokeWidth={LINE} fill="none">
+                <path
+                  d={`M${COURT.farL} ${COURT.farY} L${COURT.farR} ${COURT.farY}
+                      L${COURT.nearR} ${COURT.nearY} L${COURT.nearL} ${COURT.nearY} Z`}
+                  fill={COURT_FILL}
+                />
+                <path d={`M${NET_POST_L} ${NET_CORD_Y} L${NET_POST_R} ${NET_CORD_Y}`} />
+                <path d={`M${net.l} ${NET_BASE_Y} L${net.r} ${NET_BASE_Y}`} />
+                <path d={`M${NET_POST_L} ${NET_CORD_Y} L${NET_POST_L} ${NET_BASE_Y + 4}`} />
+                <path d={`M${NET_POST_R} ${NET_CORD_Y} L${NET_POST_R} ${NET_BASE_Y + 4}`} />
+                <g strokeWidth={0.7} opacity={0.7}>
+                  {NET_MESH.map((x) => (
+                    <path
+                      key={x}
+                      d={`M${x.toFixed(1)} ${NET_CORD_Y} L${x.toFixed(1)} ${NET_BASE_Y}`}
+                    />
+                  ))}
+                </g>
+              </g>
+
+              {/* opponent, behind the far baseline */}
+              <g className="pa-opp pa-play" style={anim("pa-opp")}>
+                <g stroke={INK} strokeWidth={FIG} fill="none">
+                  <path d="M1153 201.5 L1153 212" />
+                  <path d="M1153 212 L1148 224" />
+                  <path d="M1153 212 L1158 224" />
+                  <path d="M1153 204 L1141 200" />
+                  <ellipse cx={1137} cy={199} rx={3.4} ry={2.3} />
+                </g>
+                <circle cx={1153} cy={198} r={3.2} fill={INK} stroke="none" />
+              </g>
+
+              {/* you, behind the near baseline — cropped by the frame, the way a
+                  broadcast camera crops the near player */}
+              <g className="pa-me pa-play" style={anim("pa-me")}>
+                <g stroke={INK} strokeWidth={FIG} fill="none">
+                  <path d="M1153 335.5 L1153 352" />
+                  <path d="M1153 352 L1146 370" />
+                  <path d="M1153 352 L1160 370" />
+                  <path d="M1153 339 L1142 347" />
+                </g>
+                <g
+                  className="pa-arm-down pa-play"
+                  style={anim("pa-arm-down")}
+                  stroke={INK}
+                  strokeWidth={FIG}
+                  fill="none"
+                >
+                  <path d="M1153 339 L1169 344" />
+                  <ellipse cx={1175} cy={345.5} rx={5.2} ry={3.6} />
+                </g>
+                <g
+                  className="pa-arm-up pa-play"
+                  style={anim("pa-arm-up")}
+                  stroke={INK}
+                  strokeWidth={FIG}
+                  fill="none"
+                >
+                  <path d="M1153 339 L1167 321" />
+                  <ellipse cx={1170} cy={316} rx={5.2} ry={3.6} />
+                </g>
+                <circle cx={1153} cy={330} r={5.5} fill={INK} stroke="none" />
               </g>
             </g>
 
-            {/* opponent, behind the far baseline */}
-            <g className="pa-opp pa-play" style={anim("pa-opp")}>
-              <g stroke={INK} strokeWidth={FIG} fill="none">
-                <path d="M1153 201.5 L1153 212" />
-                <path d="M1153 212 L1148 224" />
-                <path d="M1153 212 L1158 224" />
-                <path d="M1153 204 L1141 200" />
-                <ellipse cx={1137} cy={199} rx={3.4} ry={2.3} />
+            <g className="pa-ball-fade pa-play" style={anim("pa-ball-fade")}>
+              <g className="pa-ball pa-play" style={anim("pa-ball")}>
+                <circle cx={0} cy={0} r={BALL_R} fill={BALL} stroke="none" />
               </g>
-              <circle cx={1153} cy={198} r={3.2} fill={INK} stroke="none" />
-            </g>
-
-            {/* you, behind the near baseline — cropped by the frame, the way a
-                broadcast camera crops the near player */}
-            <g className="pa-me pa-play" style={anim("pa-me")}>
-              <g stroke={INK} strokeWidth={FIG} fill="none">
-                <path d="M1153 335.5 L1153 352" />
-                <path d="M1153 352 L1146 370" />
-                <path d="M1153 352 L1160 370" />
-                <path d="M1153 339 L1142 347" />
-              </g>
-              <g
-                className="pa-arm-down pa-play"
-                style={anim("pa-arm-down")}
-                stroke={INK}
-                strokeWidth={FIG}
-                fill="none"
-              >
-                <path d="M1153 339 L1169 344" />
-                <ellipse cx={1175} cy={345.5} rx={5.2} ry={3.6} />
-              </g>
-              <g
-                className="pa-arm-up pa-play"
-                style={anim("pa-arm-up")}
-                stroke={INK}
-                strokeWidth={FIG}
-                fill="none"
-              >
-                <path d="M1153 339 L1167 321" />
-                <ellipse cx={1170} cy={316} rx={5.2} ry={3.6} />
-              </g>
-              <circle cx={1153} cy={330} r={5.5} fill={INK} stroke="none" />
             </g>
           </g>
 
-          <g className="pa-ball-fade pa-play" style={anim("pa-ball-fade")}>
-            <g className="pa-ball pa-play" style={anim("pa-ball")}>
-              <circle cx={0} cy={0} r={BALL_R} fill={INK} stroke="none" />
+          {/* ── podium stills ───────────────────────────────────────────── */}
+          <g className="pa-pod1 pa-play" style={anim("pa-pod1")}>
+            <Podium />
+            <Winner />
+            <g stroke={INK} strokeWidth={FIG} fill="none">
+              <path d="M1153 249 L1139 271" />
+              <path d="M1153 249 L1167 271" />
             </g>
           </g>
-        </g>
 
-        {/* ── podium stills ───────────────────────────────────────────── */}
-        <g className="pa-pod1 pa-play" style={anim("pa-pod1")}>
-          <Podium />
-          <Winner />
-          <g stroke={INK} strokeWidth={FIG} fill="none">
-            <path d="M1153 249 L1139 271" />
-            <path d="M1153 249 L1167 271" />
+          <g className="pa-pod2 pa-play" style={anim("pa-pod2")}>
+            <Podium />
+            <Winner />
+            <g stroke={INK} strokeWidth={FIG} fill="none">
+              {/* your arms stay down while it's put on you */}
+              <path d="M1153 249 L1139 271" />
+              <path d="M1153 249 L1167 271" />
+              {/* the official's forearm, coming in from the left edge at the
+                  height of your shoulder */}
+              <path d="M1094 249.5 L1120 249.5" />
+              {/* the ribbon hangs from the hand as a short V */}
+              <path d="M1124 252.5 L1121.5 258.5" />
+              <path d="M1124 252.5 L1126.5 258.5" />
+            </g>
+            {/* A sleeve on the arm, running off the edge of the frame. Without
+                it a lone line poking in from the side read as a stick; a cuff
+                makes it someone's arm. */}
+            <rect
+              x={1056}
+              y={244.5}
+              width={38}
+              height={10}
+              rx={1.5}
+              fill={PAPER}
+              stroke={INK}
+              strokeWidth={FIG}
+            />
+            <circle cx={1123} cy={249.5} r={3} fill={INK} stroke="none" />
+            <Medal cx={1124} cy={263} />
+          </g>
+
+          <g className="pa-pod3 pa-play" style={anim("pa-pod3")}>
+            <Podium />
+            <Winner />
+            <g stroke={INK} strokeWidth={FIG} fill="none">
+              {/* both arms up */}
+              <path d="M1153 249 L1133 224" />
+              <path d="M1153 249 L1173 224" />
+              {/* the ribbon, now round your neck — kept short so the medal sits
+                  at the collar rather than dangling at the waist */}
+              <path d="M1149 247 L1152 252" />
+              <path d="M1157 247 L1154 252" />
+            </g>
+            <Medal cy={256} />
           </g>
         </g>
-
-        <g className="pa-pod2 pa-play" style={anim("pa-pod2")}>
-          <Podium />
-          <Winner />
-          <g stroke={INK} strokeWidth={FIG} fill="none">
-            {/* your arms stay down while it's put on you */}
-            <path d="M1153 249 L1139 271" />
-            <path d="M1153 249 L1167 271" />
-            {/* the official's forearm, coming in from the left edge at the
-                height of your shoulder */}
-            <path d="M1094 249.5 L1120 249.5" />
-            {/* the ribbon hangs from the hand as a short V */}
-            <path d="M1124 252.5 L1121.5 258.5" />
-            <path d="M1124 252.5 L1126.5 258.5" />
-          </g>
-          {/* A sleeve on the arm, running off the edge of the frame. Without
-              it a lone line poking in from the side read as a stick; a cuff
-              makes it someone's arm. */}
-          <rect
-            x={1056}
-            y={244.5}
-            width={38}
-            height={10}
-            rx={1.5}
-            fill={PAPER}
-            stroke={INK}
-            strokeWidth={FIG}
-          />
-          <circle cx={1123} cy={249.5} r={3} fill={INK} stroke="none" />
-          <Medal cx={1124} cy={263} />
-        </g>
-
-        <g className="pa-pod3 pa-play" style={anim("pa-pod3")}>
-          <Podium />
-          <Winner />
-          <g stroke={INK} strokeWidth={FIG} fill="none">
-            {/* both arms up */}
-            <path d="M1153 249 L1133 224" />
-            <path d="M1153 249 L1173 224" />
-            {/* the ribbon, now round your neck — kept short so the medal sits
-                at the collar rather than dangling at the waist */}
-            <path d="M1149 247 L1152 252" />
-            <path d="M1157 247 L1154 252" />
-          </g>
-          <Medal cy={256} />
-        </g>
-
-        {/* the title strip sits over everything, opaque, so the court can run
-            up behind it */}
-        <ScreenTitleBar
-          x={PORTRAIT_GLASS.x}
-          y={PORTRAIT_GLASS.y}
-          w={PORTRAIT_GLASS.w}
-          r={GLASS_R}
-          lines={TITLE_LINES}
-        />
       </g>
     </g>
   );
@@ -480,7 +485,7 @@ export default function PortraitMonitorScreen() {
 function Medal({ cx = 1153, cy }: { cx?: number; cy: number }) {
   return (
     <>
-      <circle cx={cx} cy={cy} r={4.5} fill={INK} stroke="none" />
+      <circle cx={cx} cy={cy} r={4.5} fill={GOLD} stroke="none" />
       <circle cx={cx} cy={cy} r={1.6} fill={PAPER} stroke="none" />
     </>
   );

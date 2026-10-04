@@ -1,8 +1,8 @@
 /**
- * What the larger laptop (screen 3) shows while it sits on the desk: the
- * shared title strip over a code block typing itself in —
+ * What the larger laptop (screen 3) shows while it sits on the desk: a code
+ * block typing itself in, filling the glass (its name is on the neon sign
+ * above it, `NeonSigns`) —
  *
- *   ┃        EXPERIENCE        ┃
  *   ·  ```ts
  *   ·  ▬▬▬▬▬ ▬▬▬▬ = [{        ← code as bars: real glyphs would be ~4px tall
  *   ·    ▬▬▬▬▬ ▬▬▬▬▬▬▬▬▬,
@@ -23,48 +23,57 @@
  */
 
 import { screenById } from "@/lib/desk";
-import ScreenTitleBar, { titleBarHeight } from "./ScreenTitleBar";
 
 const INK = "var(--ink, #f4f6f8)";
-const INK_SOFT = "var(--ink-soft, rgba(255,255,255,0.62))";
 const INK_FAINT = "var(--ink-faint, rgba(255,255,255,0.4))";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
 const GLASS = screenById("experience").glass;
-/** the glass's own corner radius (`max(2, r - 4)` for `r={6}`) */
-const GLASS_R = 2;
+/** the code's size: every metric below is its original (drawn under a title
+ *  strip, in less room) times this, now the block has the whole glass */
+const S = 1.4;
 
 /* ── editor chrome ─────────────────────────────────────────────────────── */
-const FENCE_TEXT_SIZE = 6.5;
-const GUTTER_MARK_X = GLASS.x + 4;
-const TEXT_X = GLASS.x + 18;
+const FENCE_TEXT_SIZE = 6.5 * S;
+const GUTTER_MARK_X = GLASS.x + 5;
+const GUTTER_MARK = { w: 5 * S, h: 2.2 * S };
+const TEXT_X = GLASS.x + 22;
 
 /* ── code block ────────────────────────────────────────────────────────── */
-/** the block fills what the title strip leaves, with a small margin */
-const BLOCK_TOP = GLASS.y + titleBarHeight(1) + 6;
-const BLOCK = { x: TEXT_X - 4, y: BLOCK_TOP, w: 176, h: GLASS.y + GLASS.h - 5 - BLOCK_TOP };
+/** the block fills the glass, with a small margin all round */
+const MARGIN = 5;
+const BLOCK_TOP = GLASS.y + MARGIN;
+const BLOCK = {
+  x: TEXT_X - 5,
+  y: BLOCK_TOP,
+  w: GLASS.x + GLASS.w - MARGIN - (TEXT_X - 5),
+  h: GLASS.h - MARGIN * 2,
+};
 const CODE_X = TEXT_X;
 /** one monospace cell of the (imaginary) code font */
-const CH = 3.2;
-const ROW_PITCH = 8.8;
-const FENCE_ROW_Y = BLOCK_TOP + 7;
-const BAR_H = 3;
+const CH = 3.2 * S;
+const ROW_PITCH = 8.8 * S;
+/** the fence plus five code rows, centred in the block */
+const FENCE_ROW_Y = BLOCK_TOP + (BLOCK.h - 5 * ROW_PITCH) / 2;
+const BAR_H = 3 * S;
 /** gap left between neighbouring tokens' bars, so `"…"` and `,` don't merge */
-const BAR_INSET = 0.8;
+const BAR_INSET = 0.8 * S;
 const CURSOR_W = CH / 2;
-const CURSOR_H = 6.5;
+const CURSOR_H = 6.5 * S;
 
-/** three ink weights stand in for a syntax palette: names bright, strings
- *  softer, punctuation faintest — enough to read as structured code */
+/** an editor's syntax palette — the screen's content is lit, so it's in
+ *  colour (see the colour rule at the top of globals.css). Brackets pair off
+ *  like an editor's bracket-pair colouring; the editor's own furniture
+ *  (fences, line numbers, punctuation, the cursor) stays ink. */
 const THEME = {
-  keyword: INK, // const
-  constant: INK, // jobs
-  operator: INK_FAINT, // =
-  property: INK, // role
-  string: INK_SOFT, // "…"
+  keyword: "#c792ea", // const
+  constant: "#ffcb6b", // jobs
+  operator: "#89ddff", // =
+  property: "#f07178", // role
+  string: "#c3e88d", // "…"
   punct: INK_FAINT, // : , ;
-  bracket1: INK_SOFT, // [ ]
-  bracket2: INK_SOFT, // { }
+  bracket1: "#ffd700", // [ ]
+  bracket2: "#da70d6", // { }
   fence: INK_FAINT, // ```ts
   lineNumber: INK_FAINT,
   cursor: INK,
@@ -198,15 +207,20 @@ export default function LaptopExperienceScreen() {
   const rows = [FENCE_ROW_Y, ...CODE.map((_, r) => rowY(r))];
 
   return (
-    <g key={TIMELINE_KEY}>
+    <g key={TIMELINE_KEY} className="screen-light" data-light="experience">
       <style>{TYPING_CSS}</style>
-
-      <ScreenTitleBar x={GLASS.x} y={GLASS.y} w={GLASS.w} r={GLASS_R} lines={["EXPERIENCE"]} />
 
       {/* gutter: a dim tick where each line number would be */}
       <g stroke="none" fill={THEME.lineNumber}>
         {rows.map((y) => (
-          <rect key={y} x={GUTTER_MARK_X} y={y - 1.1} width={5} height={2.2} rx={1.1} />
+          <rect
+            key={y}
+            x={GUTTER_MARK_X}
+            y={y - GUTTER_MARK.h / 2}
+            width={GUTTER_MARK.w}
+            height={GUTTER_MARK.h}
+            rx={GUTTER_MARK.h / 2}
+          />
         ))}
       </g>
 

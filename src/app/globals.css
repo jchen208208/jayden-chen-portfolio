@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
 /*
-  "The Desk" — a black room, a desk, four screens. Ink on black, no colour.
+  "The Desk" — a black room, a desk, four screens.
+
+  The colour rule: objects are ink, light is colour. The room and everything
+  in it is white line art on black. Only what gives off light is coloured —
+  what a screen shows (the board, the skill logos, the code, the court) and
+  the lamp's bulb when it's on, and the neon signs naming each screen. Chrome
+  never is: bezels, card frames and tile borders stay ink, so the four screens keep one grammar and
+  only their content differs.
 */
 :root {
   /* surfaces */
@@ -13,6 +20,10 @@
   --ink: #f4f6f8;
   --ink-soft: rgba(255, 255, 255, 0.62);
   --ink-faint: rgba(255, 255, 255, 0.4);
+
+  /* the desk's neon signs: the colour of the light, and the tube's hot core */
+  --neon: #ff4f8b;
+  --neon-core: #ffe4ee;
 
   /* legacy accent kept as a fallback for <Accent> */
   --ember: #e6a15c;
@@ -72,18 +83,42 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
-@keyframes bounce-cue {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(7px);
-  }
+/* desk screens: the hover spotlight. Hovering (or keyboard-focusing) a
+   screen — its glass or its neon sign, which share `data-screen` — keeps
+   that screen's light on and dims the other three, which is what says "these
+   are separate things you can pick". Only the light dims: `.screen-light`
+   wraps each screen's contents, never the bezels, which are ink.
+   Each screen's own hover rule below then brightens it the rest of the way. */
+.screen-light {
+  transition: opacity 250ms ease-out;
 }
 
-.bounce-cue {
-  animation: bounce-cue 2.2s ease-in-out infinite;
+[data-desk]:has([data-screen]:is(:hover, :focus-visible)) .screen-light {
+  opacity: 0.4;
+}
+
+[data-desk]:has([data-screen="projects"]:is(:hover, :focus-visible)) [data-light="projects"],
+[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) [data-light="skills"],
+[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) [data-light="experience"],
+[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) [data-light="about"] {
+  opacity: 1;
+}
+
+/* the neon signs (`NeonSigns`) follow the same spotlight, but a sign doesn't
+   dim — it switches off, down to its bare glass tube */
+.neon-lit {
+  transition: opacity 160ms ease-out;
+}
+
+[data-desk]:has([data-screen]:is(:hover, :focus-visible)) .neon-lit {
+  opacity: 0;
+}
+
+[data-desk]:has([data-screen="projects"]:is(:hover, :focus-visible)) [data-neon="projects"] .neon-lit,
+[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) [data-neon="skills"] .neon-lit,
+[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) [data-neon="experience"] .neon-lit,
+[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) [data-neon="about"] .neon-lit {
+  opacity: 1;
 }
 
 /* laptop screen on the desk (`LaptopSkillsScreen`): skill icons slide left
@@ -290,7 +325,6 @@ body {
     scroll-behavior: auto;
   }
   .scroll-cue,
-  .bounce-cue,
   .skills-strip-track,
   .exp-type,
   .exp-cursor,

@@ -153,5 +153,6 @@ export const PCB_MONO = {
   accent: "#f4f6f8",
 } as const;
 
-/** the palette the board is painted and lit in */
-export const PALETTE: { [K in keyof typeof PCB_MONO]: string } = PCB_MONO;
+/** the palette the board is painted and lit in — colour, since it is what a
+ *  screen shows (see the colour rule at the top of globals.css) */
+export const PALETTE: { [K in keyof typeof PCB_MONO]: string } = PCB_COLOUR;

@@ -1,11 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { MouseEvent } from "react";
 import { createPortal, flushSync } from "react-dom";
 import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
-import { DESK_VIEWBOX, SCREENS, percentBox, type Rect, type ScreenSpec } from "@/lib/desk";
+import {
+  DESK_VIEWBOX,
+  SCREENS,
+  neonBoard,
+  percentBox,
+  type Rect,
+  type ScreenSpec,
+} from "@/lib/desk";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
@@ -21,8 +27,10 @@ import { headerFontClass, sectionCards } from "./sections";
  * Every screen follows the same grammar, so the four sections read as one
  * system with four different contents:
  *
- *   on the desk — a white title strip (`ScreenTitleBar`) over the section's
- *                 own live animation
+ *   on the desk — the section's own live animation filling the glass, a
+ *                 neon sign on the wall above naming it (`NeonSigns`), and
+ *                 on hover a spotlight: that screen and its sign stay lit
+ *                 while the other three dim and switch off (globals.css)
  *   on click    — one smooth zoom from the click point to a centred
  *                 fullscreen title, a quick glide up into a header, then the
  *                 section's cards unfurl beneath it with a macOS genie warp
@@ -165,43 +173,15 @@ function drawGenieFrame(
  *  handle at dy 20–24. */
 const LAMP_CHAIN_HIT: Rect = { x: 988, y: 165, w: 22, h: 42 };
 
-/** one "click here" cue per screen — a bouncing title-font label with a pair
- *  of small arrowheads underneath, sitting in the gap between the wall shelf
- *  and each screen's own bezel (positions in `SCREENS[].cue`) */
-function ScreenCue({ centerX, top }: ScreenSpec["cue"]) {
-  return (
-    <div
-      aria-hidden
-      className="bounce-cue pointer-events-none absolute flex -translate-x-1/2 flex-col items-center text-white/70"
-      style={{
-        left: `${(centerX / DESK_VIEWBOX.w) * 100}%`,
-        top: `${(top / DESK_VIEWBOX.h) * 100}%`,
-      }}
-    >
-      <span className="font-title text-[13px] uppercase tracking-wide sm:text-[15px]">Click</span>
-      <div className="-mt-1 flex flex-col items-center">
-        <ArrowheadDown />
-        <ArrowheadDown className="-mt-0.5" />
-      </div>
-    </div>
-  );
-}
-
-/** a single down-pointing arrowhead, used in pairs beneath each screen cue —
- *  smaller than the text it sits under */
-function ArrowheadDown({ className }: { className?: string }) {
-  return (
-    <svg width="9" height="5" viewBox="0 0 9 5" fill="none" aria-hidden className={className}>
-      <path
-        d="M1 1L4.5 4L8 1"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+/** how far each neon sign's click target reaches past its backboard, in desk
+ *  units */
+const SIGN_HIT_PAD = 3;
+const padRect = (r: Rect, p: number): Rect => ({
+  x: r.x - p,
+  y: r.y - p,
+  w: r.w + p * 2,
+  h: r.h + p * 2,
+});
 
 export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<SectionId | null>(null);
@@ -245,6 +225,8 @@ export default function DeskScene({ className }: { className?: string }) {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [cardsRevealed, setCardsRevealed] = useState(false);
+  // each screen's glass button, which the zoom is measured from
+  const glassRefs = useRef<Partial<Record<SectionId, HTMLButtonElement | null>>>({});
   const reduced = usePrefersReducedMotion();
   // `document.body` doesn't exist during SSR — this flips to true only once
   // mounted on the client, without a setState-in-effect.
@@ -269,8 +251,12 @@ export default function DeskScene({ className }: { className?: string }) {
   // overlay is opaque, so background scroll while it's open is harmless.
 
   const openScreen = useCallback(
-    (e: MouseEvent<HTMLButtonElement>, s: ScreenSpec) => {
-      const box = e.currentTarget.getBoundingClientRect();
+    (s: ScreenSpec) => {
+      // Always the glass, even when the click landed on the screen's neon
+      // sign, so the zoom grows out of the screen itself.
+      const glass = glassRefs.current[s.id];
+      if (!glass) return;
+      const box = glass.getBoundingClientRect();
       setOrigin({
         x: ((box.left + box.width / 2) / window.innerWidth) * 100,
         y: ((box.top + box.height / 2) / window.innerHeight) * 100,
@@ -507,7 +493,7 @@ export default function DeskScene({ className }: { className?: string }) {
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
           <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} />
-          {/* screen 1's contents — the board turning under its title strip.
+          {/* screen 1's contents — the board turning, filling the glass.
               Sits between the desk art and the click targets below, and is
               `pointer-events-none`, so its own screen's button still takes
               the click. */}
@@ -524,10 +510,13 @@ export default function DeskScene({ className }: { className?: string }) {
           {SCREENS.map((s) => (
             <button
               key={s.id}
+              ref={(el) => {
+                glassRefs.current[s.id] = el;
+              }}
               data-screen={s.id}
               type="button"
               aria-label={`Open ${SECTIONS[s.id].deskLabel}`}
-              onClick={(e) => openScreen(e, s)}
+              onClick={() => openScreen(s)}
               // Prevents the browser's default focus-on-click: with the desk
               // sitting inside a `position: sticky` + transformed ancestor,
               // focusing this button made some browsers snap-scroll the page
@@ -538,8 +527,19 @@ export default function DeskScene({ className }: { className?: string }) {
               style={percentBox(s.glass)}
             />
           ))}
+          {/* each neon sign opens its screen too. Not a second tab stop or
+              announced control — the glass button above is that — but it
+              carries the same `data-screen`, so hovering the sign lights up
+              its screen exactly like hovering the glass does. */}
           {SCREENS.map((s) => (
-            <ScreenCue key={s.id} {...s.cue} />
+            <div
+              key={s.id}
+              aria-hidden
+              data-screen={s.id}
+              onClick={() => openScreen(s)}
+              className="absolute cursor-pointer"
+              style={percentBox(padRect(neonBoard(s.sign), SIGN_HIT_PAD))}
+            />
           ))}
         </div>
       </div>
@@ -595,8 +595,8 @@ export default function DeskScene({ className }: { className?: string }) {
                 transition: `transform ${transitionMs}ms ${overlayTiming.ease}, transform-origin ${transitionMs}ms ${overlayTiming.ease}`,
               }}
             >
-              {/* the same label the screen wears in its title strip, grown to
-                  fill the screen — a fresh element, not a scaled copy of the
+              {/* the section's name, as on its neon sign, grown to fill
+                  the screen — a fresh element, not a scaled copy of the
                   desk SVG, so it stays crisp at any viewport size */}
               {content && (
                 <div

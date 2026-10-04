@@ -16,11 +16,12 @@ import { deskGateY } from "@/lib/deskScroll";
  * unchanged — it just receives smoothed values, which makes the desk's
  * pan/zoom glide instead of stepping with each wheel notch.
  *
- * It also owns the *gate* at the framed beat (`deskGateY`): the desk-in-frame
- * moment is the point of the whole runway, so a single hard flick must not be
- * able to fly straight past it into the section below. While the gate is shut
- * every downward delta is trimmed to whatever room is left in front of it;
- * it opens once the page has actually settled on the frame.
+ * It also owns a small *gate* at the framed beat (`deskGateY`), so one hard
+ * flick can't fly straight past the desk in full frame: the first time the
+ * scroll reaches the frame it's caught there, held for `GATE_HOLD_MS`, then
+ * let go for good — whether or not you're still scrolling. (It used to stay
+ * shut until input went quiet, which with a continuous scroll meant being
+ * stuck there; that read as a pause.)
  *
  * Only runs on "/": the section routes lock page scroll (`useScrollLock`)
  * and scroll inside their own `AppWindow`, and a page-level Lenis would
@@ -28,8 +29,13 @@ import { deskGateY } from "@/lib/deskScroll";
  * `prefers-reduced-motion`.
  */
 
-/** the gate opens once the frame is reached and input has been quiet this long (ms) */
-const GATE_DWELL = 180;
+/** how close (px) the scroll has to get to the frame to count as caught —
+ *  the desk is barely moving there, so a few px short looks identical, and
+ *  waiting for Lenis's ease to close the last pixel would only lengthen the
+ *  catch */
+const GATE_REACHED_PX = 12;
+/** how long the frame holds once caught before the gate lets go (ms) */
+const GATE_HOLD_MS = 150;
 
 export default function SmoothScroll() {
   const pathname = usePathname();
@@ -40,13 +46,11 @@ export default function SmoothScroll() {
     if (!enabled) return;
 
     // already past the frame on load (a restored scroll position) — nothing to gate
-    let open = window.scrollY >= deskGateY(window.innerHeight) - 1;
-    let lastInput = 0;
+    let open = window.scrollY >= deskGateY(window.innerHeight) - GATE_REACHED_PX;
 
     const lenis = new Lenis({
       autoRaf: true,
       virtualScroll: (data) => {
-        lastInput = performance.now();
         if (open || data.deltaY <= 0) return true;
         const room = deskGateY(window.innerHeight) - lenis.targetScroll;
         if (data.deltaY > room) {
@@ -62,17 +66,18 @@ export default function SmoothScroll() {
     // The delta trim above covers wheel and touch-drag. Touch *inertia*,
     // keyboard paging and scrollbar drags reach the scroll position by other
     // routes, so while the gate is shut a frame loop also pulls any overshoot
-    // back to the frame, and decides when to open.
+    // back to the frame, and opens the gate once the hold is up.
     let raf = 0;
-    const watch = () => {
+    let caughtAt: number | null = null;
+    const watch = (now: number) => {
       const gate = deskGateY(window.innerHeight);
       if (lenis.targetScroll > gate + 0.5) {
         lenis.scrollTo(gate, { lerp: 0.12, force: true });
       }
-      if (
-        lenis.animatedScroll >= gate - 1 &&
-        performance.now() - lastInput > GATE_DWELL
-      ) {
+      if (caughtAt === null && lenis.animatedScroll >= gate - GATE_REACHED_PX) {
+        caughtAt = now;
+      }
+      if (caughtAt !== null && now - caughtAt >= GATE_HOLD_MS) {
         open = true;
         raf = 0;
         return;

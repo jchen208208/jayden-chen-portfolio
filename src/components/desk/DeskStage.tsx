@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Hero from "./Hero";
 import DeskScene from "./DeskScene";
 import { clamp } from "@/lib/svg";
-import { DESK_RUNWAY_VH, DESK_TIMELINE } from "@/lib/deskScroll";
+import { DESK_RUNWAY_VH, DESK_SCROLL, deskRise, deskZoom } from "@/lib/deskScroll";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /**
@@ -12,14 +12,11 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * while a section overlay is open.
  *
  * The desk is fully visible from the first frame — scrolling is only a camera
- * move over the `DESK_TIMELINE` runway:
- *
- *   1. *zoom in* — the desk pans up from "sitting low, title on top" into full
- *      frame while the title lifts away;
- *   2. *hold* — the framed desk, the beat `SmoothScroll` gates on;
- *   3. *zoom out* — the reverse move: the desk shrinks past its rest size and
- *      rides up out of the way as the next section rises into the space it
- *      leaves behind.
+ * move over the runway (`lib/deskScroll`), one continuous glide with no
+ * stops: the desk rises from "sitting low, title on top" while the title
+ * lifts away, swells to full frame as it passes the centre (slowing down
+ * there, never halting), then shrinks back to its rest size and rides up out
+ * of the way as the next section rises into the space it leaves behind.
  *
  * Driven by one rAF-throttled scroll listener writing styles directly (the
  * plain, reliable pattern — no motion-value rig). Falls back to a static
@@ -41,6 +38,19 @@ const DESK_POSE = {
 
 /** ease-out cubic */
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+/** ease-in-out sine — sets off and settles without a jolt */
+const easeInOut = (t: number) => (1 - Math.cos(Math.PI * t)) / 2;
+
+/** the stretch of the move (as progress, 0–1) over which each piece plays */
+const BEATS = {
+  /** the title has faded out by here */
+  heroFade: 0.21,
+  /** …and finished lifting by here */
+  heroLift: 0.44,
+  /** the next section starts rising here, a beat behind the desk, and has
+   *  arrived by the end of the move */
+  nextIn: 0.62,
+} as const;
 
 export default function DeskStage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -63,32 +73,26 @@ export default function DeskStage() {
     let raf = 0;
     const apply = () => {
       raf = 0;
-      const vh = window.innerHeight;
-      const y = window.scrollY;
-
-      // phase 1 — zoom in
-      const p = clamp(y / (vh * DESK_TIMELINE.zoomIn), 0, 1);
-      const zin = easeOut(p);
-      // phase 2 — zoom out, starting once the hold is over
-      const outStart = vh * (DESK_TIMELINE.zoomIn + DESK_TIMELINE.hold);
-      const q = clamp((y - outStart) / (vh * DESK_TIMELINE.zoomOut), 0, 1);
-      const zout = easeOut(q);
+      // progress through the whole move, 0 → 1
+      const t = clamp(window.scrollY / (window.innerHeight * DESK_SCROLL), 0, 1);
 
       // title: fully visible at rest, fades + lifts quickly as the desk takes over
-      hero.style.opacity = String(clamp(1 - p * 2.1, 0, 1));
-      hero.style.transform = `translate3d(0, ${(-56 * zin).toFixed(1)}px, 0)`;
-      hero.style.pointerEvents = p > 0.45 ? "none" : "auto";
+      const fade = clamp(t / BEATS.heroFade, 0, 1);
+      const lift = easeOut(clamp(t / BEATS.heroLift, 0, 1));
+      hero.style.opacity = String(1 - fade);
+      hero.style.transform = `translate3d(0, ${(-56 * lift).toFixed(1)}px, 0)`;
+      hero.style.pointerEvents = fade > 0.95 ? "none" : "auto";
 
-      // desk: always visible; starts low at its natural size, rises and zooms
-      // in to fill the frame, then runs the same move backwards — back down to
-      // that same natural size, but parked above centre instead of below it
-      const ty = (1 - zin) * DESK_POSE.restY - zout * DESK_POSE.restY;
-      const scale = 1 + (DESK_POSE.framed - 1) * (zin - zout);
+      // desk: always visible, always moving. It rises steadily from `restY`
+      // below centre to `restY` above it — slowest as it passes the centre —
+      // while it swells to its framed size and back, peaking right there.
+      const ty = DESK_POSE.restY * (1 - 2 * deskRise(t));
+      const scale = 1 + (DESK_POSE.framed - 1) * deskZoom(t);
       desk.style.transform = `translate3d(0, ${ty.toFixed(1)}px, 0) scale(${scale.toFixed(4)})`;
 
       // next section: rises into the room the shrinking desk vacates, a beat
       // behind it so the two moves read as one handover rather than a crossfade
-      const n = easeOut(clamp((q - 0.22) / 0.78, 0, 1));
+      const n = easeInOut(clamp((t - BEATS.nextIn) / (1 - BEATS.nextIn), 0, 1));
       next.style.opacity = String(n);
       next.style.transform = `translate3d(0, ${((1 - n) * 56).toFixed(1)}px, 0)`;
       next.style.pointerEvents = n > 0.5 ? "auto" : "none";
