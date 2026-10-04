@@ -101,10 +101,9 @@ export default function LaptopSkillsScreen() {
             style={{ ["--skills-strip-loop" as string]: `-${LOOP_W}px` }}
           >
             {[0, 1].map((pass) =>
-              ICONS.map(({ name, Icon, color }, i) => (
+              ICONS.map(({ name, Icon }, i) => (
                 <Icon
                   key={`${pass}-${name}`}
-                  color={color}
                   x={WINDOW_L + ICON_GAP / 2 + (pass * ICONS.length + i) * ICON_PITCH}
                   y={STRIP_CENTER_Y - ICON_SIZE / 2}
                   size={ICON_SIZE}

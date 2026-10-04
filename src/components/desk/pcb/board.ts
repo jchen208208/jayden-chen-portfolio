@@ -153,6 +153,21 @@ export const PCB_MONO = {
   accent: "#f4f6f8",
 } as const;
 
-/** the palette the board is painted and lit in — colour, since it is what a
- *  screen shows (see the colour rule at the top of globals.css) */
-export const PALETTE: { [K in keyof typeof PCB_MONO]: string } = PCB_COLOUR;
+/** the site's `--glow` (globals.css) — repeated here because a canvas and
+ *  three.js can't read CSS variables */
+const GLOW = "#ffbe5c";
+
+/**
+ * By the colour rule (top of globals.css): the ink board above, with the
+ * glow on what really is gold or light — the pads, vias and LED, and the
+ * warm rim light.
+ */
+export const PCB_GLOW = {
+  ...PCB_MONO,
+  gold: GLOW,
+  goldDark: "#9c7438",
+  accent: GLOW,
+} as const;
+
+/** the palette the board is painted and lit in */
+export const PALETTE: { [K in keyof typeof PCB_MONO]: string } = PCB_GLOW;

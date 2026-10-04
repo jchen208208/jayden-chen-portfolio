@@ -21,6 +21,15 @@ import NeonSigns from "./NeonSigns";
 
 const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
+/** the one colour of light (the colour rule, top of globals.css) */
+const GLOW = "var(--glow, #ffbe5c)";
+/** the lamp's pull chain: a quick yank down, then a springy return that
+ *  overshoots a touch (the y2 > 1) before settling. The yank's length is
+ *  DeskScene's CHAIN_PULL_MS, which flips the light at the bottom of it.
+ *  Moved with `transform` (px = desk units inside the SVG), since browsers
+ *  don't transition the `cy` attribute. */
+const CHAIN_DOWN = "transform 150ms ease-out";
+const CHAIN_BACK = "transform 420ms cubic-bezier(0.34, 1.6, 0.64, 1)";
 /** reference-image pixels → desk units for the soldering station */
 const SOLDERING_SCALE = 0.4;
 /** the tool wall's hung tools are tiny, so they use a lighter outline than
@@ -63,10 +72,14 @@ function Screen({
 export default function DeskSvg({
   className,
   lampOn = false,
+  chainPulled = false,
 }: {
   className?: string;
-  /** pull-chain state — lit, the bulb fills yellow and the chain hangs a touch lower */
+  /** lit, the bulb fills with the glow */
   lampOn?: boolean;
+  /** mid-pull: the chain is yanked down (the light flips at the bottom of the
+   *  pull, then the chain springs back — timed in DeskScene) */
+  chainPulled?: boolean;
 }) {
   const { w, h } = DESK_VIEWBOX;
 
@@ -348,6 +361,9 @@ export default function DeskSvg({
           <path d="M1418 512 C 1430 424 1450 350 1462 302 C 1458 356 1440 430 1428 512 Z" fill={PAPER} />
           <path d="M1398 512 C 1368 454 1342 392 1338 332 C 1356 396 1386 456 1420 512 Z" fill={PAPER} />
           <path d="M1422 512 C 1452 454 1478 392 1502 342 C 1488 400 1454 456 1424 512 Z" fill={PAPER} />
+          {/* a broad blade on the right, between the tall and middle ones,
+              to balance the broad tall leaf on the left */}
+          <path d="M1424 512 C 1444 430 1464 362 1486 316 C 1480 368 1460 436 1440 512 Z" fill={PAPER} />
           <path d="M1398 514 C 1372 484 1344 452 1336 398 C 1350 456 1378 490 1418 514 Z" fill={PAPER} />
           <path d="M1424 514 C 1450 484 1480 452 1506 398 C 1494 458 1462 492 1428 514 Z" fill={PAPER} />
           {/* pot — a tall tapered planter, rounded base on the floor */}
@@ -365,6 +381,7 @@ export default function DeskSvg({
           <path d="M1421 478 C 1418 420 1420 350 1422 296" opacity={0.3} />
           <path d="M1406 478 C 1394 428 1378 352 1384 302" opacity={0.28} />
           <path d="M1432 478 C 1442 428 1456 356 1462 308" opacity={0.28} />
+          <path d="M1434 478 C 1446 424 1464 366 1483 323" opacity={0.28} />
         </g>
 
         {/* ── 3D printer — right edge touches the desk's left edge ──────── */}
@@ -526,27 +543,32 @@ export default function DeskSvg({
             {/* just the 2D side of the bulb, poking out below the opening —
                 closed back across its flat top so it can take a fill; centred
                 on the head's own centreline (x=998) so it hangs in line with
-                the shade above it. Lit, it fills yellow. */}
-            <path d="M985 168 A13 7 0 0 0 1011 168 Z" fill={lampOn ? "#ffd75e" : "none"} />
+                the shade above it. Lit, it fills with the glow. */}
+            <path d="M985 168 A13 7 0 0 0 1011 168 Z" fill={lampOn ? GLOW : "none"} />
             {/* pull chain — attaches to the shade's rim just right of the
                 bulb and drips straight down, a string of small linked beads
                 ending in a slightly larger handle. The attach point rotates
                 with the tilted head (it's fixed to the shade), but this
                 inner group counter-rotates by the same 15° so the chain
                 itself always hangs vertically, not at the head's angle.
-                Pulling it (click target on the handle, wired in DeskScene)
-                stretches the last link and lights the bulb. */}
+                Every pull, by click or by the lamp's own idle timer (both in
+                DeskScene), yanks the whole chain down — the links spread
+                apart and the handle drops furthest — then lets it spring back
+                with a little overshoot. */}
             <g transform="rotate(-15 1015 169)" strokeWidth={1.4}>
-              {[4, 8, 12, 16].map((dy) => (
-                <circle key={dy} cx={1015} cy={169 + dy} r={1} fill={PAPER} />
+              {[4, 8, 12, 16, 20].map((dy, i, all) => (
+                <circle
+                  key={dy}
+                  cx={1015}
+                  cy={169 + dy}
+                  r={i === all.length - 1 ? 2 : 1}
+                  fill={PAPER}
+                  style={{
+                    transform: `translateY(${chainPulled ? dy * 0.3 : 0}px)`,
+                    transition: chainPulled ? CHAIN_DOWN : CHAIN_BACK,
+                  }}
+                />
               ))}
-              <circle
-                cx={1015}
-                cy={169 + (lampOn ? 24 : 20)}
-                r={2}
-                fill={PAPER}
-                style={{ transition: "cy 180ms ease-out" }}
-              />
             </g>
           </g>
           {/* joint knuckle at the arm/third-part bend, capping the seam */}

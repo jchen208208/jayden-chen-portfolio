@@ -173,6 +173,15 @@ function drawGenieFrame(
  *  handle at dy 20–24. */
 const LAMP_CHAIN_HIT: Rect = { x: 988, y: 165, w: 22, h: 42 };
 
+/** how long a pull yanks the chain down before the light flips and the chain
+ *  springs back — matches `CHAIN_DOWN` in DeskSvg */
+const CHAIN_PULL_MS = 150;
+/** left alone, the lamp switches itself on now and then (a random wait in
+ *  this range, ms)… */
+const LAMP_IDLE_ON_MS: [number, number] = [20_000, 40_000];
+/** …and back off a little later */
+const LAMP_IDLE_OFF_MS: [number, number] = [6_000, 10_000];
+
 /** how far each neon sign's click target reaches past its backboard, in desk
  *  units */
 const SIGN_HIT_PAD = 3;
@@ -186,6 +195,7 @@ const padRect = (r: Rect, p: number): Rect => ({
 export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<SectionId | null>(null);
   const [lampOn, setLampOn] = useState(false);
+  const [chainPulled, setChainPulled] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
   // How big the clicked screen's glass was on screen, as a fraction of the
   // viewport — the fullscreen content starts at this scale (roughly the
@@ -290,7 +300,48 @@ export default function DeskScene({ className }: { className?: string }) {
     setCardsRevealed(false);
   }, [clearStageTimers]);
 
-  const toggleLamp = useCallback(() => setLampOn((v) => !v), []);
+  // A pull yanks the chain down, flips the light once it bottoms out, then
+  // lets the chain spring back. A pull that lands mid-yank is ignored — the
+  // chain is already down. Reduced motion just flips the light.
+  const pullTimer = useRef<number | null>(null);
+  // whether the lamp's current "on" came from the idle timer rather than a
+  // click — only those get switched back off by it
+  const lampOnByIdle = useRef(false);
+  const pullChain = useCallback(
+    (byIdle: boolean) => {
+      if (pullTimer.current !== null) return;
+      lampOnByIdle.current = byIdle;
+      if (reduced) {
+        setLampOn((v) => !v);
+        return;
+      }
+      setChainPulled(true);
+      pullTimer.current = window.setTimeout(() => {
+        pullTimer.current = null;
+        setChainPulled(false);
+        setLampOn((v) => !v);
+      }, CHAIN_PULL_MS);
+    },
+    [reduced],
+  );
+  useEffect(
+    () => () => {
+      if (pullTimer.current !== null) window.clearTimeout(pullTimer.current);
+    },
+    [],
+  );
+  const toggleLamp = useCallback(() => pullChain(false), [pullChain]);
+
+  // Left alone, the lamp pulls its own chain now and then, and pulls it
+  // again a few seconds later to switch back off. One the visitor switched
+  // on stays on until they pull it again. Skipped for reduced motion, since
+  // the light would flash on and off unbidden.
+  useEffect(() => {
+    if (reduced || (lampOn && !lampOnByIdle.current)) return;
+    const [min, max] = lampOn ? LAMP_IDLE_OFF_MS : LAMP_IDLE_ON_MS;
+    const id = window.setTimeout(() => pullChain(true), min + Math.random() * (max - min));
+    return () => window.clearTimeout(id);
+  }, [lampOn, reduced, pullChain]);
 
   const zoomed = openId !== null;
   // Experience can run past the screen's bottom, so its overlay scrolls, and
@@ -492,7 +543,7 @@ export default function DeskScene({ className }: { className?: string }) {
           className="relative w-full"
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
-          <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} />
+          <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} chainPulled={chainPulled} />
           {/* screen 1's contents — the board turning, filling the glass.
               Sits between the desk art and the click targets below, and is
               `pointer-events-none`, so its own screen's button still takes

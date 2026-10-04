@@ -3,12 +3,14 @@
 /*
   "The Desk" — a black room, a desk, four screens.
 
-  The colour rule: objects are ink, light is colour. The room and everything
-  in it is white line art on black. Only what gives off light is coloured —
-  what a screen shows (the board, the skill logos, the code, the court) and
-  the lamp's bulb when it's on, and the neon signs naming each screen. Chrome
-  never is: bezels, card frames and tile borders stay ink, so the four screens keep one grammar and
-  only their content differs.
+  The colour rule: white and one light. The room and everything in it is
+  white line art on black — screen content included. The only colour is
+  `--glow`, a warm amber: the light itself. The lamp's bulb, the neon signs'
+  glow, and one highlight on each screen that has one (the PCB's gold pads
+  and LED, the code's keywords and strings, the tennis ball, the medal).
+  Nothing else gets a hue of its own — not brand logos, not a court — so
+  the scene reads as one room lit one way. Chrome (bezels, card frames,
+  tile borders) is always ink.
 */
 :root {
   /* surfaces */
@@ -21,9 +23,11 @@
   --ink-soft: rgba(255, 255, 255, 0.62);
   --ink-faint: rgba(255, 255, 255, 0.4);
 
-  /* the desk's neon signs: the colour of the light, and the tube's hot core */
-  --neon: #ff4f8b;
-  --neon-core: #ffe4ee;
+  /* the one colour of light (see the colour rule above). Canvas and WebGL
+     can't read CSS variables, so `pcb/board.ts` repeats it. */
+  --glow: #ffbe5c;
+  /* a neon tube's own core: warm white, where the light is hottest */
+  --neon-core: #fff4e2;
 
   /* legacy accent kept as a fallback for <Accent> */
   --ember: #e6a15c;
@@ -104,8 +108,8 @@ body {
   opacity: 1;
 }
 
-/* the neon signs (`NeonSigns`) follow the same spotlight, but a sign doesn't
-   dim — it switches off, down to its bare glass tube */
+/* the neon signs (`NeonSigns`) follow the same spotlight as the screens, but
+   a sign doesn't dim — it switches off, down to its bare glass tube */
 .neon-lit {
   transition: opacity 160ms ease-out;
 }
@@ -119,6 +123,91 @@ body {
 [data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) [data-neon="experience"] .neon-lit,
 [data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) [data-neon="about"] .neon-lit {
   opacity: 1;
+}
+
+/* a dying tube (`NeonSigns`' faults): the light cuts out and catches again a
+   few times, unevenly, then holds. `steps` makes every change a hard cut —
+   a failing tube doesn't fade. Runs inside `.neon-lit`, so it never fights
+   the spotlight's opacity. */
+@keyframes neon-flicker {
+  0% {
+    opacity: 1;
+  }
+  6% {
+    opacity: 0.1;
+  }
+  11% {
+    opacity: 1;
+  }
+  19% {
+    opacity: 0.45;
+  }
+  23% {
+    opacity: 0.05;
+  }
+  31% {
+    opacity: 0.85;
+  }
+  44% {
+    opacity: 0.2;
+  }
+  49%,
+  100% {
+    opacity: 1;
+  }
+}
+
+.neon-flicker {
+  animation: neon-flicker 900ms steps(1, end) both;
+}
+
+/* its sparks: each one drifts sideways, slowing (`.neon-spark`), while it's
+   thrown up and falls back faster and faster (the group inside), and fades
+   once it's falling (inside that). Every spark's distances and timing are
+   its own, set inline. */
+@keyframes spark-drift {
+  to {
+    transform: translateX(var(--spark-dx));
+  }
+}
+
+@keyframes spark-throw {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.3, 0.6, 0.6, 1);
+  }
+  25% {
+    transform: translateY(var(--spark-rise));
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 0.5);
+  }
+  100% {
+    transform: translateY(var(--spark-fall));
+  }
+}
+
+@keyframes spark-fade {
+  0% {
+    opacity: 0;
+  }
+  4%,
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.neon-spark {
+  animation: spark-drift var(--spark-ms) cubic-bezier(0.2, 0.7, 0.4, 1) var(--spark-delay) both;
+}
+
+.neon-spark > g {
+  animation: spark-throw var(--spark-ms) linear var(--spark-delay) both;
+}
+
+.neon-spark > g > g {
+  animation: spark-fade var(--spark-ms) ease-in var(--spark-delay) both;
 }
 
 /* laptop screen on the desk (`LaptopSkillsScreen`): skill icons slide left

@@ -34,12 +34,13 @@ import { screenById } from "@/lib/desk";
  */
 const INK = "var(--ink, #f4f6f8)";
 const PAPER = "var(--paper, #000)";
-/** what's on the glass is lit, so it's in colour (see the colour rule at the
- *  top of globals.css): a hard court, an optic-yellow ball, a gold medal. The
- *  figures and the podium stay ink — they're the drawing, not the light. */
-const COURT_FILL = "#2f5d8c";
-const BALL = "#dfff4f";
-const GOLD = "#e3b341";
+/** by the colour rule (top of globals.css) the drawing is ink — the court
+ *  just a faint wash of it, so it still reads as a surface — and the glow
+ *  goes to the two things the story is about: the ball and the medal */
+const COURT_FILL = "rgba(255, 255, 255, 0.07)";
+const GLOW = "var(--glow, #ffbe5c)";
+const BALL = GLOW;
+const GOLD = GLOW;
 const MONO = "var(--font-mono), ui-monospace, monospace";
 const PORTRAIT_GLASS = screenById("about").glass;
 /** the glass's own corner radius (`max(2, r - 4)` for `r={10}`) */

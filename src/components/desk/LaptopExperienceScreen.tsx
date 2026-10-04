@@ -25,7 +25,9 @@
 import { screenById } from "@/lib/desk";
 
 const INK = "var(--ink, #f4f6f8)";
+const INK_SOFT = "var(--ink-soft, rgba(255,255,255,0.62))";
 const INK_FAINT = "var(--ink-faint, rgba(255,255,255,0.4))";
+const GLOW = "var(--glow, #ffbe5c)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
 const GLASS = screenById("experience").glass;
@@ -61,19 +63,19 @@ const BAR_INSET = 0.8 * S;
 const CURSOR_W = CH / 2;
 const CURSOR_H = 6.5 * S;
 
-/** an editor's syntax palette — the screen's content is lit, so it's in
- *  colour (see the colour rule at the top of globals.css). Brackets pair off
- *  like an editor's bracket-pair colouring; the editor's own furniture
- *  (fences, line numbers, punctuation, the cursor) stays ink. */
+/** the editor's syntax palette, by the colour rule (top of globals.css):
+ *  ink in three weights, and the glow for just the keyword and the strings —
+ *  the values the code is about. The editor's own furniture (fences, line
+ *  numbers, punctuation, the cursor) stays ink. */
 const THEME = {
-  keyword: "#c792ea", // const
-  constant: "#ffcb6b", // jobs
-  operator: "#89ddff", // =
-  property: "#f07178", // role
-  string: "#c3e88d", // "…"
+  keyword: GLOW, // const
+  constant: INK, // jobs
+  operator: INK_FAINT, // =
+  property: INK_SOFT, // role
+  string: GLOW, // "…"
   punct: INK_FAINT, // : , ;
-  bracket1: "#ffd700", // [ ]
-  bracket2: "#da70d6", // { }
+  bracket1: INK_SOFT, // [ ]
+  bracket2: INK_SOFT, // { }
   fence: INK_FAINT, // ```ts
   lineNumber: INK_FAINT,
   cursor: INK,
