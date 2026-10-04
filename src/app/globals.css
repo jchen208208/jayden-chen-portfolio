@@ -529,9 +529,399 @@ body {
   transition: transform 250ms ease-out;
 }
 
+/* ---- Skills (`sections/skills*.tsx`) -----------------------------------------
+   Three small live things, one rule for light: everything ink, one amber
+   moment at a time. Every animated part carries `.sk-anim`, and its resting
+   style (no animation) is the finished pose — which is also what reduced
+   motion shows. */
+
+/* held at its first frame until the card is on screen for real (`SkillPane`
+   flips `data-live`): the genie warp snapshots the cards before that */
+.sk-live[data-live="false"] .sk-anim {
+  animation-play-state: paused;
+}
+
+/* hover spotlight: the others dim, the hovered one gets a small amber dot */
+.sk-dim {
+  transition: opacity 250ms ease-out;
+}
+.sk-dim[data-dim="true"] {
+  opacity: 0.35;
+}
+/* in the diagram a box dims by its ink, not its opacity — an opaque box keeps
+   the wire behind it hidden */
+svg .sk-dim {
+  transition: color 250ms ease-out;
+}
+svg .sk-dim[data-dim="true"] {
+  opacity: 1;
+  color: rgb(255 255 255 / 0.35);
+}
+.sk-pick {
+  fill: var(--glow);
+  opacity: 0;
+  transition: opacity 250ms ease-out;
+}
+.sk-pick[data-on="true"] {
+  opacity: 1;
+}
+.sk-pick-dot {
+  display: inline-block;
+  width: 0.38em;
+  height: 0.38em;
+  margin-left: 0.6em;
+  border-radius: 50%;
+  background: var(--glow);
+  opacity: 0;
+  vertical-align: middle;
+  transition: opacity 250ms ease-out;
+}
+.sk-pick-dot[data-on="true"] {
+  opacity: 1;
+}
+
+/* Languages: tabs */
+.sk-tab {
+  opacity: 0.5;
+  transition: opacity 250ms ease-out;
+}
+.sk-tab[data-on="true"] {
+  opacity: 1;
+}
+.sk-tab-bar {
+  display: block;
+  width: 70%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transition: transform 350ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.sk-tab-bar[data-on="true"] {
+  transform: scaleX(1);
+}
+
+/* Languages: the typed code — a line reveals a character per step, and its
+   caret rides the end of it until the line is done (the last line keeps one) */
+.sk-k,
+.sk-s {
+  color: var(--glow);
+}
+.sk-d {
+  color: var(--ink-faint);
+}
+.sk-type {
+  display: inline-block;
+  flex: none;
+  overflow: hidden;
+  white-space: pre;
+  width: calc(var(--n) * 1ch);
+  animation-name: sk-type;
+  animation-fill-mode: backwards;
+  animation-timing-function: steps(1, end);
+}
+@keyframes sk-type {
+  from {
+    width: 0;
+  }
+}
+.sk-caret {
+  flex: none;
+  width: 0.55ch;
+  height: 1.1em;
+  margin-left: 1px;
+  background: var(--ink);
+  opacity: 0;
+  animation-name: sk-caret;
+  animation-fill-mode: backwards;
+  animation-timing-function: linear;
+}
+@keyframes sk-caret {
+  0% {
+    opacity: 0;
+  }
+  0.01%,
+  99.99% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.sk-caret.sk-caret-last {
+  opacity: 1;
+  animation-name: sk-caret-stay;
+}
+@keyframes sk-caret-stay {
+  0% {
+    opacity: 0;
+  }
+  0.01%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Frameworks & Tools: a 10 s loop. A comet runs down a chain's wire and each
+   box lights as it arrives (its delay is set per box), then cools. Resting,
+   the comet is parked off the end of the wire and the outlines are dark. */
+.sk-comet {
+  stroke: var(--glow);
+  stroke-width: 2.4;
+  stroke-dasharray: 7 100;
+  stroke-dashoffset: 7;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.sk-comet-web {
+  animation-name: sk-comet-web;
+  animation-delay: 0.6s;
+  animation-fill-mode: backwards;
+}
+.sk-comet-ml {
+  animation-name: sk-comet-ml;
+  animation-delay: 5.4s;
+  animation-fill-mode: backwards;
+}
+@keyframes sk-comet-web {
+  0% {
+    stroke-dashoffset: 7;
+  }
+  36% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+@keyframes sk-comet-ml {
+  0% {
+    stroke-dashoffset: 7;
+  }
+  30% {
+    stroke-dashoffset: -100;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+.sk-lit {
+  fill: none;
+  stroke: var(--glow);
+  stroke-width: 2;
+  opacity: 0;
+  animation: sk-lit 10s linear infinite backwards;
+}
+@keyframes sk-lit {
+  0% {
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  24%,
+  100% {
+    opacity: 0;
+  }
+}
+.sk-head {
+  animation: sk-breathe 6s ease-in-out infinite alternate;
+}
+@keyframes sk-breathe {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hardware & Design: one 12 s loop, a 4 s turn each (the strip's slot sets
+   the delay). Each drawing's keyframes act in their first third, then it rests
+   finished and fades back to its ghost at the very end of the loop. */
+/* dashes that start out empty or off the end must leave no round-cap dot */
+.sk-trace,
+.sk-spark,
+.sk-face,
+.sk-extrude {
+  stroke-linecap: butt;
+}
+.sk-art .sk-anim {
+  animation-duration: 12s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-delay: calc(var(--slot, 0) * 4s);
+  animation-fill-mode: backwards;
+}
+.sk-joint {
+  stroke: var(--ink);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation-name: sk-joint;
+}
+@keyframes sk-joint {
+  0%,
+  9% {
+    transform: scale(0);
+    opacity: 0;
+    stroke: var(--glow);
+  }
+  14%,
+  22% {
+    transform: scale(1);
+    opacity: 1;
+    stroke: var(--glow);
+  }
+  46%,
+  94% {
+    transform: scale(1);
+    opacity: 1;
+    stroke: var(--ink);
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+    stroke: var(--ink);
+  }
+}
+.sk-iron {
+  animation-name: sk-iron;
+}
+@keyframes sk-iron {
+  0%,
+  3% {
+    transform: translate(46px, -42px);
+  }
+  10%,
+  26% {
+    transform: translate(0, 0);
+  }
+  33%,
+  100% {
+    transform: translate(46px, -42px);
+  }
+}
+.sk-trace {
+  stroke-dasharray: 100;
+  animation-name: sk-trace;
+}
+@keyframes sk-trace {
+  0%,
+  3% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  24%,
+  94% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.sk-via {
+  fill: var(--paper, #000);
+}
+.sk-spark {
+  stroke: var(--glow);
+  stroke-dasharray: 6 100;
+  stroke-dashoffset: 6;
+  animation-name: sk-spark;
+}
+@keyframes sk-spark {
+  0%,
+  3% {
+    stroke-dashoffset: 6;
+  }
+  24%,
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+.sk-padlit {
+  stroke: var(--glow);
+  opacity: 0;
+  animation-name: sk-padlit;
+}
+@keyframes sk-padlit {
+  0%,
+  22%,
+  44%,
+  100% {
+    opacity: 0;
+  }
+  26% {
+    opacity: 1;
+  }
+}
+.sk-face {
+  stroke-dasharray: 100;
+  animation-name: sk-face;
+}
+@keyframes sk-face {
+  0%,
+  3% {
+    stroke-dashoffset: 100;
+    opacity: 1;
+  }
+  12%,
+  94% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.sk-extrude {
+  stroke: var(--ink);
+  stroke-dasharray: 100;
+  animation-name: sk-extrude;
+}
+@keyframes sk-extrude {
+  0%,
+  12% {
+    stroke-dashoffset: 100;
+    stroke: var(--glow);
+    opacity: 1;
+  }
+  26% {
+    stroke-dashoffset: 0;
+    stroke: var(--glow);
+  }
+  44%,
+  94% {
+    stroke-dashoffset: 0;
+    stroke: var(--ink);
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    stroke: var(--ink);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .sk-anim {
+    animation: none !important;
+  }
+  .sk-dim,
+  .sk-pick,
+  .sk-pick-dot,
+  .sk-tab,
+  .sk-tab-bar {
+    transition: none !important;
   }
   .scroll-cue,
   .code-type,
