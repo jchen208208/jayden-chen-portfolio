@@ -31,12 +31,10 @@ const GLOW = "var(--glow, #ffbe5c)";
 const CHAIN_DOWN = "transform 150ms ease-out";
 const CHAIN_BACK = "transform 420ms cubic-bezier(0.34, 1.6, 0.64, 1)";
 /** reference-image pixels → desk units for the soldering station */
-const SOLDERING_SCALE = 0.4;
-/** the tool wall's hung tools are tiny, so they use a lighter outline than
- *  the desk's 2.4 (still ~2 once the wall's 1.3x scale is applied) plus a
- *  thin weight for interior details, like the lamp's 1.4 chain */
-const TOOL_OUTLINE = 1.6;
-const TOOL_DETAIL = 0.9;
+const SOLDERING_SCALE = 0.36;
+/** the tool wall is drawn at its original size and scaled up by this much;
+ *  its line weight is divided by it so it still draws at the desk's 2.4 */
+const TOOL_WALL_SCALE = 1.3;
 
 /** a monitor / laptop screen: opaque bezel + inset glass */
 function Screen({
@@ -113,7 +111,10 @@ export default function DeskSvg({
             bookshelf now sits, and scaled up 1.3x around its own centre
             (420,100,160,146 → centre 500,173) so the whole board and
             everything mounted on it reads bigger ─────────────────────── */}
-        <g transform="translate(-291.5 15) translate(500 173) scale(1.3) translate(-500 -173)">
+        <g
+          transform={`translate(-291.5 15) translate(500 173) scale(${TOOL_WALL_SCALE}) translate(-500 -173)`}
+          strokeWidth={2.4 / TOOL_WALL_SCALE}
+        >
           {/* sharp corners, unlike the bookshelf; an inset rect gives the
               frame a visible border thickness, the same bezel trick as
               `Screen` */}
@@ -124,28 +125,24 @@ export default function DeskSvg({
               touch narrower than the inner border */}
           <rect x={432} y={147} width={136} height={4} fill={PAPER} />
           {/* toolbox, traced from designs/reference/toolbox_reference.png,
-              resting on the shelf and set a bit left of its centre — kept
-              clear of every tool-wall edge */}
+              resting on the shelf and set a bit left of its centre: handle,
+              lid seam and two clasps */}
           <path d="M458 121 L458 115 L482 115 L482 121 L478 121 L478 118 L462 118 L462 121 Z" fill={PAPER} />
           <rect x={442} y={121} width={56} height={26} rx={5} fill={PAPER} />
           <line x1={442} y1={129} x2={498} y2={129} />
           <rect x={455} y={124} width={7} height={11} rx={1.5} fill={PAPER} />
           <rect x={479} y={124} width={7} height={11} rx={1.5} fill={PAPER} />
-          {/* a second, smaller toolbox to the right of the first — shorter,
-              more square, sharp corners instead of rounded, and different
-              details: a flat tab handle and a pair of corner rivets instead
-              of a lid seam and twin clasps */}
+          {/* a second, smaller toolbox to the right — squarer, sharp-cornered,
+              with a flat tab handle and its own lid seam */}
           <rect x={521} y={120} width={28} height={5} fill={PAPER} />
           <rect x={507} y={125} width={56} height={22} fill={PAPER} />
-          <circle cx={513} cy={130} r={1} fill={PAPER} />
-          <circle cx={557} cy={130} r={1} fill={PAPER} />
-          {/* pegboard holes — a regular 10 × 7 grid filling the wall below
-              the shelf, painted first so the shelf brackets and every hung
-              tool sit on top of them */}
+          <line x1={507} y1={132} x2={563} y2={132} />
+          {/* pegboard holes — a loose grid below the shelf, painted first so
+              the shelf brackets and every hung tool sit on top of them */}
           <g opacity={0.35} fill={INK} stroke="none">
-            {[437, 451, 465, 479, 493, 507, 521, 535, 549, 563].map((px) =>
-              [160, 172, 184, 196, 208, 220, 232].map((py) => (
-                <circle key={`${px}-${py}`} cx={px} cy={py} r={1.3} />
+            {[444, 472, 500, 528, 556].map((px) =>
+              [162, 184, 206, 228].map((py) => (
+                <circle key={`${px}-${py}`} cx={px} cy={py} r={1.4} />
               )),
             )}
           </g>
@@ -154,115 +151,78 @@ export default function DeskSvg({
               same trapezoid shape as the cactus pot, just inverted */}
           <path d="M451.5 151 L458.5 151 L457.0 166 L453.0 166 Z" fill={PAPER} />
           <path d="M541.5 151 L548.5 151 L547.0 166 L543.0 166 Z" fill={PAPER} />
-          {/* five tools hung upright across the pegboard, each drawn like a
-              line icon in its own local coordinates (origin = top centre):
-              a slightly lighter outline than the rest of the desk, so a few
-              thin interior detail lines (`TOOL_DETAIL`) still read at this
-              size, and every shape opaque-filled so overlaps stay clean */}
-          <g strokeWidth={TOOL_OUTLINE}>
-            {/* scissors — an asymmetric pair of finger loops (one round,
-                one taller oval, like real shears), arms crossing to a pivot
-                screw, and two overlapping leaf-shaped blades closed to a
-                point */}
-            <g transform="translate(442 171)">
-              <path d="M-3.3 17 Q-4.6 32 -0.7 48 Q1.1 32 1.5 18 Z" fill={PAPER} />
-              <path d="M3.3 17 Q4.6 32 0.7 48 Q-1.1 32 -1.5 18 Z" fill={PAPER} />
-              <path d="M-5.5 11 Q-3 14 -0.6 18.5 L0.9 16.6 Q-1 13 -2.2 10.6 Z" fill={PAPER} />
-              <path d="M5.5 12 Q3 15 0.6 18.5 L-0.9 16.6 Q1 14 2.4 11.4 Z" fill={PAPER} />
-              <ellipse cx={-5} cy={6} rx={4.6} ry={5.2} fill={PAPER} />
-              <ellipse cx={-5} cy={6} rx={2.3} ry={2.9} fill={PAPER} strokeWidth={TOOL_DETAIL} />
-              <ellipse cx={5.6} cy={6.6} rx={4.9} ry={6.2} fill={PAPER} />
-              <ellipse cx={5.6} cy={6.6} rx={2.5} ry={3.8} fill={PAPER} strokeWidth={TOOL_DETAIL} />
-              <circle cx={0} cy={17.4} r={1.5} fill={PAPER} strokeWidth={TOOL_DETAIL} />
-            </g>
-            {/* work glove, after designs/reference/glove_reference.jpg —
-                hung cuff-up: one silhouette for the hand (four tapered
-                fingers with V-notches between them, thumb angled off to
-                the side), finger-seam lines, a knuckle seam across the
-                back, and a separate cuff with a band stitched through it */}
-            <g transform="translate(471 170)">
-              <path
-                d="M8.6 10 L8.9 27 L8.4 38 Q8.2 40.5 6.4 40.5 Q4.6 40.5 4.5 38 L4.3 29.5
-                   L4.1 42.5 Q4 45 2.1 45 Q0.2 45 0.1 42.5 L-0.1 29.5
-                   L-0.2 44 Q-0.3 46.5 -2.2 46.5 Q-4.1 46.5 -4.2 44 L-4.4 29.5
-                   L-4.5 41.5 Q-4.6 44 -6.5 44 Q-8.4 44 -8.5 41.5 L-8.7 26
-                   Q-11.2 27.5 -13.3 31.5 Q-14.8 33.8 -16.2 32.6 Q-17.2 31.6 -16.4 29.6
-                   Q-13.8 21 -8.8 14 L-8.6 10 Z"
-                fill={PAPER}
-              />
-              <g strokeWidth={TOOL_DETAIL}>
-                <path d="M4.3 29.5 L4.3 25.5 M-0.1 29.5 L-0.1 25.5 M-4.4 29.5 L-4.4 25.5" />
-                <path d="M-8.2 22.5 Q0 25 8.8 22.5" />
-              </g>
-              <path d="M-9.8 1 L9.8 1 L9 10.5 L-9 10.5 Z" fill={PAPER} />
-              <path d="M-9.5 5 L9.5 5" strokeWidth={TOOL_DETAIL} />
-            </g>
-            {/* claw hammer — resting on two pegs under its head: a wooden
-                handle socketed into the head (the seam is kept), a rubber
-                grip sleeve with ridges near the butt, and a one-piece head
-                with a bevelled striking face, a narrow neck, the eye block
-                and a curved claw sweeping down to a point */}
-            <g transform="translate(503 161)">
-              <path d="M-2.1 4 L-2.5 38 L2.5 38 L2.1 4 Z" fill={PAPER} />
-              <path d="M-2.9 37 L-3.3 56 Q0 59.5 3.3 56 L2.9 37 Z" fill={PAPER} />
-              <path
-                d="M-3.1 41.5 L3.1 41.5 M-3.15 45.5 L3.15 45.5 M-3.2 49.5 L3.2 49.5"
-                strokeWidth={TOOL_DETAIL}
-              />
-              <path
-                d="M-12.5 -4.2 Q-13.3 -4.2 -13.3 -3.4 L-13.3 3.4 Q-13.3 4.2 -12.5 4.2 L-9.8 4.2 L-9.8 2.4
-                   L-4.2 2.4 L-4.2 5.5 L4.2 5.5 L4.2 2.2 Q10.5 2 16.2 8.8 Q17 9.6 17.3 8.6
-                   Q15.5 -3.6 4.2 -3.8 L4.2 -4.6 L-4.2 -4.6 L-4.2 -2.4 L-9.8 -2.4 L-9.8 -4.2 Z"
-                fill={PAPER}
-              />
-              <path d="M-11.9 -4 L-11.9 4" strokeWidth={TOOL_DETAIL} />
-            </g>
-            {/* combination pliers — jaws up: bowed rubber-sleeved handles
-                (collar line near the top) meeting under a tapered nose with
-                a jaw seam, serration ticks, the rounded cutter/grip opening
-                just above the pivot, and a riveted pivot boss on top */}
-            <g transform="translate(533 166)">
-              <path
-                d="M-3.6 21 Q-7.6 36 -7.6 50.5 Q-7.6 54 -5 54 Q-2.6 54 -2.7 50.5 Q-2.4 37 -0.1 21 Z"
-                fill={PAPER}
-              />
-              <path
-                d="M3.6 21 Q7.6 36 7.6 50.5 Q7.6 54 5 54 Q2.6 54 2.7 50.5 Q2.4 37 0.1 21 Z"
-                fill={PAPER}
-              />
-              <path d="M-5.3 29.5 L-1.3 29.5 M5.3 29.5 L1.3 29.5" strokeWidth={TOOL_DETAIL} />
-              <path
-                d="M-1 0.5 Q0 -0.3 1 0.5 L4.3 17.5 Q4.6 21.5 0 24.5 Q-4.6 21.5 -4.3 17.5 Z"
-                fill={PAPER}
-              />
-              <path d="M0 1 L0 11.5 M0 16.8 L0 18" strokeWidth={TOOL_DETAIL} />
-              <path d="M0 11.5 Q1.5 14.1 0 16.8 Q-1.5 14.1 0 11.5 Z" fill={PAPER} strokeWidth={TOOL_DETAIL} />
-              <path d="M-0.9 4 L0.9 4 M-1.3 6.5 L1.3 6.5 M-1.7 9 L1.7 9" strokeWidth={TOOL_DETAIL * 0.8} />
-              <circle cx={0} cy={20.2} r={2.4} fill={PAPER} />
-              <circle cx={0} cy={20.2} r={0.8} fill={INK} stroke="none" />
-            </g>
-            {/* combination wrench — hung by its open end on a peg: one
-                unbroken outline (angled open-jaw head, a shaft that slims
-                slightly toward the middle, ring-shaped box end) so no seams
-                show where the heads meet the shaft, plus a hex socket in
-                the box end and a recessed channel running down the shaft */}
-            <g transform="translate(558 167)">
-              <path
-                d="M2.3 12.37 A6.3 6.3 0 0 0 0.15 0.2 L2.09 5.01 A2.5 2.5 0 0 1 -2.54 6.88
-                   L-4.48 2.07 A6.3 6.3 0 0 0 -2.3 12.37 L-1.85 32.24 L-2.3 52.11
-                   A5.4 5.4 0 1 0 2.3 52.11 L1.85 32.24 Z"
-                fill={PAPER}
-              />
-              <path
-                d="M2.51 58.45 L0 59.9 L-2.51 58.45 L-2.51 55.55 L0 54.1 L2.51 55.55 Z"
-                fill={PAPER}
-                strokeWidth={TOOL_DETAIL}
-              />
-              <path
-                d="M-0.75 16.37 L-0.6 32.24 L-0.75 48.11 M0.75 16.37 L0.6 32.24 L0.75 48.11"
-                strokeWidth={TOOL_DETAIL}
-              />
-            </g>
+          {/* five tools hung upright across the pegboard, each in its own
+              local coordinates (origin = top centre) and kept to its
+              silhouette — the outline says what it is, as on the 3D printer;
+              every shape opaque-filled so overlaps stay clean */}
+          {/* scissors — two finger loops (one round, one taller oval), the
+              arms crossing, and two leaf-shaped blades closed to a point */}
+          <g transform="translate(442 171)">
+            <path d="M-3.3 17 Q-4.6 32 -0.7 48 Q1.1 32 1.5 18 Z" fill={PAPER} />
+            <path d="M3.3 17 Q4.6 32 0.7 48 Q-1.1 32 -1.5 18 Z" fill={PAPER} />
+            <path d="M-5.5 11 Q-3 14 -0.6 18.5 L0.9 16.6 Q-1 13 -2.2 10.6 Z" fill={PAPER} />
+            <path d="M5.5 12 Q3 15 0.6 18.5 L-0.9 16.6 Q1 14 2.4 11.4 Z" fill={PAPER} />
+            <ellipse cx={-5} cy={6} rx={4.6} ry={5.2} fill={PAPER} />
+            <ellipse cx={5.6} cy={6.6} rx={4.9} ry={6.2} fill={PAPER} />
+          </g>
+          {/* work glove, after designs/reference/glove_reference.jpg — hung
+              cuff-up: four fingers and a thumb as one silhouette, and the
+              cuff */}
+          <g transform="translate(471 170)">
+            <path
+              d="M8.6 10 L8.9 27 L8.4 38 Q8.2 40.5 6.4 40.5 Q4.6 40.5 4.5 38 L4.3 29.5
+                 L4.1 42.5 Q4 45 2.1 45 Q0.2 45 0.1 42.5 L-0.1 29.5
+                 L-0.2 44 Q-0.3 46.5 -2.2 46.5 Q-4.1 46.5 -4.2 44 L-4.4 29.5
+                 L-4.5 41.5 Q-4.6 44 -6.5 44 Q-8.4 44 -8.5 41.5 L-8.7 26
+                 Q-11.2 27.5 -13.3 31.5 Q-14.8 33.8 -16.2 32.6 Q-17.2 31.6 -16.4 29.6
+                 Q-13.8 21 -8.8 14 L-8.6 10 Z"
+              fill={PAPER}
+            />
+            <path d="M-9.8 1 L9.8 1 L9 10.5 L-9 10.5 Z" fill={PAPER} />
+          </g>
+          {/* claw hammer — resting on two pegs under its head: the handle,
+              a grip sleeve at the butt, and the head with its curved claw */}
+          <g transform="translate(503 161)">
+            <path d="M-2.1 4 L-2.5 38 L2.5 38 L2.1 4 Z" fill={PAPER} />
+            <path d="M-2.9 37 L-3.3 56 Q0 59.5 3.3 56 L2.9 37 Z" fill={PAPER} />
+            <path
+              d="M-12.5 -4.2 Q-13.3 -4.2 -13.3 -3.4 L-13.3 3.4 Q-13.3 4.2 -12.5 4.2 L-9.8 4.2 L-9.8 2.4
+                 L-4.2 2.4 L-4.2 5.5 L4.2 5.5 L4.2 2.2 Q10.5 2 16.2 8.8 Q17 9.6 17.3 8.6
+                 Q15.5 -3.6 4.2 -3.8 L4.2 -4.6 L-4.2 -4.6 L-4.2 -2.4 L-9.8 -2.4 L-9.8 -4.2 Z"
+              fill={PAPER}
+            />
+          </g>
+          {/* combination pliers — jaws up: two bowed handles meeting under a
+              tapered nose, its jaw line faint, and the pivot */}
+          <g transform="translate(533 166)">
+            <path
+              d="M-3.6 21 Q-7.6 36 -7.6 50.5 Q-7.6 54 -5 54 Q-2.6 54 -2.7 50.5 Q-2.4 37 -0.1 21 Z"
+              fill={PAPER}
+            />
+            <path
+              d="M3.6 21 Q7.6 36 7.6 50.5 Q7.6 54 5 54 Q2.6 54 2.7 50.5 Q2.4 37 0.1 21 Z"
+              fill={PAPER}
+            />
+            <path
+              d="M-1 0.5 Q0 -0.3 1 0.5 L4.3 17.5 Q4.6 21.5 0 24.5 Q-4.6 21.5 -4.3 17.5 Z"
+              fill={PAPER}
+            />
+            <path d="M0 2 L0 17" opacity={0.5} />
+            <circle cx={0} cy={20.2} r={2.4} fill={PAPER} />
+          </g>
+          {/* combination wrench — hung by its open end on a peg: one outline
+              (open jaw, shaft, ring end) and the hex socket in the ring */}
+          <g transform="translate(558 167)">
+            <path
+              d="M2.3 12.37 A6.3 6.3 0 0 0 0.15 0.2 L2.09 5.01 A2.5 2.5 0 0 1 -2.54 6.88
+                 L-4.48 2.07 A6.3 6.3 0 0 0 -2.3 12.37 L-1.85 32.24 L-2.3 52.11
+                 A5.4 5.4 0 1 0 2.3 52.11 L1.85 32.24 Z"
+              fill={PAPER}
+            />
+            <path
+              d="M2.51 58.45 L0 59.9 L-2.51 58.45 L-2.51 55.55 L0 54.1 L2.51 55.55 Z"
+              fill={PAPER}
+            />
           </g>
           {/* the pegs each tool hangs from, painted over the tools: one
               through the scissors' round loop, two under the hammer's head
@@ -473,14 +433,17 @@ export default function DeskSvg({
             tip stays clear of the tool wall above. The line weight is
             divided by the scale so it still draws at 2.4 ── */}
         <g
-          transform={`translate(146 ${DESK_TOP}) scale(${SOLDERING_SCALE}) translate(-73 -${SOLDERING_FEET_Y})`}
+          transform={`translate(151 ${DESK_TOP}) scale(${SOLDERING_SCALE}) translate(-73 -${SOLDERING_FEET_Y})`}
           strokeWidth={2.4 / SOLDERING_SCALE}
         >
-          <SolderingStation ink={INK} paper={PAPER} strokeWidth={2.4 / SOLDERING_SCALE} />
+          <SolderingStation paper={PAPER} strokeWidth={2.4 / SOLDERING_SCALE} />
         </g>
 
-        {/* ── potted cactus on the desk, traced from the reference ─────── */}
-        <g>
+        {/* ── potted cactus on the desk, traced from the reference: two
+            arms and a ribbed column with a few spines and a flower on top,
+            in a terracotta pot. Drawn at its first size and shrunk about
+            the pot's base, line weight kept at 2.4 ─────────────────── */}
+        <g transform="translate(332 396) scale(0.88) translate(-332 -396)" strokeWidth={2.4 / 0.88}>
           {/* the cactus itself, nudged right so its centre branch lines up
               with the centre of the pot */}
           <g transform="translate(4 0)">
@@ -497,24 +460,28 @@ export default function DeskSvg({
                  L359 337 A5 5 0 0 0 354 342 L338 342 Z"
               fill={PAPER}
             />
-            {/* arm ridge lines */}
-            <path d="M317 343 L304 343 L304 321" opacity={0.3} />
-            <path d="M339 334 L352 334 L352 314" opacity={0.3} />
-            {/* body — a slim rounded column */}
+            {/* body — a slim rounded column, two faint ribs */}
             <path
-              d="M316 396 L316 322 C316 312 320 306 328 306 C336 306 340 312 340 322
-                 L340 396 Z"
+              d="M316 384 L316 322 C316 312 320 306 328 306 C336 306 340 312 340 322
+                 L340 384 Z"
               fill={PAPER}
             />
-            {/* ridge lines on the body */}
-            <path d="M321 310 L321 392" opacity={0.35} />
-            <path d="M328 306 L328 392" opacity={0.35} />
-            <path d="M335 310 L335 392" opacity={0.35} />
+            <path d="M324 309 L324 380 M332 309 L332 380" opacity={0.35} />
+            {/* spines, ticked out from the edges */}
+            <g opacity={0.7}>
+              <path d="M316 320 l-4 -3 M316 336 l-4 -3 M340 324 l4 -3 M340 352 l4 -3" />
+              <path d="M297 330 l-4 -3 M359 322 l4 -3" />
+            </g>
+            {/* a flower on top — three petals */}
+            <path
+              d="M323 308 Q320 302 321 297 Q325 298 326.5 302 Q327 297 328 294
+                 Q329 297 329.5 302 Q331 298 335 297 Q336 302 333 308 Z"
+              fill={PAPER}
+            />
           </g>
-          {/* pot — keep the terracotta shape */}
-          <path d="M305 362 L359 362 L355 378 L309 378 Z" fill={PAPER} />
-          <path d="M309 378 L355 378 L344 396 L320 396 Z" fill={PAPER} />
-          <line x1={310} y1={378} x2={354} y2={378} opacity={0.4} />
+          {/* pot — terracotta shape: rim band, tapered body */}
+          <path d="M310 362 L354 362 L351 378 L313 378 Z" fill={PAPER} />
+          <path d="M313 378 L351 378 L342 396 L322 396 Z" fill={PAPER} />
         </g>
 
         {/* ── desk lamp: base like the monitors, arm bends left then down to the head ── */}
@@ -664,10 +631,12 @@ export default function DeskSvg({
               fill={PAPER}
             />
           ))}
-          {/* front panel strip + power button */}
+          {/* front panel: top vent, power button, two USB ports */}
           <line x1={642} y1={450} x2={662} y2={450} />
           <line x1={642} y1={458} x2={662} y2={458} />
-          <circle cx={652} cy={474} r={4} />
+          <circle cx={652} cy={476} r={4} />
+          <rect x={646} y={490} width={12} height={5} rx={1} />
+          <rect x={646} y={500} width={12} height={5} rx={1} />
           <path d="M532 656 v6 M664 656 v6" />
         </g>
 
@@ -685,55 +654,67 @@ export default function DeskSvg({
           {/* recycling symbol — traced from designs/reference/recycling symbol.png.
               One arrow (right edge → rounded bottom-right corner → flat arrowhead
               on the bottom edge), drawn around the triangle's centroid and
-              rotated 120° twice. Solid, like the reference. */}
-          <g transform="translate(1088 578) scale(0.072)" fill={INK} stroke="none">
+              rotated 120° twice. Solid, like the reference, but slimmed: a
+              page-coloured stroke round each arrow eats ~0.6 off every edge */}
+          <g
+            transform="translate(1088 578) scale(0.072)"
+            fill={INK}
+            stroke={PAPER}
+            strokeWidth={1.2 / 0.072}
+            strokeLinejoin="miter"
+          >
             {[0, 120, 240].map((deg) => (
               <path
                 key={deg}
                 transform={`rotate(${deg})`}
                 d="M238 -102.8 L377.6 139 A79 79 0 0 1 309.2 257.5 L70 257.5
-                   L70 325 L5 210 L70 95 L70 162.5 L257.2 162.5
+                   L70 352 L-22 210 L70 68 L70 162.5 L257.2 162.5
                    A14 14 0 0 0 269.3 141.5 L155.7 -55.3 Z"
               />
             ))}
           </g>
         </g>
 
-        {/* ── rolling office chair, front and centre ────────────────────── */}
+        {/* ── rolling office chair, front and centre, turned toward the
+            desk — so we see the back of it: the backrest with its spine
+            running down over the seat into the mechanism, armrests on
+            beams, the gas lift and a five-star base about as wide as the
+            seat ─────────────────────────────────────────────────────── */}
         <g>
-          {/* backrest — top edge sits just below the desk's top edge */}
-          <rect x={720} y={386} width={160} height={120} rx={22} fill={PAPER} />
-          <path d="M736 448 Q800 438 864 448" opacity={0.4} />
-          {/* seat — same width as the backrest */}
+          {/* armrests — a beam up from each side of the seat to a pad */}
+          <rect x={723} y={516} width={11} height={54} rx={2} fill={PAPER} />
+          <rect x={866} y={516} width={11} height={54} rx={2} fill={PAPER} />
+          <rect x={711} y={509} width={36} height={9} rx={4.5} fill={PAPER} />
+          <rect x={853} y={509} width={36} height={9} rx={4.5} fill={PAPER} />
+          {/* seat cushion — as wide as the backrest */}
+          <rect x={732} y={540} width={136} height={38} rx={16} fill={PAPER} />
+          {/* backrest — top edge just below the desk's */}
+          <rect x={732} y={384} width={136} height={116} rx={26} fill={PAPER} />
+          {/* tilt mechanism under the seat, then the gas lift */}
+          <rect x={778} y={578} width={44} height={10} rx={3} fill={PAPER} />
+          <rect x={794} y={588} width={12} height={28} fill={PAPER} />
+          {/* the spine, up the back of the chair: out of the middle of the
+              seat cushion and onto the backrest */}
+          <path d="M788 551 L789 452 Q789 438 800 438 Q811 438 811 452 L812 551 Q812 561 800 561 Q788 561 788 551 Z" fill={PAPER} />
+          {/* five-star base: two legs out to the sides, the one toward us a
+              short stub under the hub */}
           <path
-            d="M720 552
-               Q720 540 800 540
-               Q880 540 880 552
-               L880 574
-               Q880 588 800 588
-               Q720 588 720 574 Z"
+            d="M794 614 L736 632 Q728 635 728 642 L738 642 Q738 640 741 639 L796 624 Z"
             fill={PAPER}
           />
-          {/* connector — off the backrest, laid over the seat cushion to about
-              half its depth, then dropping in */}
           <path
-            d="M782 492 L818 492 L818 556 Q818 566 809 566 L791 566 Q782 566 782 556 Z"
+            d="M806 614 L864 632 Q872 635 872 642 L862 642 Q862 640 859 639 L804 624 Z"
             fill={PAPER}
           />
-          <path d="M776 560 Q800 570 824 560" opacity={0.4} />
-          {/* short central column from under the seat */}
-          <rect x={794} y={588} width={12} height={16} fill={PAPER} />
-          {/* the column branches into three legs — a little thickness, feet on the floor */}
-          <rect x={795} y={602} width={10} height={38} fill={PAPER} />
-          <path d="M799 600 L711 610 L707 615 L707 640 L717 640 L717 618 L803 608 Z" fill={PAPER} />
-          <path d="M801 600 L889 610 L893 615 L893 640 L883 640 L883 618 L797 608 Z" fill={PAPER} />
-          {/* centre caster — a rounded bar */}
-          <rect x={791} y={636} width={18} height={26} rx={9} fill={PAPER} />
-          {/* side casters — a circle with an inset circle */}
-          <circle cx={712} cy={650} r={12} fill={PAPER} />
-          <circle cx={712} cy={650} r={5} />
-          <circle cx={888} cy={650} r={12} fill={PAPER} />
-          <circle cx={888} cy={650} r={5} />
+          <path d="M794 622 L806 622 L808 640 L792 640 Z" fill={PAPER} />
+          <rect x={786} y={610} width={28} height={14} rx={5} fill={PAPER} />
+          {/* casters: the front one edge-on, a rounded bar; the side ones a
+              wheel with its hub */}
+          <rect x={792} y={638} width={16} height={24} rx={8} fill={PAPER} />
+          <circle cx={733} cy={651} r={11} fill={PAPER} />
+          <circle cx={733} cy={651} r={4} />
+          <circle cx={867} cy={651} r={11} fill={PAPER} />
+          <circle cx={867} cy={651} r={4} />
         </g>
       </g>
     </svg>

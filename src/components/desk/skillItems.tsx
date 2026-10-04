@@ -44,11 +44,7 @@ export function SolderingIcon({ className, size, title, color, ...rest }: IconBa
       {...(size !== undefined && { width: size, height: size })}
     >
       {title && <title>{title}</title>}
-      <SolderingStation
-        ink="currentColor"
-        paper="var(--paper, #000)"
-        strokeWidth={SOLDERING_ICON_STROKE}
-      />
+      <SolderingStation paper="var(--paper, #000)" strokeWidth={SOLDERING_ICON_STROKE} />
     </svg>
   );
 }
