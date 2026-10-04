@@ -15,6 +15,7 @@ import {
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
+import type { PcFanMode } from "./PcFanLights";
 import DeskCardList from "./DeskCardList";
 import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
@@ -182,6 +183,17 @@ const LAMP_IDLE_ON_MS: [number, number] = [20_000, 40_000];
 /** …and back off a little later */
 const LAMP_IDLE_OFF_MS: [number, number] = [6_000, 10_000];
 
+/** the PC's power button (DeskSvg's PC tower, translated −100), with a
+ *  generous hit box — it's only 8 units across */
+const PC_BUTTON_HIT: Rect = { x: 540, y: 464, w: 24, h: 24 };
+/** the fans' light effects, in the order the power button steps through them */
+const PC_FAN_MODES: Exclude<PcFanMode, "off">[] = ["spin", "wave", "breathe"];
+/** left alone, the fans light up now and then with an effect of their own
+ *  choosing (a random wait in this range, ms)… */
+const PC_IDLE_ON_MS: [number, number] = [12_000, 28_000];
+/** …and go dark again a while later */
+const PC_IDLE_OFF_MS: [number, number] = [8_000, 14_000];
+
 /** how far each neon sign's click target reaches past its backboard, in desk
  *  units */
 const SIGN_HIT_PAD = 3;
@@ -196,6 +208,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<SectionId | null>(null);
   const [lampOn, setLampOn] = useState(false);
   const [chainPulled, setChainPulled] = useState(false);
+  const [pcFans, setPcFans] = useState<PcFanMode>("off");
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
   // How big the clicked screen's glass was on screen, as a fraction of the
   // viewport — the fullscreen content starts at this scale (roughly the
@@ -342,6 +355,37 @@ export default function DeskScene({ className }: { className?: string }) {
     const id = window.setTimeout(() => pullChain(true), min + Math.random() * (max - min));
     return () => window.clearTimeout(id);
   }, [lampOn, reduced, pullChain]);
+
+  // The PC's fans work like the lamp: the power button toggles them, and left
+  // alone they light up now and then and go dark again. Each switch-on is a
+  // different effect — the button steps through them in turn, the idle timer
+  // picks one of the other two at random.
+  const lastPcMode = useRef<PcFanMode>(PC_FAN_MODES[PC_FAN_MODES.length - 1]);
+  const pcOnByIdle = useRef(false);
+  const nextPcMode = useCallback((random: boolean) => {
+    const i = PC_FAN_MODES.indexOf(lastPcMode.current as (typeof PC_FAN_MODES)[number]);
+    const step = random ? 1 + Math.floor(Math.random() * (PC_FAN_MODES.length - 1)) : 1;
+    const next = PC_FAN_MODES[(i + step) % PC_FAN_MODES.length];
+    lastPcMode.current = next;
+    return next;
+  }, []);
+  const togglePcFans = useCallback(() => {
+    pcOnByIdle.current = false;
+    // reduced motion has no effects to step through: just the steady glow
+    // (`breathe`, with its animation off)
+    setPcFans(pcFans === "off" ? (reduced ? "breathe" : nextPcMode(false)) : "off");
+  }, [pcFans, nextPcMode, reduced]);
+  // As with the lamp, fans the visitor switched on stay on until they switch
+  // them off, and reduced motion never lights them unbidden.
+  useEffect(() => {
+    if (reduced || (pcFans !== "off" && !pcOnByIdle.current)) return;
+    const [min, max] = pcFans === "off" ? PC_IDLE_ON_MS : PC_IDLE_OFF_MS;
+    const id = window.setTimeout(() => {
+      pcOnByIdle.current = true;
+      setPcFans(pcFans === "off" ? nextPcMode(true) : "off");
+    }, min + Math.random() * (max - min));
+    return () => window.clearTimeout(id);
+  }, [pcFans, reduced, nextPcMode]);
 
   const zoomed = openId !== null;
   // Experience can run past the screen's bottom, so its overlay scrolls, and
@@ -543,7 +587,12 @@ export default function DeskScene({ className }: { className?: string }) {
           className="relative w-full"
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
-          <DeskSvg className="absolute inset-0 h-full w-full" lampOn={lampOn} chainPulled={chainPulled} />
+          <DeskSvg
+            className="absolute inset-0 h-full w-full"
+            lampOn={lampOn}
+            chainPulled={chainPulled}
+            pcFans={pcFans}
+          />
           {/* screen 1's contents — the board turning, filling the glass.
               Sits between the desk art and the click targets below, and is
               `pointer-events-none`, so its own screen's button still takes
@@ -557,6 +606,15 @@ export default function DeskScene({ className }: { className?: string }) {
             onMouseDown={(e) => e.preventDefault()}
             className="absolute cursor-pointer outline-none"
             style={percentBox(LAMP_CHAIN_HIT)}
+          />
+          <button
+            type="button"
+            aria-label={pcFans === "off" ? "Turn the PC's lights on" : "Turn the PC's lights off"}
+            aria-pressed={pcFans !== "off"}
+            onClick={togglePcFans}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute cursor-pointer rounded-full outline-none"
+            style={percentBox(PC_BUTTON_HIT)}
           />
           {SCREENS.map((s) => (
             <button

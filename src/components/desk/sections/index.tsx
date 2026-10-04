@@ -23,7 +23,7 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   about: personalCards,
 };
 
-/** Skills and Experience set their header in the display face (Mileast); the others
+/** Skills and Experience set their header in the display face (Chakra Petch); the others
  *  uses the site monospace. Card titles are the display face throughout. */
 const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills", "experience"]);
 

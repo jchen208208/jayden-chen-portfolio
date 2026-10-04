@@ -4,6 +4,7 @@ import LaptopExperienceScreen from "./LaptopExperienceScreen";
 import LaptopSkillsScreen from "./LaptopSkillsScreen";
 import PortraitMonitorScreen from "./PortraitMonitorScreen";
 import NeonSigns from "./NeonSigns";
+import PcFanLights, { type PcFanMode } from "./PcFanLights";
 
 /**
  * "The Desk" — a clean-line trace of Jayden's setup, in the flat style of
@@ -71,8 +72,11 @@ export default function DeskSvg({
   className,
   lampOn = false,
   chainPulled = false,
+  pcFans = "off",
 }: {
   className?: string;
+  /** the PC's RGB fans: off, or which light effect they're running */
+  pcFans?: PcFanMode;
   /** lit, the bulb fills with the glow */
   lampOn?: boolean;
   /** mid-pull: the chain is yanked down (the light flips at the bottom of the
@@ -521,7 +525,8 @@ export default function DeskSvg({
                 Every pull, by click or by the lamp's own idle timer (both in
                 DeskScene), yanks the whole chain down — the links spread
                 apart and the handle drops furthest — then lets it spring back
-                with a little overshoot. */}
+                with a little overshoot. The handle is drawn in the glow colour,
+                so it reads as the pullable part. */}
             <g transform="rotate(-15 1015 169)" strokeWidth={1.4}>
               {[4, 8, 12, 16, 20].map((dy, i, all) => (
                 <circle
@@ -529,7 +534,9 @@ export default function DeskSvg({
                   cx={1015}
                   cy={169 + dy}
                   r={i === all.length - 1 ? 2 : 1}
-                  fill={PAPER}
+                  // the handle is amber — the one thing here to grab
+                  fill={i === all.length - 1 ? GLOW : PAPER}
+                  stroke={i === all.length - 1 ? GLOW : undefined}
                   style={{
                     transform: `translateY(${chainPulled ? dy * 0.3 : 0}px)`,
                     transition: chainPulled ? CHAIN_DOWN : CHAIN_BACK,
@@ -631,10 +638,22 @@ export default function DeskSvg({
               fill={PAPER}
             />
           ))}
-          {/* front panel: top vent, power button, two USB ports */}
+          {/* the fans' RGB, when it's on — see `PcFanLights` */}
+          <PcFanLights mode={pcFans} />
+          {/* front panel: top vent, the power button — amber, the fans'
+              switch (DeskScene), lit while they're on — two USB ports */}
           <line x1={642} y1={450} x2={662} y2={450} />
           <line x1={642} y1={458} x2={662} y2={458} />
-          <circle cx={652} cy={476} r={4} />
+          {pcFans !== "off" && (
+            <circle cx={652} cy={476} r={8} fill={GLOW} fillOpacity={0.3} stroke="none" />
+          )}
+          <circle
+            cx={652}
+            cy={476}
+            r={4}
+            stroke={GLOW}
+            fill={pcFans !== "off" ? "var(--neon-core, #fff4e2)" : PAPER}
+          />
           <rect x={646} y={490} width={12} height={5} rx={1} />
           <rect x={646} y={500} width={12} height={5} rx={1} />
           <path d="M532 656 v6 M664 656 v6" />

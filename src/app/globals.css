@@ -46,7 +46,7 @@
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
-  --font-title: var(--font-mileast);
+  --font-title: var(--font-chakra);
 }
 
 html {
@@ -208,6 +208,87 @@ body {
 
 .neon-spark > g > g {
   animation: spark-fade var(--spark-ms) ease-in var(--spark-delay) both;
+}
+
+/* the PC's RGB fans (`PcFanLights`): they come on with a quick fade, then
+   run one of three effects, each a seamless loop.
+   `pc-spin` turns the glowing comet round each fan's centre (it rotates
+   about its own origin); `pc-side-spin` moves the side-on fans' light up and
+   down their edge in step with it — a circling light seen edge-on rides a
+   sine, so it eases out at each end and is quickest through the middle.
+   `pc-wave` slides the repeating bands in the wave's mask one whole period
+   (`WAVE_PERIOD`) to the right, so the end of the loop is the start.
+   `pc-breathe` glows all the fans up slowly and dims them away again. */
+@keyframes pc-lights-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.pc-lights {
+  animation: pc-lights-in 300ms ease-out both;
+}
+
+@keyframes pc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pc-spin {
+  transform-origin: 0 0;
+  animation: pc-spin 3.6s linear infinite;
+}
+
+@keyframes pc-side-spin {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  25% {
+    transform: translateY(22px);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  75% {
+    transform: translateY(-22px);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.pc-side-band {
+  animation: pc-side-spin 3.6s linear infinite;
+}
+
+@keyframes pc-wave {
+  to {
+    transform: translateX(110px);
+  }
+}
+
+.pc-wave-band {
+  animation: pc-wave 4.8s linear infinite;
+}
+
+@keyframes pc-breathe {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.pc-breathe {
+  animation: pc-breathe 5s ease-in-out infinite;
+}
+
+/* the title face is Chakra Petch (loaded in 500/600/700); titles are semibold */
+.font-title {
+  font-weight: 600;
 }
 
 /* smaller laptop on the desk (`LaptopSkillsScreen`): code types itself into
@@ -412,7 +493,12 @@ body {
   .code-type,
   .code-cursor,
   .mf-play,
-  .pa-play {
+  .pa-play,
+  .pc-lights,
+  .pc-spin,
+  .pc-side-band,
+  .pc-wave-band,
+  .pc-breathe {
     animation: none !important;
   }
   .exp-reveal,

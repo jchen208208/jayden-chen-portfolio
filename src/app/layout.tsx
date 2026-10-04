@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono, Tilt_Neon } from "next/font/google";
-import localFont from "next/font/local";
+import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Tilt_Neon } from "next/font/google";
 import "./globals.css";
 
-// Mileast — display face for the hero name + primary buttons. Local .otf, see /font.
-const mileast = localFont({
-  variable: "--font-mileast",
+// Chakra Petch (SIL OFL — free for commercial use) — the title face: section
+// and card titles, the résumé button. The hero name is not text but squares
+// (`ContributionName`).
+const chakraPetch = Chakra_Petch({
+  variable: "--font-chakra",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
   display: "swap",
-  src: [
-    { path: "./fonts/Mileast.otf", weight: "400", style: "normal" },
-    { path: "./fonts/Mileast-Italic.otf", weight: "400", style: "italic" },
-  ],
 });
 
 const fraunces = Fraunces({
@@ -51,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${mileast.variable} ${tiltNeon.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${tiltNeon.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}

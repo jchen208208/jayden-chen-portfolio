@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PROFILE } from "@/lib/site";
 import { Icon } from "@/components/site/icons";
+import ContributionName from "./ContributionName";
 
 /**
  * The title card: name, tagline, résumé, socials. This is the site's only
@@ -13,9 +14,8 @@ export default function Hero() {
         <Icon name="hardHat" size={15} className="text-white" />
         Under construction
       </p>
-      <h1 className="font-title text-[clamp(2.75rem,9vw,6rem)] leading-[0.95] tracking-tight text-white">
-        {PROFILE.name}
-      </h1>
+      {/* the name, spelled out in squares like a GitHub contribution graph */}
+      <ContributionName />
       <p className="mt-6 font-mono text-xs uppercase tracking-[0.3em] text-white/65 sm:text-sm">
         {PROFILE.tagline}
       </p>
