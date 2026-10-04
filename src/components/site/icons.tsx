@@ -16,6 +16,12 @@ const PATHS = {
 
 type IconName = keyof typeof PATHS;
 
+/** the glyph as a CSS `mask-image` value, for painting things only inside its shape */
+export function iconMaskImage(name: IconName) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="${PATHS[name]}"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 export function Icon({
   name,
   size = 18,
