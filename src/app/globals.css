@@ -7,7 +7,7 @@
   white line art on black — screen content included. The only colour is
   `--glow`, a warm amber: the light itself. The lamp's bulb, the neon signs'
   glow, and one highlight on each screen that has one (the PCB's gold pads
-  and LED, the code's keywords and strings, the tennis ball, the medal).
+  and LED, the code's keywords and strings, the tennis ball, the trophy).
   Nothing else gets a hue of its own — not brand logos, not a court — so
   the scene reads as one room lit one way. Chrome (bezels, card frames,
   tile borders) is always ink.
@@ -277,34 +277,27 @@ body {
   opacity: 1;
 }
 
-/* portrait monitor on the desk (`PortraitMonitorScreen`): one generated
-   timeline runs a tennis rally, a winning shot, a celebration and a podium
-   slideshow. Each element's animation name and duration are set inline by the
-   component; the shared playback lives here so hovering that screen's click
-   target can pause the whole sequence at once.
+/* portrait monitor on the desk (`PortraitMonitorScreen`, worked out in
+   `tennisRally.ts`): one generated timeline runs a tennis point, a
+   celebration and the podium. Each element's animation name and
+   duration — and, for the moving parts, its resting transform — are set
+   inline by the component; the shared playback lives here so hovering that
+   screen's click target can pause the whole sequence at once.
 
    `linear` is load-bearing: a timing function applies to every keyframe
    INTERVAL, so anything eased here would ease in and out of each of the
-   ball's sampled positions and it would visibly stall at the net. The arc
-   lives in the sampled coordinates instead, and individual keyframes opt into
-   `step-end` where a cut is wanted. */
+   ball's sampled positions and it would visibly stall in the air. The arc
+   lives in the sampled coordinates instead, and the swings' keyframes name
+   their own easing. Every joint rotates about its own origin, hence 0 0. */
 .pa-play {
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-}
-
-/* resting frames, shown whenever the animations are off (see the
-   reduced-motion block below) — never leave an animated element without one,
-   or killing its animation drops it at the desk viewBox's origin */
-.pa-ball {
   transform-origin: 0 0;
-  transform: translate(1153px, 342px) scale(0.939);
 }
 
-.pa-arm-up,
-.pa-pod1,
-.pa-pod2,
-.pa-pod3 {
+/* the podium only exists inside its own stretch of the cycle — and never
+   under reduced motion, which shows the court's still instead */
+.pa-podium {
   opacity: 0;
 }
 

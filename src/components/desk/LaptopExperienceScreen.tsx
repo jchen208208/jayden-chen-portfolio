@@ -13,6 +13,10 @@
  * to be in shot), closing in again after — until it settles on the verdict
  * at the right end. A beat there, then it fades and starts again.
  *
+ * The glow travels with the camera rather than piling up: whatever the
+ * camera has moved on from goes back to ink (see `PLAN`), so only the stretch
+ * in focus is ever lit.
+ *
  *   ┌──────────────┐
  *   │ ▭──┐         │ → → →  ⬡ ─▶ ⚖ ─▶ ⚒ ─▶ ☁ ─▶ ✓|✗
  *   │ ▤ ━▶ ⌕ ━▶ ☰  │        ⬡ ─┘   ▤
@@ -28,7 +32,7 @@
  * an inline `<style>`, key the root on a hash of that CSS. globals.css holds
  * the playback (`.mf-play`, `.mf-figs`): hovering the screen pauses it and
  * brightens the diagram; `prefers-reduced-motion` shows the whole diagram,
- * unzoomed, with its route lit.
+ * unzoomed, with the end of its route lit.
  *
  * Coordinates are glass-relative desk units (the glass is 202×100), inside
  * `DeskSvg`'s outer `<g stroke={INK} strokeWidth={2.4}>` — so every stroke
@@ -316,10 +320,12 @@ function edgeShape({ pts }: FigEdge) {
 const FADE_MS = 450;
 /** in close on the start, still dark, before the run begins */
 const LEAD_MS = 700;
-/** the whole route lit and the camera at rest on the end, before the fade */
+/** the camera at rest on the end of the route, lit, before the fade */
 const HOLD_MS = 2000;
 /** how fast a box or an arrowhead comes on */
 const LIGHT_MS = 160;
+/** how fast it goes back to ink once the camera has moved on */
+const FADE_BACK_MS = 400;
 /** the camera's glide between shots: eased at both ends, like a dolly */
 const GLIDE = "cubic-bezier(0.45, 0, 0.55, 1)";
 
@@ -394,51 +400,84 @@ function cameraPath(f: number, fig: Figure) {
   return name;
 }
 
-/** a box or an arrowhead coming on at `at` and staying lit until the figure
- *  has faded */
-function lightUp(f: number, at: number) {
+/** a box or an arrowhead coming on at `at`, lit until `until`, then fading
+ *  back to ink — or, with `until` null, staying lit until the figure has
+ *  faded (the end of the route, where the camera comes to rest) */
+function lightUp(f: number, at: number, until: number | null) {
   const { end } = SLOTS[f];
-  const name = `mf-on-${f}-${Math.round(at)}`;
+  const name = `mf-on-${f}-${Math.round(at)}-${until === null ? "end" : Math.round(until)}`;
+  const off =
+    until === null
+      ? `${pct(at + LIGHT_MS)}, ${pct(end)} { opacity: 1; }${reset(end, "opacity", 0)}`
+      : `${pct(at + LIGHT_MS)}, ${pct(until)} { opacity: 1; }
+  ${pct(until + FADE_BACK_MS)}, 100% { opacity: 0; }`;
   KEYFRAMES.set(
     name,
     `@keyframes ${name} {
   0%, ${pct(at)} { opacity: 0; }
-  ${pct(at + LIGHT_MS)}, ${pct(end)} { opacity: 1; }${reset(end, "opacity", 0)}
+  ${off}
 }`,
   );
   return name;
 }
 
-/** an arrow drawn on from its tail to its tip across [`from`, `to`] — the
- *  lit path has `pathLength=1`, so a dash offset of 1 hides it, 0 shows it */
-function drawOn(f: number, from: number, to: number) {
+/** an arrow drawn on from its tail to its tip across [`from`, `to`], lit
+ *  until `until`, then fading back to ink (`until` null: lit until the
+ *  figure has faded). The lit path has `pathLength=1`, so a dash offset of 1
+ *  hides it and 0 shows it; once it has faded it stays drawn but invisible,
+ *  and the next turn's offset of 1 hides it again before it shows. */
+function drawOn(f: number, from: number, to: number, until: number | null) {
   const { end } = SLOTS[f];
-  const name = `mf-draw-${f}-${Math.round(from)}`;
+  const name = `mf-draw-${f}-${Math.round(from)}-${until === null ? "end" : Math.round(until)}`;
+  const off =
+    until === null
+      ? `${pct(to)}, ${pct(end)} { stroke-dashoffset: 0; opacity: 1; }${reset(end, "stroke-dashoffset", 1)}`
+      : `${pct(to)}, ${pct(until)} { stroke-dashoffset: 0; opacity: 1; }
+  ${pct(until + FADE_BACK_MS)}, 100% { stroke-dashoffset: 0; opacity: 0; }`;
   KEYFRAMES.set(
     name,
     `@keyframes ${name} {
-  0%, ${pct(from)} { stroke-dashoffset: 1; }
-  ${pct(to)}, ${pct(end)} { stroke-dashoffset: 0; }${reset(end, "stroke-dashoffset", 1)}
+  0%, ${pct(from)} { stroke-dashoffset: 1; opacity: 1; }
+  ${off}
 }`,
   );
   return name;
 }
 
-/** Everything a figure needs from the clock: its fade, its camera, and per
- *  lit edge and node, which animation drives it. Built once, at module load,
- *  so the `<style>` and the elements agree. */
+/**
+ * Everything a figure needs from the clock: its fade, its camera, and per
+ * lit edge and node, which animation drives it. Built once, at module load,
+ * so the `<style>` and the elements agree.
+ *
+ * The light only stays where the camera is. A box lights as the run reaches
+ * it and stays lit while its outgoing arrows draw (one step), then goes back
+ * to ink; an arrow stays lit half a step past drawing on. So at any moment
+ * the glow is just the box in focus, the arrows leaving it, and the tail of
+ * the ones that led there. Only the last step's — where the camera comes to
+ * rest — stay lit until the figure fades.
+ */
 const PLAN = FIGURES.map((fig, f) => {
   const { run } = SLOTS[f];
   const at = (step: number) => run + step * fig.stepMs;
+  const lastStep = Math.max(...fig.edges.map((e) => e.step ?? 0), ...fig.nodes.map((n) => n.lit ?? 0));
+  const until = (step: number, linger: number) => (step >= lastStep ? null : at(step + linger));
   return {
     fade: figureFade(f),
     camera: cameraPath(f, fig),
-    edges: fig.edges.map((e) =>
-      e.step === undefined
-        ? null
-        : { draw: drawOn(f, at(e.step - 1), at(e.step)), head: lightUp(f, at(e.step) - 40) },
-    ),
-    nodes: fig.nodes.map((n) => (n.lit === undefined ? null : lightUp(f, at(n.lit)))),
+    edges: fig.edges.map((e) => {
+      if (e.step === undefined) return null;
+      const off = until(e.step, 0.5);
+      return {
+        draw: drawOn(f, at(e.step - 1), at(e.step), off),
+        head: lightUp(f, at(e.step) - 40, off),
+        holds: off === null,
+      };
+    }),
+    nodes: fig.nodes.map((n) => {
+      if (n.lit === undefined) return null;
+      const off = until(n.lit, 1);
+      return { anim: lightUp(f, at(n.lit), off), holds: off === null };
+    }),
   };
 });
 
@@ -459,9 +498,9 @@ function FigureView({ fig, f }: { fig: Figure; f: number }) {
   const shapes = fig.edges.map(edgeShape);
   const nodeAt = (n: FigNode) => `translate(${n.at[0]} ${n.at[1]})`;
   return (
-    // at rest (reduced motion) only the first figure shows, unzoomed and
-    // fully lit — the inline opacity, transform and dash offsets below are
-    // that resting frame
+    // at rest (reduced motion) only the first figure shows, unzoomed, with
+    // just the end of its route lit — the inline opacity, transform and
+    // dash offsets below are that resting frame
     <g className="mf-play" style={{ ...anim(plan.fade), opacity: f === 0 ? 1 : 0 }}>
       <g className="mf-play" style={{ ...anim(plan.camera), transform: "none" }}>
         {/* the arrows at rest */}
@@ -496,14 +535,14 @@ function FigureView({ fig, f }: { fig: Figure; f: number }) {
                   d={d}
                   pathLength={1}
                   strokeDasharray={1}
-                  style={{ ...anim(lit.draw), strokeDashoffset: 0 }}
+                  style={{ ...anim(lit.draw), strokeDashoffset: 0, opacity: lit.holds ? 1 : 0 }}
                 />
                 <path
                   className="mf-play"
                   d={arrow}
                   fill={GLOW}
                   stroke="none"
-                  style={{ ...anim(lit.head), opacity: 1 }}
+                  style={{ ...anim(lit.head), opacity: lit.holds ? 1 : 0 }}
                 />
               </g>
             );
@@ -514,7 +553,12 @@ function FigureView({ fig, f }: { fig: Figure; f: number }) {
             const lit = plan.nodes[i];
             if (!lit) return null;
             return (
-              <g key={i} className="mf-play" transform={nodeAt(n)} style={{ ...anim(lit), opacity: 1 }}>
+              <g
+                key={i}
+                className="mf-play"
+                transform={nodeAt(n)}
+                style={{ ...anim(lit.anim), opacity: lit.holds ? 1 : 0 }}
+              >
                 <GlyphShape glyph={n.glyph} />
               </g>
             );
