@@ -1,117 +1,313 @@
-"use client";
-
-import { useId } from "react";
-import { SKILLS_GLASS_LOCAL } from "@/lib/desk";
-import { SKILLS_BOX_ITEMS } from "./skillItems";
-
 /**
- * What the laptop (screen 2) shows while it sits on the desk:
+ * What the smaller laptop (screen 2) shows while it sits on the desk: a code
+ * block typing itself in, filling the glass (its name is on the neon sign
+ * above it, `NeonSigns`) —
  *
- *    ‹ 🐍 ⚛ 🐳 ⎇ ▲ ›
+ *   ·  ```ts
+ *   ·  ▬▬▬▬▬ ▬▬▬▬▬▬ = {               ← code as bars: real glyphs would be ~3px tall
+ *   ·    ▬▬▬▬▬▬▬▬▬: [▬▬▬▬, ▬▬▬, ▬▬▬▬],
+ *   ·  };▌                            ← typed in one character at a time, block cursor
  *
- * Every skill icon from the opened section scrolls slowly left between a
- * pair of ‹ › chevrons, centred on the glass — so the screen reads as
- * switched on and shows what's inside. (Its name is on the neon sign above
- * it, `NeonSigns`.)
+ * The code is shaped like the section it opens: one `skills` object with a
+ * list per card (`languages`, `tools`, `hardware` — `SKILLS_BOX_TITLES`).
+ * Tokens are told apart by three ink weights, with the glow on the keyword
+ * and the strings (the colour rule, top of globals.css).
  *
- * Everything is in desk viewBox units and drawn inside `DeskSvg`'s outer
- * `<g>`. Motion lives in globals.css (`.skills-strip-track`), which also
- * brightens the strip while the screen's click target is hovered, and stops
- * it under `prefers-reduced-motion`.
+ * Typing is pure CSS: each token bar grows `steps(chars)` over its own slice
+ * of one shared cycle, and the cursor jumps along with it. Those keyframes
+ * depend on every token's timing, so they're generated below from `CODE`
+ * and emitted in an inline `<style>`. globals.css holds the rest: hovering
+ * the screen's click target pauses typing, brightens the code and holds the
+ * cursor solid; `prefers-reduced-motion` shows the finished file.
+ *
+ * Everything is in the laptop's own units: `DeskSvg` draws it inside the
+ * `LAPTOP1_TRANSFORM` group, so the glass is `SKILLS_GLASS_LOCAL`.
  */
 
+import { SKILLS_GLASS_LOCAL } from "@/lib/desk";
+
 const INK = "var(--ink, #f4f6f8)";
+const INK_SOFT = "var(--ink-soft, rgba(255,255,255,0.62))";
+const INK_FAINT = "var(--ink-faint, rgba(255,255,255,0.4))";
+const GLOW = "var(--glow, #ffbe5c)";
 const MONO = "var(--font-mono), ui-monospace, monospace";
 
-/** The laptop's glass at its ORIGINAL, unscaled coordinates: `DeskSvg` wraps
- *  this whole laptop in one `LAPTOP1_TRANSFORM`, so everything here is scaled
- *  up along with the bezel around it. */
 const GLASS = SKILLS_GLASS_LOCAL;
+/** the code's size: every metric below is a base size times this — sized so
+ *  the longest row (`languages`) just fits the glass */
+const S = 1.05;
 
-/** icon row: square icons between ‹ and ›, centred on the glass */
-const STRIP_CENTER_Y = GLASS.y + GLASS.h / 2;
-const ICON_SIZE = 18;
-const ICON_GAP = 12;
-const ICON_PITCH = ICON_SIZE + ICON_GAP;
-const CHEVRON_SIZE = 20;
-const CHEVRON_L_X = GLASS.x + 9;
-const CHEVRON_R_X = GLASS.x + GLASS.w - 9;
-/** the window the icons scroll through, just inside the chevrons */
-const WINDOW_L = CHEVRON_L_X + 7;
-const WINDOW_R = CHEVRON_R_X - 7;
+/* ── editor chrome ─────────────────────────────────────────────────────── */
+const FENCE_TEXT_SIZE = 6.5 * S;
+const GUTTER_MARK_X = GLASS.x + 4;
+const GUTTER_MARK = { w: 5 * S, h: 2.2 * S };
+const TEXT_X = GLASS.x + 16 * S;
 
-const ICONS = SKILLS_BOX_ITEMS.flat();
-/** one full pass of the list — the track is drawn twice and slides left by
- *  exactly this much, so the loop's restart lands on an identical frame */
-const LOOP_W = ICONS.length * ICON_PITCH;
+/* ── code block ────────────────────────────────────────────────────────── */
+/** the block fills the glass, with a small margin all round */
+const MARGIN = 4;
+const BLOCK_TOP = GLASS.y + MARGIN;
+const BLOCK = {
+  x: TEXT_X - 4,
+  y: BLOCK_TOP,
+  w: GLASS.x + GLASS.w - MARGIN - (TEXT_X - 4),
+  h: GLASS.h - MARGIN * 2,
+};
+const CODE_X = TEXT_X;
+/** one monospace cell of the (imaginary) code font */
+const CH = 3.2 * S;
+const ROW_PITCH = 8.8 * S;
+/** the fence plus five code rows, centred in the block */
+const FENCE_ROW_Y = BLOCK_TOP + (BLOCK.h - 5 * ROW_PITCH) / 2;
+const BAR_H = 3 * S;
+/** gap left between neighbouring tokens' bars, so `"…"` and `,` don't merge */
+const BAR_INSET = 0.8 * S;
+const CURSOR_W = CH / 2;
+const CURSOR_H = 6.5 * S;
+
+/** the editor's syntax palette, by the colour rule (top of globals.css):
+ *  ink in three weights, and the glow for just the keyword and the strings —
+ *  the values the code is about. The editor's own furniture (fences, line
+ *  numbers, punctuation, the cursor) stays ink. */
+const THEME = {
+  keyword: GLOW, // const
+  constant: INK, // skills
+  operator: INK_FAINT, // =
+  property: INK_SOFT, // languages
+  string: GLOW, // "…"
+  punct: INK_FAINT, // : , ;
+  bracket1: INK_SOFT, // [ ]
+  bracket2: INK_SOFT, // { }
+  fence: INK_FAINT, // ```ts
+  lineNumber: INK_FAINT,
+  cursor: INK,
+} as const;
+
+type Tone =
+  | "keyword"
+  | "constant"
+  | "operator"
+  | "property"
+  | "string"
+  | "punct"
+  | "bracket1"
+  | "bracket2";
+
+/** the typed code, row by row: an indent, then [length in chars, tone]
+ *  tokens separated by one space — or none, for a token marked `true`
+ *  (`languages:`, `["…`, `",`) — roughly
+ *    const skills = {
+ *      languages: ["……", "…", "……"],
+ *      tools: ["………", "……"],
+ *      hardware: ["……", "…"],
+ *    }; */
+type CodeToken = [len: number, tone: Tone, joined?: boolean];
+const CODE: { indent: number; tokens: CodeToken[] }[] = [
+  { indent: 0, tokens: [[5, "keyword"], [6, "constant"], [1, "operator"], [1, "bracket2"]] },
+  {
+    indent: 2,
+    tokens: [
+      [9, "property"],
+      [1, "punct", true],
+      [1, "bracket1"],
+      [4, "string", true],
+      [1, "punct", true],
+      [3, "string"],
+      [1, "punct", true],
+      [4, "string"],
+      [1, "bracket1", true],
+      [1, "punct", true],
+    ],
+  },
+  {
+    indent: 2,
+    tokens: [
+      [5, "property"],
+      [1, "punct", true],
+      [1, "bracket1"],
+      [5, "string", true],
+      [1, "punct", true],
+      [6, "string"],
+      [1, "bracket1", true],
+      [1, "punct", true],
+    ],
+  },
+  {
+    indent: 2,
+    tokens: [
+      [8, "property"],
+      [1, "punct", true],
+      [1, "bracket1"],
+      [7, "string", true],
+      [1, "punct", true],
+      [3, "string"],
+      [1, "bracket1", true],
+      [1, "punct", true],
+    ],
+  },
+  { indent: 0, tokens: [[1, "bracket2"], [1, "punct", true]] },
+];
+
+/* ── timing ────────────────────────────────────────────────────────────── */
+const START_MS = 700; // empty block, cursor waiting
+const CHAR_MS = 85;
+const NEWLINE_MS = 320;
+const HOLD_MS = 3000; // finished file on screen before it clears and loops
+
+const rowY = (row: number) => FENCE_ROW_Y + (row + 1) * ROW_PITCH;
+
+type Token = { row: number; col: number; len: number; tone: Tone; start: number; end: number };
+type CursorStop = { t: number; col: number; row: number; steps: number };
+
+/** lays every token out on the grid and on the clock, and records where the
+ *  cursor is at each moment it starts moving */
+function buildTimeline() {
+  const tokens: Token[] = [];
+  const cursor: CursorStop[] = [];
+  let t = START_MS;
+  CODE.forEach(({ indent, tokens: rowTokens }, row) => {
+    let col = indent;
+    if (row > 0) t += NEWLINE_MS;
+    // a newline lands straight on the auto-indent
+    cursor.push({ t, col, row, steps: 0 });
+    rowTokens.forEach(([len, tone, joined], i) => {
+      if (i > 0 && !joined) {
+        // the space before this token
+        cursor.push({ t, col, row, steps: 1 });
+        t += CHAR_MS;
+        col += 1;
+      }
+      cursor.push({ t, col, row, steps: len });
+      tokens.push({ row, col, len, tone, start: t, end: t + len * CHAR_MS });
+      t += len * CHAR_MS;
+      col += len;
+    });
+    cursor.push({ t, col, row, steps: 0 });
+  });
+  return { tokens, cursor, cycleMs: t + HOLD_MS };
+}
+
+const { tokens: TOKENS, cursor: CURSOR_STOPS, cycleMs: CYCLE_MS } = buildTimeline();
+const FINAL = CURSOR_STOPS[CURSOR_STOPS.length - 1];
+const cursorX = (col: number) => CODE_X + col * CH;
+const cursorY = (row: number) => rowY(row) - CURSOR_H / 2;
+
+const pct = (ms: number) => `${((ms / CYCLE_MS) * 100).toFixed(3)}%`;
+
+/** every token: hidden until its slice, grows a character per step, holds
+ *  until the cycle ends, then the whole file clears at once */
+const TOKEN_CSS = TOKENS.map(
+  (tok, i) => `@keyframes code-tok-${i} {
+  0%, ${pct(tok.start)} { transform: scaleX(0); animation-timing-function: steps(${tok.len}, end); }
+  ${pct(tok.end)} { transform: scaleX(1); animation-timing-function: step-end; }
+  100% { transform: scaleX(0); }
+}`,
+).join("\n");
+
+/** the cursor as a translate away from where it rests on the finished file
+ *  (its un-animated position, which reduced motion shows) */
+const cursorOffset = (col: number, row: number) =>
+  `translate(${(cursorX(col) - cursorX(FINAL.col)).toFixed(2)}px, ${(cursorY(row) - cursorY(FINAL.row)).toFixed(2)}px)`;
+
+function buildCursorCss() {
+  const home = { t: 0, col: CODE[0].indent, row: 0, steps: 0 };
+  const frames: string[] = [];
+  let prevT = -Infinity;
+  for (const { t, col, row, steps } of [home, ...CURSOR_STOPS]) {
+    // stops sharing an instant (a line jump, then typing straight away) need
+    // distinct keyframe offsets — nudge the later one a millisecond along
+    const at = Math.max(t, prevT + 1);
+    prevT = at;
+    const timing = steps > 0 ? `steps(${steps}, end)` : "step-end";
+    frames.push(
+      `  ${pct(at)} { transform: ${cursorOffset(col, row)}; animation-timing-function: ${timing}; }`,
+    );
+  }
+  frames.push(`  100% { transform: ${cursorOffset(home.col, home.row)}; }`);
+  return `@keyframes code-cursor-move {\n${frames.join("\n")}\n}`;
+}
+
+const TYPING_CSS = `${TOKEN_CSS}\n${buildCursorCss()}`;
+/** Every token runs its own CSS animation, so they only stay in step if they
+ *  all start on the same frame. A hot reload that adds tokens would mount
+ *  just the new ones mid-cycle (they'd type out of order, after the rest had
+ *  cleared) — keying the whole screen on the generated keyframes remounts
+ *  everything together whenever the code or timing changes. */
+const TIMELINE_KEY = [...TYPING_CSS].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+
+/** only the name and length go inline — play-state stays in globals.css so
+ *  hovering the screen can pause it */
+const typeAnimation = (name: string) => ({
+  animationName: name,
+  animationDuration: `${CYCLE_MS}ms`,
+});
 
 export default function LaptopSkillsScreen() {
-  const fadeId = useId();
-  const chevron = (x: number, glyph: string) => (
-    <text
-      x={x}
-      y={STRIP_CENTER_Y}
-      textAnchor="middle"
-      dominantBaseline="central"
-      fontSize={CHEVRON_SIZE}
-      fontFamily={MONO}
-      fill={INK}
-      stroke="none"
-    >
-      {glyph}
-    </text>
-  );
+  const rows = [FENCE_ROW_Y, ...CODE.map((_, r) => rowY(r))];
 
   return (
-    <g className="screen-light" data-light="skills">
-      <defs>
-        {/* soft fade at both ends of the window, so icons drift out from
-            behind one chevron and into the other instead of being cut off */}
-        <linearGradient
-          id={`${fadeId}-grad`}
-          gradientUnits="userSpaceOnUse"
-          x1={WINDOW_L}
-          x2={WINDOW_R}
-          y1={0}
-          y2={0}
-        >
-          <stop offset="0" stopColor="#000" />
-          <stop offset="0.18" stopColor="#fff" />
-          <stop offset="0.82" stopColor="#fff" />
-          <stop offset="1" stopColor="#000" />
-        </linearGradient>
-        <mask id={`${fadeId}-mask`} maskUnits="userSpaceOnUse">
-          <rect
-            x={WINDOW_L}
-            y={GLASS.y}
-            width={WINDOW_R - WINDOW_L}
-            height={GLASS.h}
-            fill={`url(#${fadeId}-grad)`}
-            stroke="none"
-          />
-        </mask>
-      </defs>
+    <g key={TIMELINE_KEY} className="screen-light" data-light="skills">
+      <style>{TYPING_CSS}</style>
 
-      <g className="skills-strip" style={{ color: INK }}>
-        {chevron(CHEVRON_L_X, "‹")}
-        {chevron(CHEVRON_R_X, "›")}
-        <g mask={`url(#${fadeId}-mask)`}>
-          <g
-            className="skills-strip-track"
-            style={{ ["--skills-strip-loop" as string]: `-${LOOP_W}px` }}
-          >
-            {[0, 1].map((pass) =>
-              ICONS.map(({ name, Icon }, i) => (
-                <Icon
-                  key={`${pass}-${name}`}
-                  x={WINDOW_L + ICON_GAP / 2 + (pass * ICONS.length + i) * ICON_PITCH}
-                  y={STRIP_CENTER_Y - ICON_SIZE / 2}
-                  size={ICON_SIZE}
-                  aria-hidden
-                />
-              )),
-            )}
-          </g>
+      {/* gutter: a dim tick where each line number would be */}
+      <g stroke="none" fill={THEME.lineNumber}>
+        {rows.map((y) => (
+          <rect
+            key={y}
+            x={GUTTER_MARK_X}
+            y={y - GUTTER_MARK.h / 2}
+            width={GUTTER_MARK.w}
+            height={GUTTER_MARK.h}
+            rx={GUTTER_MARK.h / 2}
+          />
+        ))}
+      </g>
+
+      {/* code block */}
+      <rect
+        x={BLOCK.x}
+        y={BLOCK.y}
+        width={BLOCK.w}
+        height={BLOCK.h}
+        rx={2}
+        fill={INK}
+        opacity={0.07}
+        stroke="none"
+      />
+      <g className="code-text" stroke="none">
+        <text
+          x={CODE_X}
+          y={FENCE_ROW_Y}
+          dominantBaseline="central"
+          fontSize={FENCE_TEXT_SIZE}
+          fontFamily={MONO}
+          fill={THEME.fence}
+        >
+          ```ts
+        </text>
+        {TOKENS.map((tok, i) => (
+          <rect
+            key={i}
+            className="code-type code-tok"
+            x={CODE_X + tok.col * CH}
+            y={rowY(tok.row) - BAR_H / 2}
+            width={tok.len * CH - BAR_INSET}
+            height={BAR_H}
+            rx={BAR_H / 2}
+            fill={THEME[tok.tone]}
+            style={typeAnimation(`code-tok-${i}`)}
+          />
+        ))}
+        {/* ▌ cursor: the group travels, the rect blinks */}
+        <g className="code-type" style={typeAnimation("code-cursor-move")}>
+          <rect
+            className="code-cursor"
+            fill={THEME.cursor}
+            x={cursorX(FINAL.col)}
+            y={cursorY(FINAL.row)}
+            width={CURSOR_W}
+            height={CURSOR_H}
+          />
         </g>
       </g>
     </g>

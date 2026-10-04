@@ -30,7 +30,7 @@ const BOB = 0.5;
  *  matching multiple of the device pixel ratio stops it going soft there. */
 const DESK_MAX_ZOOM = 1.35;
 /** the air left between neighbouring boards at their widest, in mm */
-const BOARD_GAP = 15;
+const BOARD_GAP = 8;
 /** Drawn larger than true scale. The dongle is much smaller than SPARC, and
  *  side by side at real size it read as the lesser board. */
 const BOARD_SCALE: Partial<Record<BoardId, number>> = { esp32: 1.2 };

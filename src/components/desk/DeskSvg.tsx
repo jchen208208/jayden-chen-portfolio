@@ -601,8 +601,7 @@ export default function DeskSvg({
             stay in register. Still smaller than screen 3, the bigger laptop. */}
         <g transform={LAPTOP1_TRANSFORM}>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* a ‹ › strip of the section's skill icons scrolling past — see
-              `LaptopSkillsScreen` */}
+          {/* a `skills` object typing itself in — see `LaptopSkillsScreen` */}
           <LaptopSkillsScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
@@ -612,7 +611,8 @@ export default function DeskSvg({
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
-          {/* code typing itself in — see `LaptopExperienceScreen` */}
+          {/* the papers' method diagrams, each run lit arrow by arrow — see
+              `LaptopExperienceScreen` */}
           <LaptopExperienceScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               wider than the screen, sides slanting inward slightly toward the desk */}

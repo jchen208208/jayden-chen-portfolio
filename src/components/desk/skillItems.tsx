@@ -18,10 +18,7 @@ import type { IconBaseProps, IconType } from "react-icons";
 import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
 
 /**
- * The skills list, shared by the opened Skills section (`SkillsCard` in
- * `DeskScene`) and the icon strip scrolling across the laptop screen on the
- * desk (`LaptopSkillsScreen`) — one source, so the preview always shows
- * exactly what clicking opens.
+ * The skills list behind the opened Skills section (`sections/skills.tsx`).
  */
 
 /** the desk's soldering station (`SolderingStation`, shared with `DeskSvg`)

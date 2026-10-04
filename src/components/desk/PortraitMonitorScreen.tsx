@@ -22,7 +22,7 @@ import { screenById } from "@/lib/desk";
  * overflow safe — without it this spills over the desk and the wall.
  *
  * Every element runs off one generated timeline (`CYCLE_MS`) so they cannot
- * drift apart — the pattern `LaptopExperienceScreen` uses for its typing:
+ * drift apart — the pattern `LaptopSkillsScreen` uses for its typing:
  * build the clock in ms, emit `@keyframes` into an inline `<style>`, and key
  * the root `<g>` on a hash of that CSS so a hot reload remounts everything in
  * step rather than starting new elements mid-cycle.
