@@ -19,7 +19,7 @@ import type { PcFanMode } from "./PcFanLights";
 import DeskCardList from "./DeskCardList";
 import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
-import { SectionTitle, headerFontClass, sectionCards } from "./sections";
+import { SectionBackdrop, SectionTitle, hasBackdrop, headerFontClass, sectionCards } from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -68,6 +68,9 @@ const LIFT_STAGE_TIMING: Record<Exclude<OverlayStage, "closed">, { ms: number; e
  *  overlap slightly instead of the glide only kicking in once the zoom has
  *  come to a complete stop. */
 const LIFT_GLIDE_DELAY_MS = 620;
+/** a section's backdrop (Skills' mat) fades in over this long once the
+ *  header starts gliding up */
+const BACKDROP_FADE_MS = 500;
 /** The minimum gap above the cards (from the header) and below them (from the
  *  bottom of the screen). The cards take `CARD_HEIGHT_SCALE` of what's left
  *  between the two, so the gap below ends up a little larger. */
@@ -423,6 +426,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const rowMaxWidth = cards[0]?.maxWidth;
   const rowFitsContent = cards[0]?.fitContent ?? false;
   const rowOwnEntrance = cards[0]?.ownEntrance ?? false;
+  const backdrop = content !== null && hasBackdrop(content);
 
   const overlayTransform =
     stage === "closed"
@@ -667,7 +671,9 @@ export default function DeskScene({ className }: { className?: string }) {
             aria-hidden={!zoomed}
             role="dialog"
             aria-label={content ? SECTIONS[content].deskLabel : undefined}
-            onClick={close}
+            // the ground closes the view — unless the section has laid a
+            // backdrop over it (Skills' mat), which is no place to miss-click
+            onClick={backdrop ? undefined : close}
             // A section sized to its content (Experience) can run past the
             // bottom of the screen, so the view itself scrolls like a page —
             // no scrollbar drawn. The desk page runs Lenis, which listens for
@@ -675,7 +681,7 @@ export default function DeskScene({ className }: { className?: string }) {
             // this element's scrolling back to the browser, and
             // `overscroll-contain` stops it chaining to the desk behind.
             data-lenis-prevent={smoothOverlay ? undefined : true}
-            className="no-scrollbar fixed inset-0 z-50 flex cursor-pointer items-center justify-center overflow-y-auto overscroll-contain"
+            className={`no-scrollbar fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain ${backdrop ? "" : "cursor-pointer"}`}
             style={{
               backgroundColor: "var(--paper, #000)",
               opacity: zoomed ? 1 : 0,
@@ -695,6 +701,22 @@ export default function DeskScene({ className }: { className?: string }) {
             >
               esc ✕
             </button>
+
+            {/* the section's backdrop, under the header and the cards — it
+                fades in as the header glides up, rather than zooming out of
+                the screen with it */}
+            {backdrop && content && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-3 sm:inset-6"
+                style={{
+                  opacity: stage === "top" ? 1 : 0,
+                  transition: `opacity ${reduced ? 0 : BACKDROP_FADE_MS}ms ease-out`,
+                }}
+              >
+                <SectionBackdrop id={content} />
+              </div>
+            )}
 
             {/* One persistent wrapper — never unmounted — carries the scale
                 transition; only its text swaps underneath it. */}
@@ -717,7 +739,7 @@ export default function DeskScene({ className }: { className?: string }) {
                   style={{ fontSize: "clamp(2rem, 8vw, 6rem)", color: "var(--ink, #f4f6f8)" }}
                 >
                   {/* keyed per opening, so a title that animates itself in
-                      (Projects' traces, Skills' typing) plays every time, not just the first */}
+                      (Projects' traces) plays every time, not just the first */}
                   <SectionTitle key={opens} id={content} />
                 </div>
               )}

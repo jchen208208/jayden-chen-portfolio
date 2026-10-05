@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { SectionId } from "@/lib/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { SectionTitle, headerFontClass } from "@/components/desk/sections";
+import { SectionBackdrop, SectionTitle, hasBackdrop, headerFontClass } from "@/components/desk/sections";
 
 /**
  * A section as its own page — what a phone gets when it taps a card on the
@@ -16,7 +16,8 @@ import { SectionTitle, headerFontClass } from "@/components/desk/sections";
  * lives in the `(desk)` layout).
  *
  * - `Esc`, the close button, and a click on the ground around the cards all
- *   return to `/`.
+ *   return to `/` — except where a section lays its own backdrop over that
+ *   ground (Skills' mat), which runs the length of the page behind it.
  * - Page scroll is locked while open; the frame scrolls itself.
  * - Focus is trapped and returned to the opener on close.
  */
@@ -73,6 +74,38 @@ export default function FocusFrame({
     };
   }, [close]);
 
+  const panel = (
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="section-title"
+      tabIndex={-1}
+      // over a backdrop (Skills' mat), start below the mat's ruled border
+      className={`relative mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 outline-none ${
+        hasBackdrop(id) ? "pb-24 pt-24 sm:pt-28" : "py-8 sm:py-12"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <h1
+          id="section-title"
+          className={`text-[clamp(1.75rem,8vw,3.5rem)] uppercase leading-none text-ink ${headerFontClass(id)}`}
+        >
+          <SectionTitle id={id} />
+        </h1>
+        <button
+          type="button"
+          onClick={close}
+          aria-label="Close and return to the desk"
+          className="mt-1 shrink-0 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
+        >
+          esc ✕
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-paper"
@@ -80,32 +113,16 @@ export default function FocusFrame({
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="section-title"
-        tabIndex={-1}
-        className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 outline-none sm:py-12"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <h1
-            id="section-title"
-            className={`text-[clamp(1.75rem,8vw,3.5rem)] uppercase leading-none text-ink ${headerFontClass(id)}`}
-          >
-            <SectionTitle id={id} />
-          </h1>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close and return to the desk"
-            className="mt-1 shrink-0 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
-          >
-            esc ✕
-          </button>
+      {hasBackdrop(id) ? (
+        <div className="relative min-h-full">
+          <div aria-hidden className="pointer-events-none absolute inset-3 sm:inset-6">
+            <SectionBackdrop id={id} />
+          </div>
+          {panel}
         </div>
-        {children}
-      </div>
+      ) : (
+        panel
+      )}
     </div>
   );
 }

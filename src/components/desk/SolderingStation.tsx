@@ -2,9 +2,7 @@
  * The soldering station, traced from
  * `designs/reference/soldering_kit_reference.webp` — drawn in that image's own
  * pixel space (476×280), so every coordinate below can be checked straight
- * against the reference. Shared by the desk (`DeskSvg`, which scales it down
- * onto the 3D printer) and the "Soldering" skill tile (`SolderingIcon` in
- * `skillItems`), so the two can never drift apart.
+ * against the reference. `DeskSvg` scales it down onto the 3D printer.
  *
  * Kept to the desk's level of detail (the 3D printer's): the parts that say
  * what it is — the spring holder, the iron on its rest, the base with its
@@ -18,9 +16,6 @@
  *   spring → clamp → cord → iron → iron rest → base → lights + dial
  */
 
-/** the reference-space box the drawing occupies, stroke included — the
- *  skill icon uses it as its viewBox */
-export const SOLDERING_BOUNDS = { x: 64, y: 36, w: 324, h: 210 };
 /** underside of the two feet, in reference space */
 export const SOLDERING_FEET_Y = 238;
 /** the iron is drawn smaller than in the reference, relative to the base */

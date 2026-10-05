@@ -563,48 +563,15 @@ body {
   }
 }
 
-/* The Skills header typed into an editor (`TypedText`): each character
-   stays hidden until its own delay; the cursor's copies (one waiting at the
-   line's start, one per character) each show only for their own step, and
-   the last one stays and blinks. Own class names, so the desk's "hover the
-   Skills laptop → pause the code" rules leave it alone. Resting style is the
-   finished line, which is also what reduced motion shows. */
-.typed-char {
-  animation: typed-hide 1ms step-end backwards;
-}
-@keyframes typed-hide {
-  from {
-    visibility: hidden;
-  }
-}
-.typed-wait,
-.typed-pass {
-  visibility: hidden;
-}
-.typed-wait {
-  animation:
-    typed-show var(--dur) step-end,
-    caret-blink 1.1s steps(1, end) infinite;
-}
-.typed-pass {
-  animation: typed-show var(--dur) step-end;
-}
-@keyframes typed-show {
-  from,
-  to {
-    visibility: visible;
-  }
-}
-.typed-cursor {
-  animation: caret-blink 1.1s steps(1, end) infinite;
-}
-
 /* Skills stickers (`sections/skills.tsx`). On the way in, each cluster's
    label fades up and its stickers slap down one after another — inside a
    `.reveal-gate` (the desktop overlay) only once the overlay reveals its
-   cards, and again each time it does. Picking one up lifts it (bigger, more
-   shadow, a little extra tilt); dropping it slaps it down — two identical
-   keyframes, alternated, so every drop restarts the bounce. */
+   cards, and again each time it does. Hovering one turns its die-cut border
+   amber (`--cut` → `--cut-hot`, two copies of the same SVG filter) and fades
+   its name in just under it, level and small, so it doesn't crowd its
+   neighbours. Picking one up lifts it (bigger, more shadow, a little extra
+   tilt); dropping it slaps it down — two identical keyframes, alternated,
+   so every drop restarts the bounce. */
 .sticker-in:not(.reveal-gate *),
 [data-cards-revealed="true"] .reveal-gate .sticker-in {
   animation: sticker-in 380ms cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
@@ -625,14 +592,26 @@ body {
     translate: 0 0.4em;
   }
 }
-.sticker {
+/* the one under the pointer comes up over its neighbours, so its name does
+   too */
+.sticker:hover {
+  z-index: 999 !important;
+}
+.sticker-tilt {
   transition:
     rotate 220ms ease-out,
     filter 220ms ease-out;
   filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.6));
 }
-.sticker[data-lifted="true"] {
+.sticker[data-lifted="true"] .sticker-tilt {
   filter: drop-shadow(0 14px 14px rgb(0 0 0 / 0.65));
+}
+.sticker-art {
+  filter: var(--cut);
+}
+.sticker:hover .sticker-art,
+.sticker[data-lifted="true"] .sticker-art {
+  filter: var(--cut-hot);
 }
 .sticker-body {
   transition: scale 140ms ease-out;
@@ -642,6 +621,30 @@ body {
 }
 .sticker[data-lifted="true"] .sticker-body {
   scale: 1.1;
+}
+.sticker-name {
+  position: absolute;
+  left: 50%;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--glow);
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.95),
+    0 0 6px rgb(0 0 0 / 0.8);
+  opacity: 0;
+  translate: -50% -4px;
+  transition:
+    opacity 160ms ease-out,
+    translate 160ms ease-out;
+}
+.sticker:hover .sticker-name,
+.sticker[data-lifted="true"] .sticker-name {
+  opacity: 1;
+  translate: -50% 0;
 }
 .sticker-slap-0 {
   animation: sticker-slap-0 260ms ease-out;
@@ -677,10 +680,6 @@ body {
     scroll-behavior: auto;
   }
   .scroll-cue,
-  .typed-char,
-  .typed-wait,
-  .typed-pass,
-  .typed-cursor,
   .sticker-in,
   .label-in,
   .sticker-slap-0,

@@ -1,93 +1,81 @@
-import {
-  SiAutodesk,
-  SiC,
-  SiCplusplus,
-  SiGithub,
-  SiHtml5,
-  SiJavascript,
-  SiKicad,
-  SiNextdotjs,
-  SiNumpy,
-  SiPostgresql,
-  SiPython,
-  SiPytorch,
-  SiSupabase,
-} from "react-icons/si";
+import type { StaticImageData } from "next/image";
+import type { IconType } from "react-icons";
+import { SiKicad } from "react-icons/si";
 import { TbSql } from "react-icons/tb";
-import type { IconBaseProps, IconType } from "react-icons";
-import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
+import cLogo from "@/assets/skills/logos/c.svg";
+import cppLogo from "@/assets/skills/logos/cplusplus.svg";
+import fusionLogo from "@/assets/skills/logos/fusion.svg";
+import githubLogo from "@/assets/skills/logos/github.svg";
+import html5Logo from "@/assets/skills/logos/html5.svg";
+import jsLogo from "@/assets/skills/logos/javascript.svg";
+import nextLogo from "@/assets/skills/logos/nextjs.svg";
+import numpyLogo from "@/assets/skills/logos/numpy.svg";
+import postgresLogo from "@/assets/skills/logos/postgresql.svg";
+import pythonLogo from "@/assets/skills/logos/python.svg";
+import pytorchLogo from "@/assets/skills/logos/pytorch.svg";
+import supabaseLogo from "@/assets/skills/logos/supabase.svg";
+import piPhoto from "@/assets/skills/photos/raspberry-pi.webp";
+import ironPhoto from "@/assets/skills/photos/soldering-iron.webp";
 
 /**
  * The skills behind the opened Skills section (`sections/skills.tsx`), where
  * each one is a draggable die-cut sticker round its group's label.
+ *
+ * Stickers carry each logo in its own colours — the full-colour originals
+ * from Devicon (MIT, `assets/skills/logos`) — or, for hardware, a photo cut
+ * out of its background (`assets/skills/photos`):
+ *  - soldering iron: "SH72 soldering iron with pen and ruler for scale.jpg",
+ *    Retired electrician, Wikimedia Commons, CC0 (cropped to the iron)
+ *  - Raspberry Pi: "Raspberry-Pi-2-Bare-BR.jpg", Evan-Amos, Wikimedia
+ *    Commons, public domain
+ * KiCad isn't in Devicon and SQL has no logo of its own, so those two are
+ * single-colour glyphs in a brand colour.
  */
-
-/** the desk's soldering station (`SolderingStation`, shared with `DeskSvg`)
- *  standing alone as a skill icon, framed tight by its own bounds. Its
- *  opaque fills are `--paper`, so they take whatever ground it's printed on
- *  (white, on a sticker). Takes react-icons' props (incl. `size`) so it's
- *  interchangeable with them. */
-const SOLDERING_ICON_STROKE = 5.5;
-export function SolderingIcon({ className, size, title, color, ...rest }: IconBaseProps) {
-  const b = SOLDERING_BOUNDS;
-  return (
-    <svg
-      viewBox={`${b.x} ${b.y} ${b.w} ${b.h}`}
-      aria-hidden
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={SOLDERING_ICON_STROKE}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      color={color}
-      {...rest}
-      {...(size !== undefined && { width: size, height: size })}
-    >
-      {title && <title>{title}</title>}
-      <SolderingStation paper="var(--paper, #000)" strokeWidth={SOLDERING_ICON_STROKE} />
-    </svg>
-  );
-}
 
 /** one label per group of stickers */
 export const SKILLS_BOX_TITLES = ["Languages", "Frameworks & Tools", "Hardware & Design"];
 
+/** what's printed on a sticker: an image file (logo or photo), or a glyph in
+ *  one colour */
+export type StickerArt = { image: StaticImageData } | { Icon: IconType; color: string };
+
 export type SkillItem = {
   name: string;
-  Icon: IconType;
-  /** the icon's inset inside its sticker, as a fraction of the sticker.
-   *  Overridden for `SolderingIcon`, whose landscape drawing needs less
-   *  inset than a square brand logo to read as similarly large. Default 0.1
-   *  (`sections/skills.tsx`). */
-  iconInset?: number;
+  art: StickerArt;
+  /** the sticker's width as a multiple of a standard (logo) sticker — photos
+   *  run bigger. Its height follows the art's own proportions. Default 1. */
+  scale?: number;
+  /** a fixed tilt (deg), instead of the small random one — the long, thin
+   *  soldering iron lies diagonally */
+  tilt?: number;
 };
 
-/** the skills in each group, matched to `SKILLS_BOX_TITLES` by index. Logos
- *  are printed in black, not their brand colours (the colour rule, top of
- *  globals.css). Soldering has no brand logo, so it uses `SolderingIcon` —
- *  the same soldering station drawn on the desk — instead of a `react-icons`
- *  glyph. */
+// SVG imports are typed loosely by Next (so SVG-as-component plugins don't
+// clash) — they're static images here
+const logo = (m: unknown) => ({ image: m as StaticImageData });
+
+/** the skills in each group, matched to `SKILLS_BOX_TITLES` by index */
 export const SKILLS_BOX_ITEMS: SkillItem[][] = [
   [
-    { name: "Python", Icon: SiPython },
-    { name: "C", Icon: SiC },
-    { name: "C++", Icon: SiCplusplus },
-    { name: "JavaScript", Icon: SiJavascript },
-    { name: "SQL", Icon: TbSql },
-    { name: "HTML/CSS", Icon: SiHtml5 },
+    { name: "Python", art: logo(pythonLogo) },
+    { name: "C", art: logo(cLogo) },
+    { name: "C++", art: logo(cppLogo) },
+    { name: "JavaScript", art: logo(jsLogo) },
+    { name: "SQL", art: { Icon: TbSql, color: "#e48e00" } },
+    { name: "HTML/CSS", art: logo(html5Logo) },
   ],
   [
-    { name: "Git/GitHub", Icon: SiGithub },
-    { name: "Next.js", Icon: SiNextdotjs },
-    { name: "PostgreSQL", Icon: SiPostgresql },
-    { name: "Supabase", Icon: SiSupabase },
-    { name: "PyTorch", Icon: SiPytorch },
-    { name: "NumPy", Icon: SiNumpy },
+    { name: "Git/GitHub", art: logo(githubLogo) },
+    { name: "Next.js", art: logo(nextLogo) },
+    { name: "PostgreSQL", art: logo(postgresLogo) },
+    { name: "Supabase", art: logo(supabaseLogo) },
+    { name: "PyTorch", art: logo(pytorchLogo) },
+    { name: "NumPy", art: logo(numpyLogo) },
   ],
   [
-    { name: "Soldering", Icon: SolderingIcon, iconInset: 0.02 },
-    { name: "PCB Design (KiCad)", Icon: SiKicad },
-    { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
+    { name: "Soldering", art: { image: ironPhoto }, scale: 3, tilt: -32 },
+    { name: "Raspberry Pi", art: { image: piPhoto }, scale: 1.9 },
+    { name: "PCB Design (KiCad)", art: { Icon: SiKicad, color: "#314cb0" } },
+    { name: "CAD Modelling (Fusion)", art: logo(fusionLogo) },
   ],
 ];
