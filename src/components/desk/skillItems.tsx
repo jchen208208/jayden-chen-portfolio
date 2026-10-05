@@ -18,14 +18,15 @@ import type { IconBaseProps, IconType } from "react-icons";
 import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
 
 /**
- * The skills list behind the opened Skills section (`sections/skills.tsx`).
+ * The skills behind the opened Skills section (`sections/skills.tsx`), where
+ * each one is a draggable die-cut sticker round its group's label.
  */
 
 /** the desk's soldering station (`SolderingStation`, shared with `DeskSvg`)
- *  standing alone as a skill icon, framed tight by its own bounds. The
- *  card interior is the overlay's page-coloured ground, so the drawing's
- *  opaque `--paper` fills blend in exactly as they do on the desk. Takes
- *  react-icons' props (incl. `size`) so it's interchangeable with them. */
+ *  standing alone as a skill icon, framed tight by its own bounds. Its
+ *  opaque fills are `--paper`, so they take whatever ground it's printed on
+ *  (white, on a sticker). Takes react-icons' props (incl. `size`) so it's
+ *  interchangeable with them. */
 const SOLDERING_ICON_STROKE = 5.5;
 export function SolderingIcon({ className, size, title, color, ...rest }: IconBaseProps) {
   const b = SOLDERING_BOUNDS;
@@ -49,25 +50,24 @@ export function SolderingIcon({ className, size, title, color, ...rest }: IconBa
   );
 }
 
-/** one subtitle per card, left to right */
+/** one label per group of stickers */
 export const SKILLS_BOX_TITLES = ["Languages", "Frameworks & Tools", "Hardware & Design"];
 
 export type SkillItem = {
   name: string;
   Icon: IconType;
-  /** the icon's inset inside its tile, as a fraction of the tile — tiles
-   *  scale with the card, so the padding has to as well. Overridden for
-   *  `SolderingIcon`, whose landscape drawing needs far less inset than a
-   *  square brand logo to read as similarly large. Default 0.18. */
+  /** the icon's inset inside its sticker, as a fraction of the sticker.
+   *  Overridden for `SolderingIcon`, whose landscape drawing needs less
+   *  inset than a square brand logo to read as similarly large. Default 0.1
+   *  (`sections/skills.tsx`). */
   iconInset?: number;
 };
 
-/** the actual skills inside each card, matched to `SKILLS_BOX_TITLES` by
- *  index — one array per card, each rendered as an icon tile (brand logo +
- *  name underneath) rather than a plain text chip. Logos are ink, not their
- *  brand colours (the colour rule, top of globals.css). Soldering has no
- *  brand logo, so it uses `SolderingIcon` — the same soldering station drawn
- *  on the desk — instead of a `react-icons` glyph. */
+/** the skills in each group, matched to `SKILLS_BOX_TITLES` by index. Logos
+ *  are printed in black, not their brand colours (the colour rule, top of
+ *  globals.css). Soldering has no brand logo, so it uses `SolderingIcon` —
+ *  the same soldering station drawn on the desk — instead of a `react-icons`
+ *  glyph. */
 export const SKILLS_BOX_ITEMS: SkillItem[][] = [
   [
     { name: "Python", Icon: SiPython },
@@ -86,7 +86,7 @@ export const SKILLS_BOX_ITEMS: SkillItem[][] = [
     { name: "NumPy", Icon: SiNumpy },
   ],
   [
-    { name: "Soldering", Icon: SolderingIcon, iconInset: 0.05 },
+    { name: "Soldering", Icon: SolderingIcon, iconInset: 0.02 },
     { name: "PCB Design (KiCad)", Icon: SiKicad },
     { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
   ],

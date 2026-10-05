@@ -3,6 +3,7 @@
 import { SECTIONS, type SectionId } from "@/lib/site";
 import PcbTitle, { PROJECTS_BOARD } from "../PcbTitle";
 import ScreenCard from "../ScreenCard";
+import { SKILLS_TITLE, TypedTitle } from "../TypedText";
 import { experienceCards } from "./experience";
 import { personalCards } from "./personal";
 import { projectsCards } from "./projects";
@@ -24,8 +25,8 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   about: personalCards,
 };
 
-/** Skills and Experience set their header in the display face (Chakra Petch); the others
- *  uses the site monospace. Card titles are the display face throughout. */
+/** Skills and Experience set their header in the display face (Chakra Petch);
+ *  the others use the site monospace. Card titles are the display face throughout. */
 const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills", "experience"]);
 
 /** the section header's font classes (the big title above the cards) */
@@ -33,13 +34,19 @@ export function headerFontClass(id: SectionId) {
   return DISPLAY_FACE_HEADERS.has(id) ? "font-title tracking-wide" : "font-mono font-semibold";
 }
 
-/** the section header's title. Projects is drawn as circuit-board traces;
+/** the section header's title. Projects is drawn as circuit-board traces,
+ *  Skills is a line of C typed in (`typedef struct skills {};`);
  *  the rest are plain text in the header's font (`headerFontClass`). Sized
  *  in `em`, so it follows the header's own font size. */
 export function SectionTitle({ id }: { id: SectionId }) {
   const label = SECTIONS[id].screenLabel;
   if (id === "projects") {
     return <PcbTitle glyphs={PROJECTS_BOARD} label={label} className="mx-auto block" style={{ height: "1.15em", width: "auto" }} />;
+  }
+  if (id === "skills") {
+    // the line is ~11.6em long — on a phone it shrinks to fit beside the
+    // close button rather than run off the edge
+    return <TypedTitle segments={SKILLS_TITLE} label={label} style={{ fontSize: "min(1em, calc((100vw - 7rem) / 11.6))" }} />;
   }
   return <>{label}</>;
 }

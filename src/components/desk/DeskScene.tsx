@@ -717,7 +717,7 @@ export default function DeskScene({ className }: { className?: string }) {
                   style={{ fontSize: "clamp(2rem, 8vw, 6rem)", color: "var(--ink, #f4f6f8)" }}
                 >
                   {/* keyed per opening, so a title that animates itself in
-                      (Skills' traces) plays every time, not just the first */}
+                      (Projects' traces, Skills' typing) plays every time, not just the first */}
                   <SectionTitle key={opens} id={content} />
                 </div>
               )}
