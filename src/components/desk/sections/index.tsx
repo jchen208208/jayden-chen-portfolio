@@ -1,6 +1,7 @@
 "use client";
 
-import type { SectionId } from "@/lib/site";
+import { SECTIONS, type SectionId } from "@/lib/site";
+import PcbTitle, { PROJECTS_BOARD } from "../PcbTitle";
 import ScreenCard from "../ScreenCard";
 import { experienceCards } from "./experience";
 import { personalCards } from "./personal";
@@ -30,6 +31,17 @@ const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills", "experie
 /** the section header's font classes (the big title above the cards) */
 export function headerFontClass(id: SectionId) {
   return DISPLAY_FACE_HEADERS.has(id) ? "font-title tracking-wide" : "font-mono font-semibold";
+}
+
+/** the section header's title. Projects is drawn as circuit-board traces;
+ *  the rest are plain text in the header's font (`headerFontClass`). Sized
+ *  in `em`, so it follows the header's own font size. */
+export function SectionTitle({ id }: { id: SectionId }) {
+  const label = SECTIONS[id].screenLabel;
+  if (id === "projects") {
+    return <PcbTitle glyphs={PROJECTS_BOARD} label={label} className="mx-auto block" style={{ height: "1.15em", width: "auto" }} />;
+  }
+  return <>{label}</>;
 }
 
 export function sectionCards(id: SectionId, opts: CardOptions): SectionCard[] {

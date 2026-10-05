@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { SECTIONS, type SectionId } from "@/lib/site";
+import type { SectionId } from "@/lib/site";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { headerFontClass } from "@/components/desk/sections";
+import { SectionTitle, headerFontClass } from "@/components/desk/sections";
 
 /**
  * A section as its own page — what a phone gets when it taps a card on the
@@ -27,7 +27,6 @@ export default function FocusFrame({
   id: SectionId;
   children: React.ReactNode;
 }) {
-  const meta = SECTIONS[id];
   const router = useRouter();
   const panelRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<Element | null>(null);
@@ -94,7 +93,7 @@ export default function FocusFrame({
             id="section-title"
             className={`text-[clamp(1.75rem,8vw,3.5rem)] uppercase leading-none text-ink ${headerFontClass(id)}`}
           >
-            {meta.screenLabel}
+            <SectionTitle id={id} />
           </h1>
           <button
             type="button"

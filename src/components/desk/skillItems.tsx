@@ -1,9 +1,11 @@
 import {
+  SiAutodesk,
   SiC,
   SiCplusplus,
   SiGithub,
   SiHtml5,
   SiJavascript,
+  SiKicad,
   SiNextdotjs,
   SiNumpy,
   SiPostgresql,
@@ -12,138 +14,80 @@ import {
   SiSupabase,
 } from "react-icons/si";
 import { TbSql } from "react-icons/tb";
-import type { IconType } from "react-icons";
+import type { IconBaseProps, IconType } from "react-icons";
+import SolderingStation, { SOLDERING_BOUNDS } from "./SolderingStation";
 
 /**
- * The skills behind the opened Skills section (`sections/skills.tsx`) — one
- * list per card, matched to `SKILLS_BOX_TITLES` by position.
+ * The skills list behind the opened Skills section (`sections/skills.tsx`).
  */
+
+/** the desk's soldering station (`SolderingStation`, shared with `DeskSvg`)
+ *  standing alone as a skill icon, framed tight by its own bounds. The
+ *  card interior is the overlay's page-coloured ground, so the drawing's
+ *  opaque `--paper` fills blend in exactly as they do on the desk. Takes
+ *  react-icons' props (incl. `size`) so it's interchangeable with them. */
+const SOLDERING_ICON_STROKE = 5.5;
+export function SolderingIcon({ className, size, title, color, ...rest }: IconBaseProps) {
+  const b = SOLDERING_BOUNDS;
+  return (
+    <svg
+      viewBox={`${b.x} ${b.y} ${b.w} ${b.h}`}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={SOLDERING_ICON_STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      color={color}
+      {...rest}
+      {...(size !== undefined && { width: size, height: size })}
+    >
+      {title && <title>{title}</title>}
+      <SolderingStation paper="var(--paper, #000)" strokeWidth={SOLDERING_ICON_STROKE} />
+    </svg>
+  );
+}
 
 /** one subtitle per card, left to right */
 export const SKILLS_BOX_TITLES = ["Languages", "Frameworks & Tools", "Hardware & Design"];
 
-type SkillBase = {
+export type SkillItem = {
   name: string;
-  /** how this skill is spelled in `PROJECTS[].tags` / `EXPERIENCE[].stack` —
-   *  the hover caption's "used in" comes from these, so a skill nobody lists
-   *  simply has no caption */
-  match: string[];
-  /** places it is used that aren't in the résumé data (this very site) */
-  extra?: string[];
-};
-
-/* ── languages ─────────────────────────────────────────────────────────────── */
-
-/** a span of code and how it's coloured: keyword and string take the glow,
- *  plain is ink, dim is ink-faint (the same rule as the desk's code screen) */
-export type Tone = "k" | "s" | "p" | "d";
-export type Seg = [text: string, tone: Tone];
-
-export type LanguageItem = SkillBase & {
   Icon: IconType;
-  /** the typed file's name */
-  file: string;
-  /** at most four lines, each short enough to fit the narrowest card */
-  lines: Seg[][];
+  /** the icon's inset inside its tile, as a fraction of the tile — tiles
+   *  scale with the card, so the padding has to as well. Overridden for
+   *  `SolderingIcon`, whose landscape drawing needs far less inset than a
+   *  square brand logo to read as similarly large. Default 0.18. */
+  iconInset?: number;
 };
 
-export const LANGUAGES: LanguageItem[] = [
-  {
-    name: "Python",
-    Icon: SiPython,
-    match: ["Python"],
-    file: "main.py",
-    lines: [
-      [["def", "k"], [" greet(name):", "p"]],
-      [["    return", "k"], [" f", "p"], ['"hello, {name}"', "s"]],
-      [["print(greet(", "p"], ['"world"', "s"], ["))", "p"]],
-    ],
-  },
-  {
-    name: "C",
-    Icon: SiC,
-    match: ["C"],
-    file: "main.c",
-    lines: [
-      [["#include", "k"], [" <stdio.h>", "s"]],
-      [["int", "k"], [" main(", "p"], ["void", "k"], [") {", "p"]],
-      [["    puts(", "p"], ['"hello"', "s"], [");", "p"]],
-      [["}", "p"]],
-    ],
-  },
-  {
-    name: "C++",
-    Icon: SiCplusplus,
-    match: ["C++", "Embedded C++"],
-    file: "main.cpp",
-    lines: [
-      [["#include", "k"], [" <iostream>", "s"]],
-      [["int", "k"], [" main() {", "p"]],
-      [["    std::cout << ", "p"], ['"hello\\n"', "s"], [";", "p"]],
-      [["}", "p"]],
-    ],
-  },
-  {
-    name: "JavaScript",
-    Icon: SiJavascript,
-    match: ["JavaScript"],
-    file: "main.js",
-    lines: [
-      [["const", "k"], [" greet = (name) =>", "p"]],
-      [["  ", "p"], ["`hello, ${name}`", "s"], [";", "p"]],
-      [["console.log(greet(", "p"], ['"world"', "s"], ["));", "p"]],
-    ],
-  },
-  {
-    name: "SQL",
-    Icon: TbSql,
-    match: ["SQL"],
-    file: "query.sql",
-    lines: [
-      [["SELECT", "k"], [" name, score", "p"]],
-      [["FROM", "k"], [" players", "p"]],
-      [["WHERE", "k"], [" score > 90", "p"]],
-      [["ORDER BY", "k"], [" score ", "p"], ["DESC", "k"], [";", "p"]],
-    ],
-  },
-  {
-    name: "HTML/CSS",
-    Icon: SiHtml5,
-    match: ["HTML/CSS"],
-    file: "index.html",
-    lines: [
-      [["<", "d"], ["h1", "k"], [" class=", "p"], ['"title"', "s"], [">", "d"]],
-      [["  hello, world", "p"]],
-      [["</", "d"], ["h1", "k"], [">", "d"]],
-    ],
-  },
-];
-
-/* ── frameworks & tools ────────────────────────────────────────────────────── */
-
-export type ToolItem = SkillBase & { Icon: IconType };
-
-/** drawn as the stack diagram (`sections/skillsStack.tsx`), which places each
- *  by name */
-export const TOOLS: ToolItem[] = [
-  { name: "Next.js", Icon: SiNextdotjs, match: [], extra: ["this site"] },
-  { name: "Supabase", Icon: SiSupabase, match: [] },
-  { name: "PostgreSQL", Icon: SiPostgresql, match: [] },
-  { name: "NumPy", Icon: SiNumpy, match: ["NumPy"] },
-  { name: "PyTorch", Icon: SiPytorch, match: ["PyTorch"] },
-  { name: "Git/GitHub", Icon: SiGithub, match: [] },
-];
-
-/* ── hardware & design ─────────────────────────────────────────────────────── */
-
-export type HardwareItem = SkillBase & {
-  /** one line on what it was for, from the résumé's own bullet */
-  note: string;
-};
-
-/** drawn as three bench strips (`sections/skillsBench.tsx`), in this order */
-export const HARDWARE: HardwareItem[] = [
-  { name: "Soldering", match: ["Soldering"], note: "Breadboard to working MVP" },
-  { name: "PCB Design (KiCad)", match: ["PCB Design"], note: "A custom 2-layer board" },
-  { name: "CAD Modelling (Fusion)", match: ["CAD Modelling"], note: "A 3D-printed enclosure" },
+/** the actual skills inside each card, matched to `SKILLS_BOX_TITLES` by
+ *  index — one array per card, each rendered as an icon tile (brand logo +
+ *  name underneath) rather than a plain text chip. Logos are ink, not their
+ *  brand colours (the colour rule, top of globals.css). Soldering has no
+ *  brand logo, so it uses `SolderingIcon` — the same soldering station drawn
+ *  on the desk — instead of a `react-icons` glyph. */
+export const SKILLS_BOX_ITEMS: SkillItem[][] = [
+  [
+    { name: "Python", Icon: SiPython },
+    { name: "C", Icon: SiC },
+    { name: "C++", Icon: SiCplusplus },
+    { name: "JavaScript", Icon: SiJavascript },
+    { name: "SQL", Icon: TbSql },
+    { name: "HTML/CSS", Icon: SiHtml5 },
+  ],
+  [
+    { name: "Git/GitHub", Icon: SiGithub },
+    { name: "Next.js", Icon: SiNextdotjs },
+    { name: "PostgreSQL", Icon: SiPostgresql },
+    { name: "Supabase", Icon: SiSupabase },
+    { name: "PyTorch", Icon: SiPytorch },
+    { name: "NumPy", Icon: SiNumpy },
+  ],
+  [
+    { name: "Soldering", Icon: SolderingIcon, iconInset: 0.05 },
+    { name: "PCB Design (KiCad)", Icon: SiKicad },
+    { name: "CAD Modelling (Fusion)", Icon: SiAutodesk },
+  ],
 ];

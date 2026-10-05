@@ -19,7 +19,7 @@ import type { PcFanMode } from "./PcFanLights";
 import DeskCardList from "./DeskCardList";
 import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
-import { headerFontClass, sectionCards } from "./sections";
+import { SectionTitle, headerFontClass, sectionCards } from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -248,6 +248,8 @@ export default function DeskScene({ className }: { className?: string }) {
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [cardsRevealed, setCardsRevealed] = useState(false);
+  // how many times a screen has been opened — keys the header title
+  const [opens, setOpens] = useState(0);
   // each screen's glass button, which the zoom is measured from
   const glassRefs = useRef<Partial<Record<SectionId, HTMLButtonElement | null>>>({});
   const reduced = usePrefersReducedMotion();
@@ -290,6 +292,7 @@ export default function DeskScene({ className }: { className?: string }) {
         Math.max(0.03, Math.min(box.width / window.innerWidth, box.height / window.innerHeight)),
       );
       setContent(s.id);
+      setOpens((n) => n + 1);
       // a long section may have been left scrolled down last time
       overlayRef.current?.scrollTo(0, 0);
       setOpenId(s.id);
@@ -713,7 +716,9 @@ export default function DeskScene({ className }: { className?: string }) {
                   className={`px-8 text-center uppercase leading-none ${headerFontClass(content)}`}
                   style={{ fontSize: "clamp(2rem, 8vw, 6rem)", color: "var(--ink, #f4f6f8)" }}
                 >
-                  {SECTIONS[content].screenLabel}
+                  {/* keyed per opening, so a title that animates itself in
+                      (Skills' traces) plays every time, not just the first */}
+                  <SectionTitle key={opens} id={content} />
                 </div>
               )}
             </div>
