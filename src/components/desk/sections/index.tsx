@@ -35,12 +35,17 @@ export function headerFontClass(id: SectionId) {
 }
 
 /** the section header's title. Projects is drawn as circuit-board traces;
- *  the rest are plain text in the header's font (`headerFontClass`). Sized
- *  in `em`, so it follows the header's own font size. */
+ *  Skills is plain text in the page's own heading style; the rest are plain text in the header's
+ *  font (`headerFontClass`). Sized in `em`, so it follows the header's own
+ *  font size. */
 export function SectionTitle({ id }: { id: SectionId }) {
   const label = SECTIONS[id].screenLabel;
   if (id === "projects") {
     return <PcbTitle glyphs={PROJECTS_BOARD} label={label} className="mx-auto block" style={{ height: "1.15em", width: "auto" }} />;
+  }
+  if (id === "skills") {
+    // the same lettering as the group labels on its mat (`.skills-heading`)
+    return <span className="skills-heading">{label}</span>;
   }
   return <>{label}</>;
 }

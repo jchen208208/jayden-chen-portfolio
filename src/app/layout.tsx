@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Tilt_Neon } from "next/font/google";
+import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Orbitron, Tilt_Neon } from "next/font/google";
 import "./globals.css";
 
 // Chakra Petch (SIL OFL — free for commercial use) — the title face: section
@@ -9,6 +9,15 @@ const chakraPetch = Chakra_Petch({
   variable: "--font-chakra",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+// Orbitron (SIL OFL — free for commercial use) — the Skills page's face: its
+// title, group labels, sticker names and the mat's ruler numbers. A techno
+// step up from Chakra Petch; variable weight, so one file covers all of them.
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
+  subsets: ["latin"],
   display: "swap",
 });
 
@@ -50,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${tiltNeon.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${orbitron.variable} ${tiltNeon.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}

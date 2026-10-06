@@ -47,9 +47,9 @@ import type { CardLayout, CardOptions, SectionCard } from "./shared";
 /** design space the overlay's layout is drawn in — scaled down to fit */
 const ROW_DESIGN = { w: 1400, h: 560 };
 /** the stacked layout's design width, and its height in the same units */
-const STACK_DESIGN = { w: 560, h: 1150 };
+const STACK_DESIGN = { w: 560, h: 1250 };
 /** a standard (logo) sticker's width, in design units */
-const STICKER = 78;
+const STICKER = 90;
 /** how far the art sits in from the sticker's edge, as a share of it — logos
  *  get a little room, photos fill theirs */
 const LOGO_INSET = 0.08;
@@ -72,13 +72,13 @@ const LAYOUTS: Record<CardLayout, { spots: Spot[]; rx: number; ry: number }> = {
   // Languages top centre, the other two in the bottom corners
   row: {
     spots: [
-      { cx: 50, cy: 30, dx: 0, spin: -90 },
-      { cx: 20, cy: 70, dx: 0, spin: -90 },
+      { cx: 50, cy: 26.5, dx: 0, spin: -90 },
+      { cx: 20, cy: 66, dx: 0, spin: -90 },
       // four stickers, two of them big photos — set on the diagonals so
       // none crowds the label's ends
-      { cx: 78, cy: 70, dx: 0, spin: -45 },
+      { cx: 81, cy: 73, dx: 0, spin: -45 },
     ],
-    rx: 240,
+    rx: 254,
     ry: 108,
   },
   // one under another, each knocked a little off centre
@@ -88,8 +88,9 @@ const LAYOUTS: Record<CardLayout, { spots: Spot[]; rx: number; ry: number }> = {
       { cx: 50, cy: 50, dx: 40, spin: -90 },
       { cx: 50, cy: 83, dx: -20, spin: -45 },
     ],
+    // narrow enough for a phone, so tall enough to clear the wide labels
     rx: 175,
-    ry: 130,
+    ry: 160,
   },
 };
 
@@ -126,7 +127,8 @@ const GRID_MAJOR = "rgba(255,255,255,0.14)";
 const RULE = "rgba(255,255,255,0.38)";
 const GUIDE = "rgba(255,255,255,0.3)";
 const NUMERAL = "rgba(255,255,255,0.5)";
-const MONO = "var(--font-mono), ui-monospace, monospace";
+/** the ruler numbers are in the page's face (Orbitron), like all its text */
+const NUMERAL_FONT = "var(--font-orbitron), var(--font-title), sans-serif";
 /** the outer rule's inset from the mat's edge, and the inner (ruled area)
  *  rule's — the band between them carries the ticks and numbers */
 const OUTER = 12;
@@ -160,7 +162,7 @@ function MatDrawing({ w, h }: { w: number; h: number }) {
   }
   const cols = Math.floor((x1 - x0) / unit + 0.01);
   const rows = Math.floor((y1 - y0) / unit + 0.01);
-  const numeral = { fill: NUMERAL, fontFamily: MONO, fontSize: 11 } as const;
+  const numeral = { fill: NUMERAL, fontFamily: NUMERAL_FONT, fontSize: 11 } as const;
   const reach = w + h;
 
   return (
@@ -454,13 +456,13 @@ function StickerBoard({ layout }: { layout: CardLayout }) {
           return (
             <div key={group.title} role="group" aria-label={group.title}>
               <h3
-                className="label-in absolute whitespace-nowrap font-title uppercase leading-none tracking-wide text-ink"
+                className="label-in skills-heading absolute whitespace-nowrap uppercase leading-none"
                 style={{
                   // centred with `transform` — the fade-in animates `translate`
                   transform: "translate(-50%, -50%)",
                   left: `calc(${spot.cx}% + ${ds(spot.dx)})`,
                   top: `${spot.cy}%`,
-                  fontSize: `max(0.8rem, ${ds(26)})`,
+                  fontSize: `max(0.75rem, ${ds(23)})`,
                   animationDelay: `${at}ms`,
                 }}
               >
@@ -469,12 +471,13 @@ function StickerBoard({ layout }: { layout: CardLayout }) {
               {group.items.map((item, i) => {
                 const { step, reach, tilt } = SCATTER[g][i];
                 const angle = ((spot.spin + step) * Math.PI) / 180;
+                const [nx, ny] = (wide && item.nudge) || [0, 0];
                 return (
                   <Sticker
                     key={item.name}
                     item={item}
-                    left={`calc(${spot.cx}% + ${ds(spot.dx + Math.cos(angle) * rx * reach)})`}
-                    top={`calc(${spot.cy}% + ${ds(Math.sin(angle) * ry * reach)})`}
+                    left={`calc(${spot.cx}% + ${ds(spot.dx + nx + Math.cos(angle) * rx * reach)})`}
+                    top={`calc(${spot.cy}% + ${ds(ny + Math.sin(angle) * ry * reach)})`}
                     tilt={tilt}
                     delay={at + 150 + i * 90}
                     raise={raise}

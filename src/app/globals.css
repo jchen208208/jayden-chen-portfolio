@@ -87,6 +87,34 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
+/* A school name marked like a highlighter (after matthewhamilton.dev) — kept
+   for the About section, not yet used: a flat, translucent wash of the glow
+   behind the words — a lighter amber than the glow itself, on the black
+   page — with the crest (`assets/waterloo-crest.png`) tucked in after them
+   as `.school-crest`, and the words brightened to read on it.
+   `clone` gives each line its own padding if a narrow screen wraps it.
+   Capitals leave the descender space under the baseline empty, so the
+   padding is heavier on top — it sits the wash centred on the letters. */
+.school-mark {
+  padding: 0.2em 0.3em 0.04em;
+  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--glow) 28%, transparent);
+  color: #fff1d9;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 200ms ease-out;
+}
+.school-mark:hover,
+.school-mark:focus-visible {
+  background-color: color-mix(in srgb, var(--glow) 42%, transparent);
+}
+.school-crest {
+  display: inline-block;
+  width: auto;
+  height: 1.2em;
+  vertical-align: -0.22em;
+}
+
 /* the résumé button's hover sweep: three skewed bars in shades of the glow
    wait off the left edge, run right across the button (staggered by their
    inline `transition-delay`) and out the far side, then run back when the
@@ -563,6 +591,19 @@ body {
   }
 }
 
+/* The Skills page's headings — its title and the three group labels: Orbitron,
+   in a lighter amber than the glow, with an outline round the letters in a
+   darker amber than the glow (a grey and a white one were tried). `paint-order: stroke fill` lays the stroke under the fill, so only
+   its outer half shows and the outline doesn't eat into the letters. */
+.skills-heading {
+  font-family: var(--font-orbitron), var(--font-title), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: color-mix(in srgb, var(--glow, #ffbe5c) 72%, #fff);
+  -webkit-text-stroke: max(3px, 0.055em) color-mix(in srgb, var(--glow, #ffbe5c) 65%, #000);
+  paint-order: stroke fill;
+}
+
 /* Skills stickers (`sections/skills.tsx`). On the way in, each cluster's
    label fades up and its stickers slap down one after another — inside a
    `.reveal-gate` (the desktop overlay) only once the overlay reveals its
@@ -627,10 +668,11 @@ body {
   left: 50%;
   pointer-events: none;
   white-space: nowrap;
-  font-family: var(--font-title);
-  font-size: 0.8rem;
+  font-family: var(--font-orbitron), var(--font-title), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--glow);
   text-shadow:
     0 1px 2px rgb(0 0 0 / 0.95),

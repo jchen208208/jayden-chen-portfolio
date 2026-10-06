@@ -53,7 +53,9 @@ export default function Hero() {
       </p>
       {/* the name, spelled out in squares like a GitHub contribution graph */}
       <ContributionName />
-      <p className="mt-8 font-mono text-sm uppercase tracking-[0.3em] text-white/65 sm:text-base">
+      {/* letter-spacing trails the last letter too, so the same space up
+          front (`pl`) keeps the letters themselves centred under the name */}
+      <p className="mt-8 pl-[0.3em] font-mono text-[12px] uppercase tracking-[0.3em] text-white/65 sm:text-[14px]">
         {PROFILE.tagline}
       </p>
 

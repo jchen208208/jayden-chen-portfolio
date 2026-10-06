@@ -5,9 +5,18 @@
  * shaped like the real thing so the UI renders; swap in real copy before launch.
  */
 
+/** the tagline's parts — the hero highlights the school on its own */
+const STUDY = {
+  program: "Computer Engineering",
+  school: "University of Waterloo",
+  schoolUrl: "https://uwaterloo.ca/",
+  classOf: "'31",
+} as const;
+
 export const PROFILE = {
   name: "Jayden Chen",
-  tagline: "Computer Engineering · University of Waterloo '31",
+  ...STUDY,
+  tagline: `${STUDY.program} · ${STUDY.school} ${STUDY.classOf}`,
   email: "jaydenccan11@gmail.com",
   githubUser: "jchen208208",
   github: "https://github.com/jchen208208",

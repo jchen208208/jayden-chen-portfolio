@@ -48,6 +48,9 @@ export type SkillItem = {
   /** a fixed tilt (deg), instead of the small random one — the long, thin
    *  soldering iron lies diagonally */
   tilt?: number;
+  /** a hand-placed shift from its spot on the ring, in design units
+   *  `[right, down]` — the desk layout only (`sections/skills.tsx`) */
+  nudge?: [x: number, y: number];
 };
 
 // SVG imports are typed loosely by Next (so SVG-as-component plugins don't
@@ -61,7 +64,7 @@ export const SKILLS_BOX_ITEMS: SkillItem[][] = [
     { name: "C", art: logo(cLogo) },
     { name: "C++", art: logo(cppLogo) },
     { name: "JavaScript", art: logo(jsLogo) },
-    { name: "SQL", art: { Icon: TbSql, color: "#e48e00" } },
+    { name: "SQL", art: { Icon: TbSql, color: "#e48e00" }, nudge: [55, 0] },
     { name: "HTML/CSS", art: logo(html5Logo) },
   ],
   [
