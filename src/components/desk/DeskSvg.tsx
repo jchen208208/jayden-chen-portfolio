@@ -1,9 +1,5 @@
 import { DESK_VIEWBOX, LAPTOP1_TRANSFORM } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
-import LaptopExperienceScreen from "./LaptopExperienceScreen";
-import LaptopSkillsScreen from "./LaptopSkillsScreen";
-import PortraitMonitorScreen from "./PortraitMonitorScreen";
-import NeonSigns from "./NeonSigns";
 import PcFanLights, { type PcFanMode } from "./PcFanLights";
 
 /**
@@ -549,16 +545,12 @@ export default function DeskSvg({
           <circle cx={998} cy={118} r={6} fill={PAPER} />
         </g>
 
-        {/* ── a neon sign over each screen, naming it ──────────────────── */}
-        <NeonSigns />
-
         {/* ── screen 1: landscape monitor ──────────────────────────────── */}
         <g>
           <Screen x={382} y={239} w={202} h={138} />
-          {/* The glass is left empty here: what this screen shows — the
-              board turning in 3D — is WebGL, so it can't live in
-              the SVG. `ProjectsMonitorScreen` draws it as an HTML layer over
-              this same glass rect (392,249,182,118) instead. */}
+          {/* each glass is left empty here: its section name is an HTML
+              layer over it (`DeskScene`), so it can share the résumé
+              button's hover sweep */}
           {/* connecting beam — a touch longer than before */}
           <path d="M464 377 L502 377 L508 387 L458 387 Z" fill={PAPER} />
           {/* base — flat, rounded only on top, bottom flush on the desk */}
@@ -570,13 +562,10 @@ export default function DeskSvg({
 
         {/* ── screen 2: laptop ─────────────────────────────────────────── */}
         {/* Drawn at its original size and scaled up in place by `LAPTOP1` —
-            one transform over the whole laptop, so the bezel, the glass and
-            the terminal UI inside it all grow by exactly the same amount and
-            stay in register. Still smaller than screen 3, the bigger laptop. */}
+            one transform over the whole laptop, so the bezel and the glass
+            grow by exactly the same amount and stay in register. Still smaller than screen 3, the bigger laptop. */}
         <g transform={LAPTOP1_TRANSFORM}>
           <Screen x={602} y={300} w={150} h={90} r={6} inset={9} />
-          {/* a `skills` object typing itself in — see `LaptopSkillsScreen` */}
-          <LaptopSkillsScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               slightly wider than the screen so it reads as a laptop base */}
           <rect x={594} y={388} width={166} height={8} rx={2} fill={PAPER} />
@@ -585,9 +574,6 @@ export default function DeskSvg({
         {/* ── screen 3: larger laptop ──────────────────────────────────── */}
         <g>
           <Screen x={802} y={268} w={222} h={120} r={6} inset={10} />
-          {/* the papers' method diagrams, each run lit arrow by arrow — see
-              `LaptopExperienceScreen` */}
-          <LaptopExperienceScreen />
           {/* base — just its sideways thickness, no keyboard face in this side view;
               wider than the screen, sides slanting inward slightly toward the desk */}
           <path d="M792 384 L1034 384 L1026 396 L800 396 Z" fill={PAPER} />
@@ -596,9 +582,6 @@ export default function DeskSvg({
         {/* ── screen 4: portrait monitor ───────────────────────────────── */}
         <g>
           <Screen x={1062} y={128} w={182} h={252} r={10} inset={12} />
-          {/* the glass (1074,140,158,228): a tennis point played through to
-              a podium; see `PortraitMonitorScreen` */}
-          <PortraitMonitorScreen />
           {/* two legs — connect the screen down to the base */}
           <path d="M1140 380 L1150 380 L1146 388 L1136 388 Z" fill={PAPER} />
           <path d="M1156 380 L1166 380 L1170 388 L1160 388 Z" fill={PAPER} />

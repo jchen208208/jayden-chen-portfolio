@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Orbitron, Tilt_Neon } from "next/font/google";
+import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Orbitron, VT323 } from "next/font/google";
 import "./globals.css";
 
 // Chakra Petch (SIL OFL — free for commercial use) — the title face: section
@@ -40,10 +40,14 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-// Tilt Neon — monoline, drawn to look like bent tubes: the desk's neon signs.
-const tiltNeon = Tilt_Neon({
-  variable: "--font-neon",
+// VT323 (SIL OFL — free for commercial use) — the desk screens' face: each
+// screen's section name. Traced from the DEC VT320 terminal's character set,
+// so the glass reads as an old monitor; it pairs with the hero name's pixel
+// squares.
+const vt323 = VT323({
+  variable: "--font-vt323",
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 
@@ -59,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${orbitron.variable} ${tiltNeon.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${orbitron.variable} ${vt323.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}

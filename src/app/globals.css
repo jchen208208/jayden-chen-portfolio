@@ -5,9 +5,9 @@
 
   The colour rule: white and one light. The room and everything in it is
   white line art on black — screen content included. The only colour is
-  `--glow`, a warm amber: the light itself. The lamp's bulb, the neon signs'
-  glow, and one highlight on each screen that has one (the PCB's gold pads
-  and LED, the code's keywords and strings, the tennis ball, the trophy).
+  `--glow`, a warm amber: the light itself. The lamp's bulb, the PC's fans,
+  the desk screens' phosphor-lit names (on glass of the same amber run down
+  to a dark umber), and the sweep that runs across a button on hover.
   Nothing else gets a hue of its own — not brand logos, not a court — so
   the scene reads as one room lit one way. Chrome (bezels, card frames,
   tile borders) is always ink.
@@ -26,7 +26,11 @@
   /* the one colour of light (see the colour rule above). Canvas and WebGL
      can't read CSS variables, so `pcb/board.ts` repeats it. */
   --glow: #ffbe5c;
-  /* a neon tube's own core: warm white, where the light is hottest */
+  /* the desk screens' glass (`ScreenMosaic`): a dark umber — the glow's own
+     hue run down to a rich brown, like an amber monitor's tube, so it adds
+     no colour of its own. Each mosaic tile is a shade either side of it. */
+  --screen-bg: #573914;
+  /* warm white, where a light is hottest (the PC's lit power button) */
   --neon-core: #fff4e2;
 
   /* legacy accent kept as a fallback for <Accent> */
@@ -47,6 +51,7 @@
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
   --font-title: var(--font-chakra);
+  --font-screen: var(--font-vt323);
 }
 
 html {
@@ -159,12 +164,48 @@ body {
   transform: translateX(320%) skewX(-14deg);
 }
 
+/* a desk screen's route (`ScreenLabel`): white letters, lit like a
+   phosphor screen — a tight amber bloom round each letter and a fainter one
+   beyond it. Above the mosaic. */
+.screen-label {
+  position: relative;
+  z-index: 2;
+  color: var(--ink);
+  text-shadow:
+    0 0 0.12em color-mix(in srgb, var(--glow) 70%, transparent),
+    0 0 0.45em color-mix(in srgb, var(--glow) 30%, transparent);
+}
+
+/* the mosaic behind it (`ScreenMosaic`) — a desk screen's hover and click.
+   Each piece turns about its own centre. Hovering draws them slightly
+   apart, a beat apart from each other (`--tile-delay`): each drifts out
+   from the glass's centre with a slight tilt (`--part-*`), so the grout
+   widens; this same transition flies them back in once a burst is cleared.
+   The three states list the same functions in the same order, so a piece's
+   spin interpolates as a turn. A burst throws each one along its own
+   flight (`--fly-*`, set inline from where the glass was hit), nearest
+   first: it eases away so the pieces are seen parting, then picks up speed,
+   spinning, until it's off the glass. */
+.mosaic-tile {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1) var(--tile-delay, 0ms);
+}
+
+[data-screen]:is(:hover, :focus-visible) .mosaic-tile {
+  transform: translate(var(--part-x), var(--part-y)) rotate(var(--part-r));
+}
+
+[data-screen][data-shattered] .mosaic-tile {
+  transform: translate(var(--fly-x), var(--fly-y)) rotate(var(--fly-r)) scale(0.7);
+  transition: transform 650ms cubic-bezier(0.4, 0, 0.9, 0.55) var(--fly-delay, 0ms);
+}
+
 /* desk screens: the hover spotlight. Hovering (or keyboard-focusing) a
-   screen — its glass or its neon sign, which share `data-screen` — keeps
-   that screen's light on and dims the other three, which is what says "these
-   are separate things you can pick". Only the light dims: `.screen-light`
-   wraps each screen's contents, never the bezels, which are ink.
-   Each screen's own hover rule below then brightens it the rest of the way. */
+   screen keeps that screen's light on and dims the other three, which is
+   what says "these are separate things you can pick". Only the light dims:
+   `.screen-light` wraps each screen's contents, never the bezels, which are
+   ink. */
 .screen-light {
   transition: opacity 250ms ease-out;
 }
@@ -178,108 +219,6 @@ body {
 [data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) [data-light="experience"],
 [data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) [data-light="about"] {
   opacity: 1;
-}
-
-/* the neon signs (`NeonSigns`) follow the same spotlight as the screens, but
-   a sign doesn't dim — it switches off, down to its bare glass tube */
-.neon-lit {
-  transition: opacity 160ms ease-out;
-}
-
-[data-desk]:has([data-screen]:is(:hover, :focus-visible)) .neon-lit {
-  opacity: 0;
-}
-
-[data-desk]:has([data-screen="projects"]:is(:hover, :focus-visible)) [data-neon="projects"] .neon-lit,
-[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) [data-neon="skills"] .neon-lit,
-[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) [data-neon="experience"] .neon-lit,
-[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) [data-neon="about"] .neon-lit {
-  opacity: 1;
-}
-
-/* a dying tube (`NeonSigns`' faults): the light cuts out and catches again a
-   few times, unevenly, then holds. `steps` makes every change a hard cut —
-   a failing tube doesn't fade. Runs inside `.neon-lit`, so it never fights
-   the spotlight's opacity. */
-@keyframes neon-flicker {
-  0% {
-    opacity: 1;
-  }
-  6% {
-    opacity: 0.1;
-  }
-  11% {
-    opacity: 1;
-  }
-  19% {
-    opacity: 0.45;
-  }
-  23% {
-    opacity: 0.05;
-  }
-  31% {
-    opacity: 0.85;
-  }
-  44% {
-    opacity: 0.2;
-  }
-  49%,
-  100% {
-    opacity: 1;
-  }
-}
-
-.neon-flicker {
-  animation: neon-flicker 900ms steps(1, end) both;
-}
-
-/* its sparks: each one drifts sideways, slowing (`.neon-spark`), while it's
-   thrown up and falls back faster and faster (the group inside), and fades
-   once it's falling (inside that). Every spark's distances and timing are
-   its own, set inline. */
-@keyframes spark-drift {
-  to {
-    transform: translateX(var(--spark-dx));
-  }
-}
-
-@keyframes spark-throw {
-  0% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0.3, 0.6, 0.6, 1);
-  }
-  25% {
-    transform: translateY(var(--spark-rise));
-    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 0.5);
-  }
-  100% {
-    transform: translateY(var(--spark-fall));
-  }
-}
-
-@keyframes spark-fade {
-  0% {
-    opacity: 0;
-  }
-  4%,
-  45% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.neon-spark {
-  animation: spark-drift var(--spark-ms) cubic-bezier(0.2, 0.7, 0.4, 1) var(--spark-delay) both;
-}
-
-.neon-spark > g {
-  animation: spark-throw var(--spark-ms) linear var(--spark-delay) both;
-}
-
-.neon-spark > g > g {
-  animation: spark-fade var(--spark-ms) ease-in var(--spark-delay) both;
 }
 
 /* the PC's RGB fans (`PcFanLights`): they come on with a quick fade, then
@@ -361,110 +300,6 @@ body {
 /* the title face is Chakra Petch (loaded in 500/600/700); titles are semibold */
 .font-title {
   font-weight: 600;
-}
-
-/* smaller laptop on the desk (`LaptopSkillsScreen`): code types itself into
-   an editor. The per-token keyframes are generated in that component; these
-   set the shared playback. Hovering (or keyboard-focusing) that screen's
-   click target pauses the typing, brightens the code and holds the ▌ cursor
-   solid. */
-.code-type {
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-/* token bars grow rightward from their own left edge */
-.code-tok {
-  transform-box: fill-box;
-  transform-origin: 0 50%;
-}
-
-.code-text {
-  opacity: 0.75;
-  transition: opacity 200ms ease-out;
-}
-
-@keyframes caret-blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-.code-cursor {
-  animation: caret-blink 1.1s steps(1, end) infinite;
-}
-
-[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) .code-type {
-  animation-play-state: paused;
-}
-
-[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) .code-text {
-  opacity: 1;
-}
-
-[data-desk]:has([data-screen="skills"]:is(:hover, :focus-visible)) .code-cursor {
-  animation: none;
-}
-
-/* larger laptop on the desk (`LaptopExperienceScreen`): a camera tours a
-   paper's method diagram while its route lights up arrow by arrow. The
-   keyframes are generated in that component; these set the shared playback.
-   `linear` is load-bearing: each arrow draws on at a steady speed across its
-   own step (the camera's frames set their own easing). Hovering that
-   screen's click target pauses the run and brightens the diagram. */
-.mf-play {
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-.mf-figs {
-  opacity: 0.85;
-  transition: opacity 200ms ease-out;
-}
-
-[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) .mf-play {
-  animation-play-state: paused;
-}
-
-[data-desk]:has([data-screen="experience"]:is(:hover, :focus-visible)) .mf-figs {
-  opacity: 1;
-}
-
-/* portrait monitor on the desk (`PortraitMonitorScreen`, worked out in
-   `tennisRally.ts`): one generated timeline runs a tennis point, a
-   celebration and the podium. Each element's animation name and
-   duration — and, for the moving parts, its resting transform — are set
-   inline by the component; the shared playback lives here so hovering that
-   screen's click target can pause the whole sequence at once.
-
-   `linear` is load-bearing: a timing function applies to every keyframe
-   INTERVAL, so anything eased here would ease in and out of each of the
-   ball's sampled positions and it would visibly stall in the air. The arc
-   lives in the sampled coordinates instead, and the swings' keyframes name
-   their own easing. Every joint rotates about its own origin, hence 0 0. */
-.pa-play {
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  transform-origin: 0 0;
-}
-
-/* the podium only exists inside its own stretch of the cycle — and never
-   under reduced motion, which shows the court's still instead */
-.pa-podium {
-  opacity: 0;
-}
-
-.pa-court {
-  opacity: 0.85;
-  transition: opacity 200ms ease-out;
-}
-
-[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) .pa-play {
-  animation-play-state: paused;
-}
-
-[data-desk]:has([data-screen="about"]:is(:hover, :focus-visible)) .pa-court {
-  opacity: 1;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -555,6 +390,104 @@ body {
 
 .exp-caret {
   transition: transform 250ms ease-out;
+}
+
+/* Projects (`sections/projects.tsx`) is a grid of little program windows,
+   after Lars Olson's portfolio — the hover is his, timings and easings and
+   all, in amber. At rest a window's frame is the glow run down to a dim
+   amber and its picture sits under a light shade. Hovering the card switches
+   the light on: the frame and file icon turn to a lit amber gradient, the
+   shade lifts, the window hops up-left and swings 5° anticlockwise on an
+   elastic overshoot, and the title slides a little right. The swing only
+   plays going in — on the way out the window just drops back level.
+
+   The window is drawn in the original's units (360 × 282): a 32-unit title
+   bar and 4-unit sides, which are the frame's own background showing round
+   a black screen, and 4 units of that black round the picture. */
+.proj-card {
+  --proj-frame: color-mix(in srgb, var(--glow) 55%, #000);
+  --proj-deep: color-mix(in srgb, var(--glow) 65%, #b45309);
+  --proj-ease: cubic-bezier(0.25, 1, 0.5, 1); /* outQuart */
+  --proj-swing: linear(
+    0, 0.272, 0.646, 1, 1.25, 1.364, 1.354, 1.257, 1.125, 1, 0.912, 0.871,
+    0.875, 0.909, 0.956, 1, 1.031, 1.046, 1.044, 1.032, 1.016, 1, 0.989, 0.984,
+    0.984, 0.989, 0.994, 1, 1.004, 1.006, 1.006, 1.004, 1.002, 1, 0.999, 0.998,
+    0.998, 0.999, 0.999, 1, 1
+  ); /* outElastic */
+}
+
+.proj-window {
+  position: relative;
+  aspect-ratio: 360 / 282;
+  padding: calc(100% * 32 / 360) calc(100% * 4 / 360) calc(100% * 4 / 360);
+  background: var(--proj-frame);
+  transition:
+    translate 200ms var(--proj-ease),
+    rotate 0s;
+}
+
+.proj-screen {
+  height: 100%;
+  padding: calc(100% * 4 / 352);
+  background: #000;
+}
+
+.proj-shot {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.proj-shade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0.25;
+}
+
+/* a dog-eared page outline, hung off the window's bottom-left corner */
+.proj-file {
+  position: absolute;
+  left: -7%;
+  bottom: -24%;
+  width: 23%;
+  height: 36%;
+  background: var(--proj-frame);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 78 94'%3E%3Cpath fill-rule='evenodd' d='M0 0h63l15 15v79H0zM2 2v90h74V15.83L62.17 2z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.proj-title {
+  transition: translate 200ms var(--proj-ease);
+}
+
+.proj-placeholder {
+  background: radial-gradient(
+    circle at 30% 25%,
+    var(--screen-bg),
+    color-mix(in srgb, var(--screen-bg) 30%, #000)
+  );
+  color: color-mix(in srgb, var(--glow) 75%, transparent);
+}
+
+@media (hover: hover) {
+  .proj-card:hover .proj-window {
+    translate: -2% -2.5%;
+    rotate: -5deg;
+    background: linear-gradient(90deg, var(--proj-deep), var(--glow) 45%, var(--neon-core));
+    transition:
+      translate 200ms var(--proj-ease),
+      rotate 1s var(--proj-swing);
+  }
+  .proj-card:hover .proj-shade {
+    opacity: 0;
+  }
+  .proj-card:hover .proj-file {
+    background: linear-gradient(135deg, var(--proj-deep), var(--glow) 55%, var(--neon-core));
+  }
+  .proj-card:hover .proj-title {
+    translate: 3% 0;
+  }
 }
 
 /* A title drawn as circuit-board traces (`PcbTitle`): each trace routes
@@ -729,10 +662,6 @@ body {
   .pcb-trace,
   .pcb-pad,
   .pcb-silk,
-  .code-type,
-  .code-cursor,
-  .mf-play,
-  .pa-play,
   .pc-lights,
   .pc-spin,
   .pc-side-band,
@@ -742,10 +671,17 @@ body {
   }
   .exp-reveal,
   .exp-caret,
-  .sweep-bar {
+  .sweep-bar,
+  .mosaic-tile {
     transition: none !important;
   }
   [data-cards-revealed="true"] .exp-row {
     animation: none !important;
+  }
+  /* a project window still lights up on hover, but stays where it is */
+  .proj-window,
+  .proj-title {
+    translate: none !important;
+    rotate: none !important;
   }
 }

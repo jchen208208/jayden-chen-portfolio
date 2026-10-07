@@ -5,6 +5,8 @@
  * shaped like the real thing so the UI renders; swap in real copy before launch.
  */
 
+import type { StaticImageData } from "next/image";
+
 /** the tagline's parts — the hero highlights the school on its own */
 const STUDY = {
   program: "Computer Engineering",
@@ -49,8 +51,8 @@ export type SectionMeta = {
   route: `/${SectionId}`;
   /** short label on the mobile card */
   deskLabel: string;
-  /** the header the opened section grows into. Uppercase. (On the desk, each
-   *  screen's neon sign spells it out — `SCREENS[].sign`.) */
+  /** the header the opened section grows into. Uppercase. (On the desk its
+   *  screen shows `route` instead — see `ScreenLabel`.) */
   screenLabel: string;
   /** one-line description under the mobile card */
   blurb: string;
@@ -107,9 +109,10 @@ export type Project = {
   highlights: string[];
   repo?: string;
   demo?: string;
-  /** true for the SPARC board: its box shows the real KiCad design turning
-   *  in 3D (the same viewer as the Projects monitor on the desk) */
-  hasBoardViewer?: boolean;
+  /** the picture in the project's window, imported from `src/assets/projects`
+   *  — a placeholder stands in until there is one.
+   *  TODO — user: a screenshot or photo for each project */
+  image?: StaticImageData;
 };
 
 export const PROJECTS: Project[] = [
@@ -122,7 +125,6 @@ export const PROJECTS: Project[] = [
       "Developing an embedded-system device mapping hand gestures to audio playback controls using a light sensor with an ESP32 MCU.",
       "Designed a custom 2-layer PCB in KiCad and a 3D-printed enclosure in Fusion 360, advancing the project through many stages from breadboard components to now a working and tested MVP ready for production and scaling.",
     ],
-    hasBoardViewer: true,
   },
   {
     slug: "shell",

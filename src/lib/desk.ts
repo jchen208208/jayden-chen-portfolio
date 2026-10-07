@@ -1,6 +1,6 @@
 /**
  * Desk scene geometry shared by the SVG (`DeskSvg`) and the HTML layers that
- * sit over it (`DeskScene`'s click targets, `ProjectsMonitorScreen`).
+ * sit over it (`DeskScene`'s click targets and screen labels).
  *
  * Coordinate space is `DESK_VIEWBOX`. Positions are converted to `%` of the
  * viewBox so the HTML overlay layer stays glued to the SVG at every width.
@@ -47,67 +47,11 @@ export type ScreenSpec = {
   /** the glass rectangle in desk units, as it lands on screen — must track the
    *  inset rect `DeskSvg` draws for that screen */
   glass: Rect;
-  /** the neon sign naming this screen, on the wall just above it (see
-   *  `NeonSign`) */
-  sign: NeonSignSpec;
 };
 
-/** A neon sign, in desk units: one line of tube lettering centred on
- *  (`cx`, `cy`), on an acrylic backboard (`neonBoard`) hung from a pin on the
- *  wall, centred over its screen with the board 10 units clear of its bezel
- *  (so `cy` = bezel top − 28). */
-export type NeonSignSpec = {
-  text: string;
-  cx: number;
-  cy: number;
-  /** the lettering's measured width at `NEON_SIZE`, for the click target */
-  w: number;
-};
-
-/** the neon lettering's font size, shared by all four signs — big enough to
- *  read at a glance, ~20px with the desk at full width */
-export const NEON_SIZE = 28;
-
-/** the acrylic backboard's margin around the lettering */
-const BOARD_PAD = { x: 12, y: 18 };
-
-/** a sign's clear acrylic backboard — what it hangs by, and its click target */
-export function neonBoard({ cx, cy, w }: NeonSignSpec): Rect {
-  return {
-    x: cx - w / 2 - BOARD_PAD.x,
-    y: cy - BOARD_PAD.y,
-    w: w + BOARD_PAD.x * 2,
-    h: BOARD_PAD.y * 2,
-  };
-}
-
-/** each string ties onto the board's top edge this share of its width in from
- *  either end */
-const STRING_INSET = 0.15;
-/** half the angle the two strings make at the pin. The same on every sign, so
- *  a wider board simply hangs from a higher pin. */
-const STRING_HALF_ANGLE = (55 * Math.PI) / 180;
-
-type Point = { x: number; y: number };
-
-/** where a sign's two strings leave its board's top edge, and the pin they
- *  meet at */
-export function neonHang(sign: NeonSignSpec): { left: Point; right: Point; pin: Point } {
-  const board = neonBoard(sign);
-  const inset = board.w * STRING_INSET;
-  const halfSpan = board.w / 2 - inset;
-  const rise = halfSpan / Math.tan(STRING_HALF_ANGLE);
-  const r2 = (v: number) => Math.round(v * 100) / 100;
-  return {
-    left: { x: r2(board.x + inset), y: board.y },
-    right: { x: r2(board.x + board.w - inset), y: board.y },
-    pin: { x: sign.cx, y: r2(board.y - rise) },
-  };
-}
-
-/** Screen 2's glass at its ORIGINAL, unscaled coordinates — what
- *  `LaptopSkillsScreen` draws in, inside the `LAPTOP1_TRANSFORM` group. */
-export const SKILLS_GLASS_LOCAL: Rect = { x: 611, y: 309, w: 132, h: 72 };
+/** Screen 2's glass at its ORIGINAL, unscaled coordinates, as `DeskSvg`
+ *  draws it inside the `LAPTOP1_TRANSFORM` group. */
+const SKILLS_GLASS_LOCAL: Rect = { x: 611, y: 309, w: 132, h: 72 };
 
 /**
  * In reading order, left to right across the desk:
@@ -120,35 +64,20 @@ export const SCREENS: ScreenSpec[] = [
   {
     id: "projects",
     glass: { x: 392, y: 249, w: 182, h: 118 },
-    sign: { text: "PROJECTS", cx: 483, cy: 211, w: 137 },
   },
   {
     id: "skills",
     glass: laptop1Rect(SKILLS_GLASS_LOCAL),
-    // in the gap between the bookshelf (bottom y=184) and the laptop's bezel
-    // (top y≈288)
-    sign: { text: "SKILLS", cx: 689, cy: 260, w: 89 },
   },
   {
     id: "experience",
     glass: { x: 812, y: 278, w: 202, h: 100 },
-    // the widest board, so it hangs from the highest pin — between the
-    // bookshelf (x≤829) and the lamp's head and pull-chain (x≥966)
-    sign: { text: "EXPERIENCE", cx: 913, cy: 240, w: 168 },
   },
   {
     id: "about",
     glass: { x: 1074, y: 140, w: 158, h: 228 },
-    // the tallest screen, so its sign hangs highest
-    sign: { text: "ABOUT", cx: 1153, cy: 100, w: 95 },
   },
 ];
-
-export function screenById(id: SectionId): ScreenSpec {
-  const s = SCREENS.find((s) => s.id === id);
-  if (!s) throw new Error(`no screen for section "${id}"`);
-  return s;
-}
 
 /** left/top/width/height as `%` strings, for absolutely positioning an HTML
  *  element over a desk rect */

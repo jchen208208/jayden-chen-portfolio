@@ -4,9 +4,8 @@
  *
  * The light fills each round fan's blade area — the band between its outer
  * ring and its hub — and the inside of each side-on fan beside it, in the
- * signs' neon amber (`--glow`): a blurred halo under the lit shape itself.
- * Three effects, each a seamless loop (timing in globals.css, next to the
- * neon's):
+ * room's one light colour (`--glow`): a blurred halo under the lit shape
+ * itself. Three effects, each a seamless loop (timing in globals.css):
  *
  *   spin    — a soft glow circles each fan, fading off along a long tail;
  *             seen edge-on, the side fans' light rides up and down with it

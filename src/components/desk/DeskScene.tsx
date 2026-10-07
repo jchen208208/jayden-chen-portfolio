@@ -1,24 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { createPortal, flushSync } from "react-dom";
 import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
-import {
-  DESK_VIEWBOX,
-  SCREENS,
-  neonBoard,
-  percentBox,
-  type Rect,
-  type ScreenSpec,
-} from "@/lib/desk";
+import { DESK_VIEWBOX, SCREENS, percentBox, type Rect, type ScreenSpec } from "@/lib/desk";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
 import type { PcFanMode } from "./PcFanLights";
 import DeskCardList from "./DeskCardList";
-import ProjectsMonitorScreen from "./ProjectsMonitorScreen";
 import ScreenCard from "./ScreenCard";
+import ScreenLabel from "./ScreenLabel";
+import ScreenMosaic from "./ScreenMosaic";
 import { SectionBackdrop, SectionTitle, hasBackdrop, headerFontClass, sectionCards } from "./sections";
 
 /**
@@ -28,11 +29,14 @@ import { SectionBackdrop, SectionTitle, hasBackdrop, headerFontClass, sectionCar
  * Every screen follows the same grammar, so the four sections read as one
  * system with four different contents:
  *
- *   on the desk — the section's own live animation filling the glass, a
- *                 neon sign on the wall above naming it (`NeonSigns`), and
- *                 on hover a spotlight: that screen and its sign stay lit
- *                 while the other three dim and switch off (globals.css)
- *   on click    — one smooth zoom from the click point to a centred
+ *   on the desk — the section's route (`/projects`) glowing amber on the
+ *                 glass in the screen face (VT323), its letters spinning in
+ *                 like slot reels on load (`ScreenLabel`), over a mosaic of
+ *                 umber shards (`ScreenMosaic`); on hover the shards draw
+ *                 slightly apart, and a spotlight keeps that screen lit
+ *                 while the other three dim (globals.css)
+ *   on click    — the mosaic bursts off the glass from where it was hit,
+ *                 then one smooth zoom from the click point to a centred
  *                 fullscreen title, a quick glide up into a header, then the
  *                 section's cards unfurl beneath it with a macOS genie warp
  *   opened      — header + a row of `ScreenCard`s; only the card bodies differ
@@ -197,15 +201,26 @@ const PC_IDLE_ON_MS: [number, number] = [12_000, 28_000];
 /** …and go dark again a while later */
 const PC_IDLE_OFF_MS: [number, number] = [8_000, 14_000];
 
-/** how far each neon sign's click target reaches past its backboard, in desk
- *  units */
-const SIGN_HIT_PAD = 3;
-const padRect = (r: Rect, p: number): Rect => ({
-  x: r.x - p,
-  y: r.y - p,
-  w: r.w + p * 2,
-  h: r.h + p * 2,
-});
+/** desk units → a CSS length that scales with the desk, via the container
+ *  query width of `[data-desk]` (the full viewBox width is 100cqw) */
+const deskUnits = (u: number) => `${(u / DESK_VIEWBOX.w) * 100}cqw`;
+/** the section route on each glass, in desk units — one size for all four.
+ *  VT323 is 0.4em a letter, so "/experience" (the longest) runs ~177 across
+ *  the 202-wide glass with the tracking below. */
+const SCREEN_LABEL_SIZE = 34;
+const SCREEN_LABEL_TRACKING = "0.08em";
+/** the label and mosaic sit this far inside the glass rect: past the inner
+ *  half of its 2.4 stroke, so nothing draws over the bezel line */
+const GLASS_INSET = 2;
+const GLASS_RADIUS = 3;
+/** the glass's inner box — what the label and mosaic fill */
+const innerGlass = ({ w, h }: Rect) => ({ w: w - GLASS_INSET * 2, h: h - GLASS_INSET * 2 });
+/** each screen's own mosaic layout */
+const MOSAIC_SEED: Record<SectionId, number> = { projects: 7, skills: 19, experience: 31, about: 43 };
+/** a click bursts the mosaic, and the section only starts zooming open this
+ *  long after — once most pieces are off the glass (the burst runs 650ms,
+ *  `.mosaic-tile`), so they're seen flying before the view covers them */
+const BURST_LEAD_MS = 520;
 
 export default function DeskScene({ className }: { className?: string }) {
   const [openId, setOpenId] = useState<SectionId | null>(null);
@@ -280,8 +295,7 @@ export default function DeskScene({ className }: { className?: string }) {
 
   const openScreen = useCallback(
     (s: ScreenSpec) => {
-      // Always the glass, even when the click landed on the screen's neon
-      // sign, so the zoom grows out of the screen itself.
+      // the zoom grows out of the glass itself
       const glass = glassRefs.current[s.id];
       if (!glass) return;
       const box = glass.getBoundingClientRect();
@@ -311,12 +325,40 @@ export default function DeskScene({ className }: { className?: string }) {
     [clearStageTimers, reduced],
   );
 
+  // The screen whose mosaic has burst, and where it was hit (in its inner
+  // glass's desk units). Set on click, cleared on close — which flies the
+  // pieces back in as the desk comes back into view.
+  const [burst, setBurst] = useState<{ id: SectionId; x: number; y: number } | null>(null);
+
+  const clickScreen = useCallback(
+    (s: ScreenSpec, e: ReactMouseEvent<HTMLButtonElement>) => {
+      // one at a time — a second click while the first is bursting is ignored
+      if (burst) return;
+      if (reduced) {
+        openScreen(s);
+        return;
+      }
+      const box = e.currentTarget.getBoundingClientRect();
+      // a keyboard press has no pointer (`detail` 0): burst from the centre
+      const fx = e.detail === 0 ? 0.5 : (e.clientX - box.left) / box.width;
+      const fy = e.detail === 0 ? 0.5 : (e.clientY - box.top) / box.height;
+      setBurst({
+        id: s.id,
+        x: fx * s.glass.w - GLASS_INSET,
+        y: fy * s.glass.h - GLASS_INSET,
+      });
+      stageTimers.current.push(window.setTimeout(() => openScreen(s), BURST_LEAD_MS));
+    },
+    [burst, reduced, openScreen],
+  );
+
   const close = useCallback(() => {
     clearStageTimers();
     setStage("closed");
     setOpenId(null);
     setBoxLayout(null);
     setCardsRevealed(false);
+    setBurst(null);
   }, [clearStageTimers]);
 
   // A pull yanks the chain down, flips the light once it bottoms out, then
@@ -589,9 +631,11 @@ export default function DeskScene({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="mx-auto hidden w-full max-w-[1180px] px-4 md:block">
+        {/* a size container, so the screen labels can be sized in desk
+            units (`deskUnits`) and scale with the art */}
         <div
           data-desk
-          className="relative w-full"
+          className="@container relative w-full"
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >
           <DeskSvg
@@ -600,11 +644,6 @@ export default function DeskScene({ className }: { className?: string }) {
             chainPulled={chainPulled}
             pcFans={pcFans}
           />
-          {/* screen 1's contents — the board turning, filling the glass.
-              Sits between the desk art and the click targets below, and is
-              `pointer-events-none`, so its own screen's button still takes
-              the click. */}
-          <ProjectsMonitorScreen />
           <button
             type="button"
             aria-label={lampOn ? "Turn lamp off" : "Turn lamp on"}
@@ -630,9 +669,10 @@ export default function DeskScene({ className }: { className?: string }) {
                 glassRefs.current[s.id] = el;
               }}
               data-screen={s.id}
+              data-shattered={burst?.id === s.id || undefined}
               type="button"
               aria-label={`Open ${SECTIONS[s.id].deskLabel}`}
-              onClick={() => openScreen(s)}
+              onClick={(e) => clickScreen(s, e)}
               // Prevents the browser's default focus-on-click: with the desk
               // sitting inside a `position: sticky` + transformed ancestor,
               // focusing this button made some browsers snap-scroll the page
@@ -641,21 +681,34 @@ export default function DeskScene({ className }: { className?: string }) {
               onMouseDown={(e) => e.preventDefault()}
               className="absolute cursor-pointer outline-none"
               style={percentBox(s.glass)}
-            />
-          ))}
-          {/* each neon sign opens its screen too. Not a second tab stop or
-              announced control — the glass button above is that — but it
-              carries the same `data-screen`, so hovering the sign lights up
-              its screen exactly like hovering the glass does. */}
-          {SCREENS.map((s) => (
-            <div
-              key={s.id}
-              aria-hidden
-              data-screen={s.id}
-              onClick={() => openScreen(s)}
-              className="absolute cursor-pointer"
-              style={percentBox(padRect(neonBoard(s.sign), SIGN_HIT_PAD))}
-            />
+            >
+              {/* what the screen shows: its section's route over the
+                  mosaic, which draws apart on hover and bursts on click
+                  (the `[data-screen]` rules in globals.css). The route sits
+                  above the mosaic (z 2); `isolate` keeps that z-index
+                  inside the glass. */}
+              <span
+                data-light={s.id}
+                className="screen-light absolute isolate flex items-center justify-center overflow-hidden"
+                style={{ inset: deskUnits(GLASS_INSET), borderRadius: deskUnits(GLASS_RADIUS) }}
+              >
+                <ScreenMosaic
+                  {...innerGlass(s.glass)}
+                  seed={MOSAIC_SEED[s.id]}
+                  burst={burst?.id === s.id ? burst : null}
+                />
+                <ScreenLabel
+                  route={SECTIONS[s.id].route}
+                  style={{
+                    fontSize: deskUnits(SCREEN_LABEL_SIZE),
+                    letterSpacing: SCREEN_LABEL_TRACKING,
+                    // tracking trails the last letter too; the same space up
+                    // front keeps the letters themselves centred
+                    paddingLeft: SCREEN_LABEL_TRACKING,
+                  }}
+                />
+              </span>
+            </button>
           ))}
         </div>
       </div>
@@ -729,7 +782,7 @@ export default function DeskScene({ className }: { className?: string }) {
                 transition: `transform ${transitionMs}ms ${overlayTiming.ease}, transform-origin ${transitionMs}ms ${overlayTiming.ease}`,
               }}
             >
-              {/* the section's name, as on its neon sign, grown to fill
+              {/* the section's name, as on its screen, grown to fill
                   the screen — a fresh element, not a scaled copy of the
                   desk SVG, so it stays crisp at any viewport size */}
               {content && (

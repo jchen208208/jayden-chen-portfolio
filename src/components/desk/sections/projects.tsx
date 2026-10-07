@@ -1,51 +1,89 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { PROJECTS, type Project } from "@/lib/site";
-import { Bullets, CardLink, Meta, type CardOptions, type SectionCard } from "./shared";
-
-/** the same viewer as the Projects monitor on the desk — client-only, and
- *  fetched on demand (three.js is the heaviest thing on the site) */
-const PcbViewer = dynamic(() => import("../pcb/PcbViewer"), { ssr: false });
+import { Bullets, CardLink, Meta, type SectionCard } from "./shared";
 
 /**
- * Projects is a stack of boxes, one per project: a white strip with the name
- * and dates over a black body with the tools and the résumé bullets. Like
+ * Projects is a grid of little program windows, one per project: a picture
+ * of the project inside an amber frame, a file icon dropped over its bottom
+ * corner, and the name and résumé lines underneath. Hovering one switches
+ * its light on — the window hops and swings, the title slides — after Lars
+ * Olson's portfolio (`.proj-*` in globals.css has the timings). Like
  * Experience it sits in the page rather than a window of its own, and its
- * boxes drop in one after another (`.exp-row` in globals.css).
+ * cards drop in one after another (`.exp-row`).
  */
 
-const LIST_MAX_WIDTH = "84rem";
+const LIST_MAX_WIDTH = "72rem";
 
-function ProjectBox({
-  project: p,
-  index,
-  active,
-}: {
-  project: Project;
-  index: number;
-  active: boolean;
-}) {
+/** stands in for a project's picture until it has one — the file it's
+ *  waiting for, on the desk screens' umber glass */
+function ShotPlaceholder({ slug }: { slug: string }) {
   return (
-    <li
-      className="exp-row overflow-hidden rounded-[16px] border-[3px] border-white bg-paper"
-      style={{ "--i": index } as CSSProperties}
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 bg-white px-8 py-4 text-black">
-        <h3 className="font-title text-3xl uppercase tracking-wide">{p.name}</h3>
-        <span className="font-mono text-sm uppercase tracking-wide text-black/55">{p.period}</span>
+    <div className="proj-placeholder flex h-full w-full flex-col items-center justify-center gap-[4%]">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        aria-hidden
+        className="w-[18%]"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="1" />
+        <circle cx="9" cy="9.5" r="1.75" />
+        <path d="M3 17l5-5 4 4 3-3 5 5" />
+      </svg>
+      <span className="font-screen text-lg leading-none">{slug}.png</span>
+    </div>
+  );
+}
+
+function ProjectCard({ project: p, index }: { project: Project; index: number }) {
+  return (
+    <li className="exp-row proj-card" style={{ "--i": index } as CSSProperties}>
+      <div className="relative">
+        <div className="proj-window">
+          {/* the title bar's three buttons */}
+          <svg
+            viewBox="0 0 76 32"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={4}
+            aria-hidden
+            className="absolute top-0 left-0 w-[21.1%] text-black"
+          >
+            <rect x="8" y="8" width="14" height="14" />
+            <rect x="32" y="8" width="14" height="14" />
+            <rect x="56" y="8" width="14" height="14" />
+          </svg>
+          <div className="proj-screen">
+            <div className="proj-shot">
+              {p.image ? (
+                <Image
+                  src={p.image}
+                  alt={p.name}
+                  fill
+                  sizes="(min-width: 640px) 24rem, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <ShotPlaceholder slug={p.slug} />
+              )}
+              <div className="proj-shade" />
+            </div>
+          </div>
+        </div>
+        <span aria-hidden className="proj-file" />
       </div>
-      <div className="flex flex-col gap-4 px-8 py-6 font-mono text-base text-white">
-        {p.hasBoardViewer && (
-          <PcbViewer
-            boards={["sparc"]}
-            running={active}
-            className="relative aspect-[16/7] w-full"
-          />
-        )}
+      <h3 className="proj-title mt-3 font-title text-xl uppercase leading-tight tracking-wide text-white">
+        {p.name}
+      </h3>
+      <div className="mt-2 flex flex-col gap-3 font-mono text-white">
+        <Meta>{p.period}</Meta>
         <Meta>{p.tags.join(" · ")}</Meta>
-        <Bullets items={p.highlights} large />
+        <Bullets items={p.highlights} />
         {(p.repo || p.demo) && (
           <div className="flex gap-4 text-xs uppercase tracking-wide">
             {p.repo && <CardLink href={p.repo}>Source</CardLink>}
@@ -57,22 +95,26 @@ function ProjectBox({
   );
 }
 
-function ProjectList({ active }: CardOptions) {
+/** columns follow the space the grid is given, not the viewport — the desk
+ *  overlay is much wider than the stacked page */
+function ProjectGrid() {
   return (
-    <ul className="flex flex-col gap-5">
-      {PROJECTS.map((p, i) => (
-        <ProjectBox key={p.slug} project={p} index={i} active={active} />
-      ))}
-    </ul>
+    <div className="@container">
+      <ul className="grid grid-cols-1 gap-x-12 gap-y-16 px-[3%] @xl:grid-cols-2 @5xl:grid-cols-3">
+        {PROJECTS.map((p, i) => (
+          <ProjectCard key={p.slug} project={p} index={i} />
+        ))}
+      </ul>
+    </div>
   );
 }
 
-export function projectsCards(opts: CardOptions): SectionCard[] {
+export function projectsCards(): SectionCard[] {
   return [
     {
       key: "projects",
       title: "",
-      body: <ProjectList {...opts} />,
+      body: <ProjectGrid />,
       maxWidth: LIST_MAX_WIDTH,
       bare: true,
       fitContent: true,
