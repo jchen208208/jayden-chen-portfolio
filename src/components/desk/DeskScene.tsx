@@ -20,7 +20,7 @@ import DeskCardList from "./DeskCardList";
 import ScreenCard from "./ScreenCard";
 import ScreenLabel from "./ScreenLabel";
 import ScreenMosaic from "./ScreenMosaic";
-import { SectionBackdrop, SectionTitle, hasBackdrop, headerFontClass, sectionCards } from "./sections";
+import { SectionBackdrop, SectionTitle, hasBackdrop, sectionCards } from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -788,11 +788,11 @@ export default function DeskScene({ className }: { className?: string }) {
               {content && (
                 <div
                   ref={headerRef}
-                  className={`px-8 text-center uppercase leading-none ${headerFontClass(content)}`}
+                  className="px-8 text-center uppercase leading-none"
                   style={{ fontSize: "clamp(2rem, 8vw, 6rem)", color: "var(--ink, #f4f6f8)" }}
                 >
                   {/* keyed per opening, so a title that animates itself in
-                      (Projects' traces) plays every time, not just the first */}
+                      plays every time, not just the first */}
                   <SectionTitle key={opens} id={content} />
                 </div>
               )}

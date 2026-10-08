@@ -164,16 +164,19 @@ body {
   transform: translateX(320%) skewX(-14deg);
 }
 
-/* a desk screen's route (`ScreenLabel`): white letters, lit like a
-   phosphor screen — a tight amber bloom round each letter and a fainter one
-   beyond it. Above the mosaic. */
+/* a desk screen's route (`ScreenLabel`): white letters with a near-black
+   outline, so they read on every piece of the amber mosaic, pale or bronze.
+   `paint-order: stroke fill` lays the stroke under the fill, as on the
+   Skills headings, so only its outer half shows and it doesn't thin the
+   letters. A soft dark shadow round them quietens the mosaic's edges and
+   grout just behind the word. Above the mosaic. */
 .screen-label {
   position: relative;
   z-index: 2;
-  color: var(--ink);
-  text-shadow:
-    0 0 0.12em color-mix(in srgb, var(--glow) 70%, transparent),
-    0 0 0.45em color-mix(in srgb, var(--glow) 30%, transparent);
+  color: #fff;
+  -webkit-text-stroke: max(3px, 0.13em) #161618;
+  paint-order: stroke fill;
+  text-shadow: 0 0 0.35em rgba(0, 0, 0, 0.6);
 }
 
 /* the mosaic behind it (`ScreenMosaic`) — a desk screen's hover and click.
@@ -524,7 +527,8 @@ body {
   }
 }
 
-/* The Skills page's headings — its title and the three group labels: Orbitron,
+/* The Skills page's headings — the three group labels (and the lettering of
+   every section's title, which `.section-title` sets in another face): Orbitron,
    in a lighter amber than the glow, with an outline round the letters in a
    darker amber than the glow (a grey and a white one were tried). `paint-order: stroke fill` lays the stroke under the fill, so only
    its outer half shows and the outline doesn't eat into the letters. */
@@ -535,6 +539,16 @@ body {
   color: color-mix(in srgb, var(--glow, #ffbe5c) 72%, #fff);
   -webkit-text-stroke: max(3px, 0.055em) color-mix(in srgb, var(--glow, #ffbe5c) 65%, #000);
   paint-order: stroke fill;
+}
+
+/* Every section's title: that amber lettering in the desk screens'
+   own face — VT323, as `ScreenLabel` writes their names on the glass. It has
+   a single weight and sits small on its em, so it's set a size up to stand
+   as tall as the other headers. */
+.section-title {
+  font-family: var(--font-vt323), monospace;
+  font-weight: 400;
+  font-size: 1.3em;
 }
 
 /* Skills stickers (`sections/skills.tsx`). On the way in, each cluster's

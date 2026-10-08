@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { SECTIONS, type SectionId } from "@/lib/site";
-import PcbTitle, { PROJECTS_BOARD } from "../PcbTitle";
 import ScreenCard from "../ScreenCard";
 import { experienceCards } from "./experience";
 import { personalCards } from "./personal";
@@ -25,29 +24,12 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   about: personalCards,
 };
 
-/** Skills and Experience set their header in the display face (Chakra Petch);
- *  the others use the site monospace. Card titles are the display face throughout. */
-const DISPLAY_FACE_HEADERS: ReadonlySet<SectionId> = new Set(["skills", "experience"]);
-
-/** the section header's font classes (the big title above the cards) */
-export function headerFontClass(id: SectionId) {
-  return DISPLAY_FACE_HEADERS.has(id) ? "font-title tracking-wide" : "font-mono font-semibold";
-}
-
-/** the section header's title. Projects is drawn as circuit-board traces;
- *  Skills is plain text in the page's own heading style; the rest are plain text in the header's
- *  font (`headerFontClass`). Sized in `em`, so it follows the header's own
+/** the section header's title (the big one above the cards) — every section
+ *  alike, in the desk screens' face (`.section-title`) and the amber
+ *  lettering of Skills' mat. Sized in `em`, so it follows the header's own
  *  font size. */
 export function SectionTitle({ id }: { id: SectionId }) {
-  const label = SECTIONS[id].screenLabel;
-  if (id === "projects") {
-    return <PcbTitle glyphs={PROJECTS_BOARD} label={label} className="mx-auto block" style={{ height: "1.15em", width: "auto" }} />;
-  }
-  if (id === "skills") {
-    // the same lettering as the group labels on its mat (`.skills-heading`)
-    return <span className="skills-heading">{label}</span>;
-  }
-  return <>{label}</>;
+  return <span className="skills-heading section-title">{SECTIONS[id].screenLabel}</span>;
 }
 
 /** What a section lays out under everything else, filling (nearly) the whole

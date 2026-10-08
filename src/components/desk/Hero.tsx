@@ -55,7 +55,7 @@ export default function Hero() {
       <ContributionName />
       {/* letter-spacing trails the last letter too, so the same space up
           front (`pl`) keeps the letters themselves centred under the name */}
-      <p className="mt-8 pl-[0.3em] font-mono text-[12px] uppercase tracking-[0.3em] text-white/65 sm:text-[14px]">
+      <p className="mt-8 pl-[0.3em] font-mono text-sm uppercase tracking-[0.3em] text-white/65 sm:text-base">
         {PROFILE.tagline}
       </p>
 

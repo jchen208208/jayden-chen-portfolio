@@ -8,8 +8,8 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * A desk screen's name — its route, `/projects` — lit amber on the glass.
  *
  * When the page loads the letters spin like slot-machine reels, each flicking
- * through random characters. After a couple of seconds they come to rest one
- * at a time, in a random order: each letter slows down over its last stretch
+ * through random characters. After half a second they come to rest one at a
+ * time, in a random order: each letter slows down over its last stretch
  * (`DECEL_MS`) and lands on its own character. The slash stays put — it's the
  * path, not part of the word. VT323 is monospaced, so the spinning never
  * shifts the word's width.
@@ -22,19 +22,19 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 /** what the reels spin through */
 const GLYPHS = "abcdefghijklmnopqrstuvwxyz0123456789#$%&*+=?";
 /** the first letter lands this long after load… */
-const FIRST_LAND_MS = 2000;
+const FIRST_LAND_MS = 500;
 /** …and the last this much later; the rest are spread evenly between, in a
  *  random order */
-const LAND_WINDOW_MS = 1400;
+const LAND_WINDOW_MS = 900;
 /** nudges each landing off the even spacing so the rhythm isn't mechanical —
  *  kept under half the tightest spacing, so the order never changes */
-const LAND_JITTER_MS = 60;
+const LAND_JITTER_MS = 40;
 /** how often a spinning letter changes at full speed… */
 const FAST_MS = 45;
 /** …and just before it lands */
 const SLOW_MS = 220;
 /** how long each letter takes to slow from one to the other */
-const DECEL_MS = 700;
+const DECEL_MS = 500;
 
 function pick(rnd: () => number, avoid: string) {
   let c = avoid;

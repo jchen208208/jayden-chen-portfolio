@@ -1,17 +1,18 @@
 import { useMemo, type CSSProperties } from "react";
+import { rampColour, rampPosition } from "@/lib/goldRamp";
 import { mulberry32 } from "@/lib/svg";
 
 /**
- * The ground behind a desk screen's name: a shard mosaic in shades of the
- * screens' umber (`--screen-bg` — the glow's own hue, darkened, so it isn't a
- * second colour), laid with thin black grout.
+ * The ground behind a desk screen's name: a shard mosaic in the amber
+ * shades of the hero name's squares — the gold stretch of its ramp
+ * (`lib/goldRamp`), none of the greys — laid with thin black grout.
  *
  * The same recipe as the shard mosaic on the tennis site
  * (client-website-1 `Mosaic.tsx`): a coarse grid whose inner corners wander
  * a long way, so every cell is an irregular quad, and some cells are split
- * corner to corner into two triangles. Each piece takes one of a few tints,
- * never the same as the piece before it or the one above, so neighbours
- * always read apart. Corners on the glass's edge only slide along it, so the
+ * corner to corner into two triangles. Each piece takes a shade from that
+ * ramp, never too close to the piece before it or the one above, so
+ * neighbours always read apart. Corners on the glass's edge only slide along it, so the
  * mosaic still fills the glass. The grout is each piece's own black stroke:
  * neighbours share their edges, so it's one even line wherever they meet.
  *
@@ -34,19 +35,15 @@ const JITTER = 0.35;
 const SPLIT = 0.3;
 /** the grout's width, in desk units */
 const GROUT = 1.6;
-/** a piece's tint over the umber: a share of black or of the glow mixed
- *  in, or none. The light pieces warm toward the glow rather than white,
- *  which would grey the umber out. Picked evenly, so about one piece in six
- *  is the lightest — a few bright shards per screen. That one stops at 26%
- *  so the amber route still reads on it. */
-const TINTS = [
-  { mix: "#000", amount: 25 },
-  { mix: "#000", amount: 12 },
-  null,
-  { mix: "var(--glow)", amount: 10 },
-  { mix: "var(--glow)", amount: 18 },
-  { mix: "var(--glow)", amount: 26 },
-];
+/** neighbouring pieces sit at least this far apart along the ramp (0–1),
+ *  so they always read apart. The gold stretch they're drawn from is 0.45
+ *  wide, and a piece steers clear of two neighbours, so this has to stay
+ *  under a quarter of that or a piece could be left nothing to pick. */
+const MIN_STEP = 0.08;
+/** the share of black mixed into every piece — the glass turned down a
+ *  touch from the name's own shades, so the route's white lettering
+ *  (`.screen-label`) stands off it */
+const DIM = 20;
 /** hovering moves each piece out from the glass's centre by this share of
  *  its distance from it — so neighbours a cell apart part by only ~2.5
  *  units, a slight widening of the grout */
@@ -102,28 +99,28 @@ function layPieces(w: number, h: number, seed: number): Piece[] {
     corners.push(row);
   }
 
-  // a tint unlike its neighbours'
+  // a shade unlike its neighbours', landing on the ramp just as one of the
+  // name's gold squares does — never on its grey stretch
   const above = new Array<number>(cols).fill(-1);
   let last = -1;
-  const pickTint = (avoid: number[]) => {
+  const pickShade = (avoid: number[]) => {
     let t: number;
-    do t = Math.floor(rnd() * TINTS.length);
-    while (avoid.includes(t));
+    do t = rampPosition(rnd, true);
+    while (avoid.some((a) => Math.abs(a - t) < MIN_STEP));
     return t;
   };
 
   const pieces: Piece[] = [];
   const centre = { x: w / 2, y: h / 2 };
-  const add = (shape: Point[], tint: number) => {
+  const add = (shape: Point[], shade: number) => {
     const c = {
       x: shape.reduce((s, p) => s + p.x, 0) / shape.length,
       y: shape.reduce((s, p) => s + p.y, 0) / shape.length,
     };
-    const t = TINTS[tint];
     pieces.push({
       points: shape.map((p) => `${r2(p.x)},${r2(p.y)}`).join(" "),
       c: { x: r2(c.x), y: r2(c.y) },
-      fill: t ? `color-mix(in srgb, var(--screen-bg) ${100 - t.amount}%, ${t.mix})` : "var(--screen-bg)",
+      fill: `color-mix(in srgb, ${rampColour(shade)} ${100 - DIM}%, #000)`,
       part: { x: r2((c.x - centre.x) * SPREAD), y: r2((c.y - centre.y) * SPREAD) },
       tilt: r2((rnd() * 2 - 1) * TILT),
       delay: Math.round(rnd() * STAGGER_MS),
@@ -150,14 +147,14 @@ function layPieces(w: number, h: number, seed: number): Piece[] {
                 [tl, tr, br],
                 [tl, br, bl],
               ];
-        const t1 = pickTint([last, above[c]]);
-        const t2 = pickTint([t1]);
+        const t1 = pickShade([last, above[c]]);
+        const t2 = pickShade([t1]);
         add(a, t1);
         add(b, t2);
         above[c] = t2;
         last = t2;
       } else {
-        const t = pickTint([last, above[c]]);
+        const t = pickShade([last, above[c]]);
         add([tl, tr, br, bl], t);
         above[c] = t;
         last = t;

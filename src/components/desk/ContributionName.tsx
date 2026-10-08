@@ -1,3 +1,4 @@
+import { rampColour, rampPosition } from "@/lib/goldRamp";
 import { PROFILE } from "@/lib/site";
 import { mulberry32 } from "@/lib/svg";
 
@@ -66,24 +67,6 @@ function layoutName(name: string) {
 const PITCH = 13;
 const CELL = 10;
 
-/** how gold (1) or how charcoal (0) a square is, as colour stops: charcoal →
- *  a lighter grey → a bronze where the two meet → the site's amber light
- *  (`--glow`, #ffbe5c) → a pale highlight. Squares are placed anywhere along
- *  it, so there are in-between shades rather than two palettes.
- *
- *  The charcoal end can't be darker than this: below about 3:1 against the
- *  black page (#5a5a60 is 3.1:1) a square stops reading as part of a letter,
- *  and the charcoal letters — and with them the name — became hard to make
- *  out. It was #2f2f35 (1.6:1). */
-const STOPS: [number, string][] = [
-  [0, "#5a5a60"],
-  [0.4, "#9c9ca2"],
-  [0.52, "#8f7442"],
-  [0.72, "#c18a2e"],
-  [0.9, "#ffbe5c"],
-  [1, "#ffe3b0"],
-];
-
 /** how strongly a letter leans: gold letters sit at `LEAN`, charcoal ones at
  *  `1 - LEAN`. At 0.8 about one square in five goes against its letter, so the
  *  charcoal letters carry some gold squares that mark out their shape. */
@@ -93,17 +76,6 @@ const SEED = 11;
 const { squares: SQUARES, centres: CENTRES, cols: COLS } = layoutName(PROFILE.name);
 const VIEW_W = COLS * PITCH - (PITCH - CELL);
 const VIEW_H = ROWS * PITCH - (PITCH - CELL);
-
-const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const colourAt = (t: number) => {
-  let i = 1;
-  while (i < STOPS.length - 1 && t > STOPS[i][0]) i++;
-  const [t0, c0] = STOPS[i - 1];
-  const [t1, c1] = STOPS[i];
-  const k = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
-  const [a, b] = [hex(c0), hex(c1)];
-  return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * k)).join(",")})`;
-};
 
 /** the odds that a square at column `col` is gold-ish: each letter's middle
  *  sits at its own lean (gold, charcoal, gold, …) and it eases to the next
@@ -121,15 +93,13 @@ function goldOdds(col: number) {
   return lean(i) + (lean(i + 1) - lean(i)) * s;
 }
 
-/** a shade for each square, the same on every render */
+/** a shade for each square from the black-and-gold ramp (`lib/goldRamp`),
+ *  the same on every render */
 const CELLS = (() => {
   const rnd = mulberry32(SEED);
   return SQUARES.map(({ col, row }) => {
     const goldish = rnd() < goldOdds(col);
-    const r = rnd() ** 1.4; // the brightest few are rarer
-    // gold-ish squares land in the upper stretch of the stops, the rest in the lower
-    const t = goldish ? 0.55 + 0.45 * r : 0.42 * r;
-    return { x: col * PITCH, y: row * PITCH, fill: colourAt(t) };
+    return { x: col * PITCH, y: row * PITCH, fill: rampColour(rampPosition(rnd, goldish)) };
   });
 })();
 
