@@ -10,20 +10,20 @@ import { ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
  * Experience is one column down the middle: a card per role, each just its
- * picture, its title and its dates. A click opens the role's own page
+ * picture with its title and dates under it. A click opens the role's own page
  * (`/experience/{slug}`, `RolePage`) with the whole story.
  *
- * Hovering a card switches its lamp on. A little pendant lamp hangs over
- * each picture, dark at rest, with the picture grey and dim under it. Lit,
- * the bulb glows amber, a cone of warm light falls from the shade down over
- * the picture, the picture comes up into colour, and the dates spin like the
- * desk screens' slot reels before landing in amber. All of it is CSS keyed
- * off one `--lit` switch (`.xp-*` in globals.css); only the reel is script.
+ * At rest each picture is grey and dim. Hovering a card brings it up into
+ * colour, and it hops and swings on an elastic overshoot like a Projects
+ * window; the title slides a little right and the dates spin like the desk screens' slot reels before landing in
+ * amber. All of it is CSS (`.xp-*` in globals.css); only the reel is script.
  *
  * Either side of the column, the panorama (`panorama.tsx`) fills the black.
  */
 
-const LIST_MAX_WIDTH = "56rem";
+/** a picture about as wide as the EXPERIENCE heading over it (~33rem, once
+ *  the list's and the card's padding are taken off) */
+const LIST_MAX_WIDTH = "38rem";
 
 /** the dates' spin on hover — quicker than the desk screens' load-in.
  *  Module-level: `useSlotReel` restarts if this changes identity. */
@@ -42,23 +42,8 @@ export function roleWhen(role: Role) {
   return role.project ? `${role.project} · ${dates}` : dates;
 }
 
-/** the lamp over a picture: a cord, a shade, and the bulb just showing
- *  under the shade's mouth — drawn in the desk's white line art */
-function Lamp() {
-  return (
-    <svg viewBox="0 0 48 40" aria-hidden className="xp-lamp">
-      <path d="M24 0 V11" className="xp-lamp-cord" />
-      <circle cx="24" cy="24.5" r="5.5" className="xp-lamp-halo" />
-      <circle cx="24" cy="24.5" r="3.2" className="xp-lamp-bulb" />
-      <circle cx="24" cy="24.5" r="3.2" className="xp-lamp-bulb-lit" />
-      <path d="M13 23 L18.5 11 H29.5 L35 23 Z" className="xp-lamp-shade" />
-      <path d="M13 23 H35" className="xp-lamp-rim" />
-    </svg>
-  );
-}
-
-/** a role's picture under its lamp, with the light cone between them —
- *  lit whenever an ancestor is (`.xp-card` hovered, or `.xp-lit`) */
+/** a role's picture in its frame — in colour whenever an ancestor is lit
+ *  (`.xp-card` hovered, or `.xp-lit`) */
 export function RoleShot({
   role,
   sizes,
@@ -85,9 +70,7 @@ export function RoleShot({
             <ShotPlaceholder slug={role.slug} />
           )}
         </span>
-        <span aria-hidden className="xp-cone" />
       </span>
-      <Lamp />
     </span>
   );
 }
@@ -108,9 +91,9 @@ function RoleCard({ role, index }: { role: Role; index: number }) {
         onFocus={(e) => {
           if (e.currentTarget.matches(":focus-visible")) setSpins((n) => n + 1);
         }}
-        className="xp-card grid grid-cols-1 items-center gap-x-8 gap-y-5 px-5 pb-5 pt-9 @xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] @xl:pt-8"
+        className="xp-card flex flex-col gap-2.5 px-5 py-2.5"
       >
-        <RoleShot role={role} sizes="(min-width: 640px) 22rem, 100vw" eager={index === 0} />
+        <RoleShot role={role} sizes="(min-width: 640px) 34rem, 100vw" eager={index === 0} />
         <span className="flex min-w-0 flex-col gap-2.5">
           <span className="xp-title font-title text-2xl uppercase leading-tight tracking-wide">
             {role.role}
@@ -132,13 +115,12 @@ function RoleCard({ role, index }: { role: Role; index: number }) {
 
 function ExperienceList() {
   return (
-    <div className="@container">
-      <ul className="flex flex-col gap-10 px-[3%] pb-4">
-        {EXPERIENCE.map((role, i) => (
-          <RoleCard key={role.slug} role={role} index={i} />
-        ))}
-      </ul>
-    </div>
+    // capped here too, so the stacked page's wider column keeps the same size
+    <ul className="flex w-full max-w-[38rem] flex-col px-[3%] pb-4">
+      {EXPERIENCE.map((role, i) => (
+        <RoleCard key={role.slug} role={role} index={i} />
+      ))}
+    </ul>
   );
 }
 

@@ -9,9 +9,9 @@ import { takeFromList } from "@/lib/experienceNav";
 import { RoleShot } from "./experience";
 import { Bullets, CardLink } from "./shared";
 
-/** the lamp over the picture switches on this long after the page opens,
- *  once the page itself is in view */
-const LAMP_ON_DELAY_MS = 320;
+/** the picture comes up into colour this long after the page opens, once
+ *  the page itself is in view */
+const COLOUR_ON_DELAY_MS = 320;
 
 /**
  * A role's own page — `/experience/{slug}`, opened from a card in the
@@ -21,11 +21,11 @@ const LAMP_ON_DELAY_MS = 320;
  * scroll, when that's where the visitor came from (`experienceNav`), and to
  * `/experience` otherwise.
  *
- * The picture's lamp switches on as the page opens — the hover from the list
- * carried through. Then the title, where and when, the one-line lead, the
- * story if there is one, what was done, the tools, a link out if the work is
- * live, and the neighbouring roles. The page route keys this by slug, so
- * moving to a neighbour starts the page (and the lamp) afresh.
+ * The picture comes up into colour as the page opens — the hover from the
+ * list carried through. Then the title, where and when, the one-line lead,
+ * the story if there is one, what was done, the tools, a link out if the
+ * work is live, and the neighbouring roles. The page route keys this by
+ * slug, so moving to a neighbour starts the page (and the colour) afresh.
  */
 export function RolePage({ slug }: { slug: string }) {
   const router = useRouter();
@@ -41,7 +41,7 @@ export function RolePage({ slug }: { slug: string }) {
 
   const [lit, setLit] = useState(false);
   useEffect(() => {
-    const t = window.setTimeout(() => setLit(true), LAMP_ON_DELAY_MS);
+    const t = window.setTimeout(() => setLit(true), COLOUR_ON_DELAY_MS);
     return () => window.clearTimeout(t);
   }, []);
 
@@ -63,8 +63,7 @@ export function RolePage({ slug }: { slug: string }) {
       }
     >
       <article className="xp-role flex flex-col gap-7 pb-6 font-mono text-white">
-        {/* room above the picture for its lamp */}
-        <div className={`pt-12 ${lit ? "xp-lit" : ""}`}>
+        <div className={lit ? "xp-lit" : undefined}>
           <RoleShot role={role} sizes="(min-width: 768px) 46rem, 100vw" eager />
         </div>
 

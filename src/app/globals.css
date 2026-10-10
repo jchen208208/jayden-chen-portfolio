@@ -33,6 +33,15 @@
   /* warm white, where a light is hottest (the PC's lit power button) */
   --neon-core: #fff4e2;
 
+  /* an elastic overshoot, for a picture swinging as it's hovered (Projects,
+     Experience) */
+  --ease-elastic: linear(
+    0, 0.272, 0.646, 1, 1.25, 1.364, 1.354, 1.257, 1.125, 1, 0.912, 0.871,
+    0.875, 0.909, 0.956, 1, 1.031, 1.046, 1.044, 1.032, 1.016, 1, 0.989, 0.984,
+    0.984, 0.989, 0.994, 1, 1.004, 1.006, 1.006, 1.004, 1.002, 1, 0.999, 0.998,
+    0.998, 0.999, 0.999, 1, 1
+  );
+
   /* legacy accent kept as a fallback for <Accent> */
   --ember: #e6a15c;
 
@@ -378,21 +387,23 @@ body {
   animation-delay: calc(var(--i, 0) * 110ms);
 }
 
-/* Experience (`sections/experience.tsx`): one column of cards, a picture
-   under a little pendant lamp, the title and the dates beside it.
+/* Experience (`sections/experience.tsx`): one column of cards, each a
+   picture beside its title and dates.
 
-   Everything a card does when it's lit hangs off one switch, `--lit` — 0 at
-   rest, 1 while the card is hovered or keyboard-focused (always, where
-   there's no hover to wait for) and on a role's own page (`.xp-lit`, set as
-   it opens). Lit:
-   - the bulb under the shade glows amber;
-   - a cone of warm light falls from it over the picture, a beat later;
-   - the picture comes up from grey and dim into colour (colour only where
-     it's lit — the colour rule), easing in a touch inside its frame;
-   - the dates turn amber as their reel lands (the spin is script).
-   Each transition reads the switch for its own timing too, so switching on
-   is slower and staggered and switching off is quick and all at once — the
-   new value's delay and duration are the ones that apply. */
+   A card is lit while it's hovered or keyboard-focused (always, where
+   there's no hover to wait for), and a role's own page lights its picture as
+   it opens (`.xp-lit`). Lit, the picture comes up from grey and dim into
+   colour (colour only where it's lit — the colour rule), easing in a touch
+   inside its frame, and the dates land in amber as their reel stops (the
+   spin is script). That much hangs off one switch, `--lit`, and each
+   transition reads it for its own timing too — the new value's delay and
+   duration are the ones that apply, so switching on is slower than
+   switching off.
+
+   A card's picture moves as well — the Projects hover's cousin: it hops up
+   and swings 3° anticlockwise on the same elastic overshoot (kept small
+   enough that its lifted corner stays clear of the card above). The swing
+   only plays going in; going out it eases back level. */
 .xp-lit,
 .xp-card:focus-visible {
   --lit: 1;
@@ -411,13 +422,11 @@ body {
 }
 
 .xp-card {
-  --xp-out: cubic-bezier(0.22, 1, 0.36, 1); /* outQuint-ish */
+  --xp-ease: cubic-bezier(0.25, 1, 0.5, 1); /* outQuart */
   --xp-radius: 14px;
   position: relative;
   border-radius: calc(var(--xp-radius) + 8px);
   outline: none;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / calc(var(--lit, 0) * 0.1));
-  transition: box-shadow calc(200ms + var(--lit, 0) * 200ms) ease-out;
 }
 
 .xp-card:focus-visible {
@@ -425,7 +434,6 @@ body {
   outline-offset: 4px;
 }
 
-/* the picture, its frame, and the lamp hanging over it */
 .xp-shot {
   position: relative;
   display: block;
@@ -438,6 +446,9 @@ body {
   overflow: hidden;
   border-radius: var(--xp-radius, 14px);
   background: var(--card);
+  transition:
+    translate 220ms var(--xp-ease, ease-out),
+    rotate 220ms var(--xp-ease, ease-out);
 }
 
 /* the frame's edge, drawn over the picture so it reads on a dark one too —
@@ -446,7 +457,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   border-radius: inherit;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / calc(0.26 + var(--lit, 0) * 0.24));
   transition: box-shadow 300ms ease-out;
@@ -457,103 +468,35 @@ body {
   position: absolute;
   inset: 0;
   display: block;
-  filter: grayscale(calc(1 - var(--lit, 0))) brightness(calc(0.62 + var(--lit, 0) * 0.33));
-  scale: calc(1 + var(--lit, 0) * 0.03);
+  filter: grayscale(calc(1 - var(--lit, 0))) brightness(calc(0.62 + var(--lit, 0) * 0.38));
+  scale: calc(1 + var(--lit, 0) * 0.04);
   transition-property: filter, scale;
-  transition-duration: calc(220ms + var(--lit, 0) * 380ms), calc(260ms + var(--lit, 0) * 540ms);
-  transition-timing-function: ease-out, var(--xp-out, ease-out);
-  transition-delay: calc(var(--lit, 0) * 90ms);
+  transition-duration: calc(220ms + var(--lit, 0) * 200ms), calc(260ms + var(--lit, 0) * 540ms);
+  transition-timing-function: ease-out, var(--xp-ease, ease-out);
 }
 
-/* the light from the bulb: brightest just under the frame's top edge, where
-   the bulb hangs, spreading and fading as it falls — a downward wedge from a
-   point above the frame (the mask), soft at its sides */
-.xp-cone {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: block;
-  background:
-    radial-gradient(
-      ellipse 34% 26% at 50% 0%,
-      color-mix(in srgb, var(--glow) 42%, transparent),
-      transparent
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--glow) 30%, transparent),
-      color-mix(in srgb, var(--glow) 4%, transparent) 92%
-    );
-  mix-blend-mode: screen;
-  -webkit-mask-image: conic-gradient(
-    at 50% -14%,
-    transparent 146deg,
-    #000 163deg,
-    #000 197deg,
-    transparent 214deg
-  );
-  mask-image: conic-gradient(
-    at 50% -14%,
-    transparent 146deg,
-    #000 163deg,
-    #000 197deg,
-    transparent 214deg
-  );
-  opacity: var(--lit, 0);
-  transition: opacity calc(180ms + var(--lit, 0) * 340ms) ease-out calc(var(--lit, 0) * 60ms);
-  pointer-events: none;
+/* the hop and the swing — a card's picture, not a role page's */
+.xp-card:focus-visible .xp-frame {
+  translate: -1.5% -2.5%;
+  rotate: -3deg;
+  transition:
+    translate 200ms var(--xp-ease),
+    rotate 1s var(--ease-elastic);
 }
 
-/* The lamp: centred over the frame, scaled with it, its bulb just clear of
-   the frame's top edge (the bottom 30% of the drawing hangs past it). It
-   swings from the top of its cord. */
-.xp-lamp {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  bottom: 100%;
-  width: clamp(2.5rem, 13%, 4.5rem);
-  overflow: visible;
-  translate: -50% 30%;
-  transform-origin: 50% 0;
-  pointer-events: none;
+@media (hover: hover) {
+  .xp-card:hover .xp-frame {
+    translate: -1.5% -2.5%;
+    rotate: -3deg;
+    transition:
+      translate 200ms var(--xp-ease),
+      rotate 1s var(--ease-elastic);
+  }
 }
 
-.xp-lamp-cord,
-.xp-lamp-rim {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.6);
-  stroke-width: 1.25;
-  stroke-linecap: round;
-}
-
-.xp-lamp-shade {
-  /* filled with the ground, so it hides the top of the bulb behind it */
-  fill: var(--paper);
-  stroke: rgb(255 255 255 / 0.75);
-  stroke-width: 1.25;
-  stroke-linejoin: round;
-}
-
-/* the bulb off: an outline in the dark */
-.xp-lamp-bulb {
-  fill: var(--paper);
-  stroke: rgb(255 255 255 / 0.45);
-  stroke-width: 1;
-}
-
-.xp-lamp-bulb-lit,
-.xp-lamp-halo {
-  fill: var(--glow);
-  transition: opacity calc(160ms + var(--lit, 0) * 60ms) ease-out;
-}
-
-.xp-lamp-bulb-lit {
-  opacity: var(--lit, 0);
-}
-
-.xp-lamp-halo {
-  opacity: calc(var(--lit, 0) * 0.3);
+.xp-title {
+  transition: translate 200ms var(--xp-ease, ease-out);
+  translate: calc(var(--lit, 0) * 6px) 0;
 }
 
 /* the dates: dim white at rest, amber lit */
@@ -564,15 +507,14 @@ body {
 
 .xp-go {
   color: rgb(255 255 255 / calc(0.4 + var(--lit, 0) * 0.5));
-  translate: calc(var(--lit, 0) * 4px) 0;
+  translate: calc(var(--lit, 0) * 10px) 0;
   transition:
     color 250ms ease-out,
-    translate 350ms var(--xp-out, ease-out);
+    translate 350ms var(--xp-ease, ease-out);
 }
 
 /* the way in: each card rises in a beat after the one above it once the
-   overlay has settled (`data-cards-revealed`, as for Projects), its lamp
-   swinging a little on its cord and coming to rest */
+   overlay has settled (`data-cards-revealed`, as for Projects) */
 @keyframes xp-arrive {
   from {
     opacity: 0;
@@ -580,32 +522,9 @@ body {
   }
 }
 
-@keyframes xp-sway {
-  0% {
-    rotate: 7deg;
-  }
-  30% {
-    rotate: -4deg;
-  }
-  55% {
-    rotate: 2deg;
-  }
-  78% {
-    rotate: -0.75deg;
-  }
-  100% {
-    rotate: 0deg;
-  }
-}
-
 [data-cards-revealed="true"] .xp-item {
   animation: xp-arrive 700ms cubic-bezier(0.25, 1, 0.5, 1) both;
   animation-delay: calc(var(--i, 0) * 100ms);
-}
-
-[data-cards-revealed="true"] .xp-item .xp-lamp {
-  animation: xp-sway 1600ms ease-in-out both;
-  animation-delay: calc(var(--i, 0) * 100ms + 120ms);
 }
 
 /* a role's own page (`experienceRole.tsx`) */
@@ -624,7 +543,7 @@ body {
    bottom edge once it's drawn and the section's backdrop is showing
    (`data-backdrop-shown`). Phones don't get it. */
 .panorama {
-  --col: 58rem;
+  --col: 42rem;
   position: fixed;
   left: 0;
   bottom: 0;
@@ -681,12 +600,7 @@ body {
   --proj-frame: color-mix(in srgb, var(--glow) 55%, #000);
   --proj-deep: color-mix(in srgb, var(--glow) 65%, #b45309);
   --proj-ease: cubic-bezier(0.25, 1, 0.5, 1); /* outQuart */
-  --proj-swing: linear(
-    0, 0.272, 0.646, 1, 1.25, 1.364, 1.354, 1.257, 1.125, 1, 0.912, 0.871,
-    0.875, 0.909, 0.956, 1, 1.031, 1.046, 1.044, 1.032, 1.016, 1, 0.989, 0.984,
-    0.984, 0.989, 0.994, 1, 1.004, 1.006, 1.006, 1.004, 1.002, 1, 0.999, 0.998,
-    0.998, 0.999, 0.999, 1, 1
-  ); /* outElastic */
+  --proj-swing: var(--ease-elastic);
 }
 
 .proj-window {
@@ -958,15 +872,18 @@ body {
   .mosaic-tile {
     transition: none !important;
   }
-  [data-cards-revealed="true"] :is(.exp-row, .xp-item, .xp-item .xp-lamp) {
+  [data-cards-revealed="true"] :is(.exp-row, .xp-item) {
     animation: none !important;
   }
-  /* an Experience lamp still switches on, but its picture stays put, and the
-     panorama is simply there rather than rising in */
+  /* an Experience picture still comes up into colour, but stays where it
+     is, and the panorama is simply there rather than rising in */
+  .xp-frame,
   .xp-photo,
+  .xp-title,
   .xp-go {
     scale: none !important;
     translate: none !important;
+    rotate: none !important;
   }
   .panorama {
     clip-path: none !important;
