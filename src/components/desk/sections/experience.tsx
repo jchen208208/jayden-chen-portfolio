@@ -1,204 +1,153 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useState } from "react";
-import type { CSSProperties } from "react";
+import Link from "next/link";
+import { useState, type CSSProperties } from "react";
 import { EXPERIENCE, type Role } from "@/lib/site";
-import { Bullets, CardLink, ShotPlaceholder, type CardOptions, type SectionCard } from "./shared";
+import { markFromList } from "@/lib/experienceNav";
+import { useSlotReel, type ReelTiming } from "@/hooks/useSlotReel";
+import { ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
- * Experience is a zigzag of pictures, one per role — left, right, left —
- * each captioned with the title and dates. Hovering a picture switches its
- * light on (it comes up from grey into colour), an amber hinge lights along
- * its open edge, and a box slides out from behind it into the empty side
- * with the short version: where, the one line, the tools. Clicking pins the
- * box out and it grows down to the résumé bullets. `.xp-*` in globals.css
- * has the choreography.
+ * Experience is one column down the middle: a card per role, each just its
+ * picture, its title and its dates. A click opens the role's own page
+ * (`/experience/{slug}`, `RolePage`) with the whole story.
  *
- * On the stacked page (phones, deep links) there's no hover to rely on, so
- * every entry is simply picture, caption, box, one under another, with the
- * bullets behind "Details".
+ * Hovering a card switches its lamp on. A little pendant lamp hangs over
+ * each picture, dark at rest, with the picture grey and dim under it. Lit,
+ * the bulb glows amber, a cone of warm light falls from the shade down over
+ * the picture, the picture comes up into colour, and the dates spin like the
+ * desk screens' slot reels before landing in amber. All of it is CSS keyed
+ * off one `--lit` switch (`.xp-*` in globals.css); only the reel is script.
  *
- * Like Projects it sits in the page rather than a window of its own, and it
- * brings itself in: each entry glides in from its own side, one after
- * another, once the overlay has settled.
+ * Either side of the column, the panorama (`panorama.tsx`) fills the black.
  */
 
-const LIST_MAX_WIDTH = "72rem";
+const LIST_MAX_WIDTH = "56rem";
 
-function Chevron({ open }: { open: boolean }) {
+/** the dates' spin on hover — quicker than the desk screens' load-in.
+ *  Module-level: `useSlotReel` restarts if this changes identity. */
+const CARD_REEL: ReelTiming = {
+  firstLandMs: 110,
+  landWindowMs: 320,
+  jitterMs: 15,
+  fastMs: 40,
+  slowMs: 130,
+  decelMs: 200,
+};
+
+/** "FinDVer · June 2026 – Present" */
+export function roleWhen(role: Role) {
+  const dates = `${role.start} – ${role.end}`;
+  return role.project ? `${role.project} · ${dates}` : dates;
+}
+
+/** the lamp over a picture: a cord, a shade, and the bulb just showing
+ *  under the shade's mouth — drawn in the desk's white line art */
+function Lamp() {
   return (
-    <svg
-      viewBox="0 0 12 8"
-      aria-hidden
-      className={`xp-chevron h-2 w-3 fill-none stroke-current ${open ? "rotate-180" : ""}`}
-      strokeWidth={1.6}
-    >
-      <path d="M1 1.5 L6 6.5 L11 1.5" />
+    <svg viewBox="0 0 48 40" aria-hidden className="xp-lamp">
+      <path d="M24 0 V11" className="xp-lamp-cord" />
+      <circle cx="24" cy="24.5" r="5.5" className="xp-lamp-halo" />
+      <circle cx="24" cy="24.5" r="3.2" className="xp-lamp-bulb" />
+      <circle cx="24" cy="24.5" r="3.2" className="xp-lamp-bulb-lit" />
+      <path d="M13 23 L18.5 11 H29.5 L35 23 Z" className="xp-lamp-shade" />
+      <path d="M13 23 H35" className="xp-lamp-rim" />
     </svg>
   );
 }
 
-function Entry({
+/** a role's picture under its lamp, with the light cone between them —
+ *  lit whenever an ancestor is (`.xp-card` hovered, or `.xp-lit`) */
+export function RoleShot({
   role,
-  index,
-  stacked,
-  open,
-  onToggle,
+  sizes,
+  eager = false,
 }: {
   role: Role;
-  index: number;
-  stacked: boolean;
-  open: boolean;
-  onToggle: () => void;
+  sizes: string;
+  eager?: boolean;
 }) {
-  const panelId = useId();
-  const side = stacked || index % 2 === 0 ? "left" : "right";
-  const name = role.project ? `${role.role} (${role.project})` : role.role;
-  // `--k` is each line's place in the box, for the stagger as it slides out
-  const line = (k: number) => ({ "--k": k }) as CSSProperties;
+  return (
+    <span className="xp-shot">
+      <span className="xp-frame">
+        <span className="xp-photo">
+          {role.image ? (
+            <Image
+              src={role.image}
+              alt=""
+              fill
+              loading={eager ? "eager" : undefined}
+              sizes={sizes}
+              className="object-cover"
+            />
+          ) : (
+            <ShotPlaceholder slug={role.slug} />
+          )}
+        </span>
+        <span aria-hidden className="xp-cone" />
+      </span>
+      <Lamp />
+    </span>
+  );
+}
+
+function RoleCard({ role, index }: { role: Role; index: number }) {
+  // bumped on each hover (or keyboard focus) — every bump spins the dates
+  const [spins, setSpins] = useState(0);
+  const when = useSlotReel(roleWhen(role), { play: spins, timing: CARD_REEL });
 
   return (
-    <li
-      className="xp-entry"
-      data-side={side}
-      data-layout={stacked ? "stack" : "row"}
-      data-open={open}
-      style={{ "--i": index } as CSSProperties}
-    >
-      <div className="xp-grid">
-        <div className="xp-figure">
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={panelId}
-            aria-label={name}
-            onClick={onToggle}
-            className="xp-pic"
-          >
-            <span className="xp-frame">
-              <span className="xp-shot">
-                {role.image ? (
-                  <Image
-                    src={role.image}
-                    alt=""
-                    fill
-                    // the first picture is in view as soon as the page opens
-                    loading={index === 0 ? "eager" : undefined}
-                    sizes="(min-width: 640px) 32rem, 100vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <ShotPlaceholder slug={role.slug} />
-                )}
-              </span>
-            </span>
-            <span aria-hidden className="xp-hinge" />
-          </button>
-          <div className="xp-caption mt-4">
-            <h3 className="font-title text-xl uppercase leading-tight tracking-wide">
-              {role.role}
-            </h3>
-            <p className="mt-1.5 font-mono text-xs uppercase tracking-wide text-white/55">
-              {role.project && <>{role.project} · </>}
-              {role.start} – {role.end}
-            </p>
-          </div>
-        </div>
-
-        <div className="xp-slot">
-          <div id={panelId} className="xp-panel font-mono text-white">
-            {role.place && (
-              <p className="xp-line text-sm text-white/90" style={line(0)}>
-                {role.place}
-              </p>
-            )}
-            <p className="xp-line mt-3 text-[0.95rem] leading-relaxed text-white/80" style={line(1)}>
-              {role.blurb}
-            </p>
-            {role.stack && (
-              <p className="xp-line mt-4 text-[0.7rem] uppercase tracking-wide text-white/45" style={line(2)}>
-                {role.stack.join(" · ")}
-              </p>
-            )}
-            {/* `grid-template-rows` 0fr → 1fr opens to the bullets' real
-                height without measuring them; `inert` keeps them out of the
-                tab order and the accessibility tree while closed */}
-            <div className="exp-reveal" data-open={open} inert={!open}>
-              <div className="min-h-0 overflow-hidden">
-                <div className="pt-5">
-                  <Bullets items={role.bullets} />
-                </div>
-              </div>
-            </div>
-            <div
-              className="xp-line mt-5 flex items-center justify-between gap-4 text-xs uppercase tracking-wide"
-              style={line(3)}
-            >
-              {role.link ? (
-                <CardLink href={role.link}>Visit site ↗</CardLink>
-              ) : (
-                <span />
-              )}
-              <button
-                type="button"
-                aria-expanded={open}
-                aria-controls={panelId}
-                onClick={onToggle}
-                className="flex items-center gap-2 text-white/60 transition-colors hover:text-white"
-              >
-                {open ? "Less" : "Details"}
-                <Chevron open={open} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <li className="xp-item" style={{ "--i": index } as CSSProperties}>
+      <Link
+        href={`/experience/${role.slug}`}
+        onClick={markFromList}
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") setSpins((n) => n + 1);
+        }}
+        onFocus={(e) => {
+          if (e.currentTarget.matches(":focus-visible")) setSpins((n) => n + 1);
+        }}
+        className="xp-card grid grid-cols-1 items-center gap-x-8 gap-y-5 px-5 pb-5 pt-9 @xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] @xl:pt-8"
+      >
+        <RoleShot role={role} sizes="(min-width: 640px) 22rem, 100vw" eager={index === 0} />
+        <span className="flex min-w-0 flex-col gap-2.5">
+          <span className="xp-title font-title text-2xl uppercase leading-tight tracking-wide">
+            {role.role}
+          </span>
+          {/* the reel's text is decoration while it spins — the real dates
+              are what's read out */}
+          <span className="xp-when font-screen text-xl uppercase leading-none">
+            <span aria-hidden>{when}</span>
+            <span className="sr-only">{roleWhen(role)}</span>
+          </span>
+          <span aria-hidden className="xp-go font-mono text-xs uppercase tracking-wide">
+            View →
+          </span>
+        </span>
+      </Link>
     </li>
   );
 }
 
-function ExperienceList({ layout, active }: CardOptions) {
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  // Every time the section opens it starts with nothing pinned. Adjusted
-  // during render (React's own pattern for resetting state on a prop change)
-  // rather than in an effect, so the reset lands before the open animation.
-  const [wasActive, setWasActive] = useState(active);
-  if (active !== wasActive) {
-    setWasActive(active);
-    if (active) setOpen(new Set());
-  }
-
-  const toggle = (slug: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
-
+function ExperienceList() {
   return (
-    <ul className="flex flex-col gap-16 px-[3%] pb-4">
-      {EXPERIENCE.map((role, i) => (
-        <Entry
-          key={role.slug}
-          role={role}
-          index={i}
-          stacked={layout === "stack"}
-          open={open.has(role.slug)}
-          onToggle={() => toggle(role.slug)}
-        />
-      ))}
-    </ul>
+    <div className="@container">
+      <ul className="flex flex-col gap-10 px-[3%] pb-4">
+        {EXPERIENCE.map((role, i) => (
+          <RoleCard key={role.slug} role={role} index={i} />
+        ))}
+      </ul>
+    </div>
   );
 }
 
-export function experienceCards(opts: CardOptions): SectionCard[] {
+export function experienceCards(): SectionCard[] {
   return [
     {
       key: "experience",
       title: "",
-      body: <ExperienceList {...opts} />,
+      body: <ExperienceList />,
       maxWidth: LIST_MAX_WIDTH,
       bare: true,
       fitContent: true,

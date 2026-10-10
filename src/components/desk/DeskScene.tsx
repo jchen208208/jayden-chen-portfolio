@@ -20,7 +20,13 @@ import DeskCardList from "./DeskCardList";
 import ScreenCard from "./ScreenCard";
 import ScreenLabel from "./ScreenLabel";
 import ScreenMosaic from "./ScreenMosaic";
-import { SectionBackdrop, SectionTitle, hasBackdrop, sectionCards } from "./sections";
+import {
+  SectionBackdrop,
+  SectionTitle,
+  backdropCoversGround,
+  hasBackdrop,
+  sectionCards,
+} from "./sections";
 
 /**
  * The desk, its four clickable screens, and the fullscreen view each one
@@ -469,6 +475,8 @@ export default function DeskScene({ className }: { className?: string }) {
   const rowFitsContent = cards[0]?.fitContent ?? false;
   const rowOwnEntrance = cards[0]?.ownEntrance ?? false;
   const backdrop = content !== null && hasBackdrop(content);
+  // a backdrop that fills the view (Skills' mat) takes the ground's clicks
+  const groundCovered = content !== null && backdropCoversGround(content);
 
   const overlayTransform =
     stage === "closed"
@@ -726,7 +734,7 @@ export default function DeskScene({ className }: { className?: string }) {
             aria-label={content ? SECTIONS[content].deskLabel : undefined}
             // the ground closes the view — unless the section has laid a
             // backdrop over it (Skills' mat), which is no place to miss-click
-            onClick={backdrop ? undefined : close}
+            onClick={groundCovered ? undefined : close}
             // A section sized to its content (Experience) can run past the
             // bottom of the screen, so the view itself scrolls like a page —
             // no scrollbar drawn. The desk page runs Lenis, which listens for
@@ -734,7 +742,7 @@ export default function DeskScene({ className }: { className?: string }) {
             // this element's scrolling back to the browser, and
             // `overscroll-contain` stops it chaining to the desk behind.
             data-lenis-prevent={smoothOverlay ? undefined : true}
-            className={`no-scrollbar fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain ${backdrop ? "" : "cursor-pointer"}`}
+            className={`no-scrollbar fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain ${groundCovered ? "" : "cursor-pointer"}`}
             style={{
               backgroundColor: "var(--paper, #000)",
               opacity: zoomed ? 1 : 0,
@@ -757,10 +765,12 @@ export default function DeskScene({ className }: { className?: string }) {
 
             {/* the section's backdrop, under the header and the cards — it
                 fades in as the header glides up, rather than zooming out of
-                the screen with it */}
+                the screen with it. `data-backdrop-shown` is the cue for one
+                with an entrance of its own (Experience's panorama). */}
             {backdrop && content && (
               <div
                 aria-hidden
+                data-backdrop-shown={stage === "top"}
                 className="pointer-events-none absolute inset-3 sm:inset-6"
                 style={{
                   opacity: stage === "top" ? 1 : 0,

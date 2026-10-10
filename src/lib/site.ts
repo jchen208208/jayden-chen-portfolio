@@ -174,14 +174,16 @@ export const PROJECTS: Project[] = [
 
 export type Role = {
   slug: string;
-  /** the title held, exactly as the résumé has it — the caption under the
-   *  picture */
+  /** the title held, exactly as the résumé has it */
   role: string;
-  /** what it was about, beside the dates in the caption — two research
-   *  roles share a title, so this is what tells them apart */
+  /** what it was about, beside the dates — two research roles share a
+   *  title, so this is what tells them apart */
   project?: string;
-  /** the one line the slide-out box leads with */
+  /** the one line the role's page leads with */
   blurb: string;
+  /** the role's page, in depth — paragraphs between the lead and the
+   *  bullets. TODO — user: write these; the page reads fine without */
+  story?: string[];
   /** where, and under whom */
   place?: string;
   /** display dates, as the résumé writes them */
@@ -193,14 +195,15 @@ export type Role = {
   link?: string;
   /** the role's picture, imported from `src/assets/experience`, 16:10 — a
    *  placeholder stands in until there is one.
-   *  TODO — user: pictures for TRACE, C3M and IT Technician */
+   *  TODO — user: pictures for TRACE, C3M, IT Technician and Private Tutor */
   image?: StaticImageData;
 };
 
-/** In résumé order, lead role first. Bullets are the résumé's own words. */
+/** In résumé order, lead role first. Bullets are the résumé's own words.
+ *  Each `slug` is its page's address: `/experience/{slug}`. */
 export const EXPERIENCE: Role[] = [
   {
-    slug: "claim-verification",
+    slug: "findver",
     project: "FinDVer",
     image: findverDiagram,
     blurb: "Financial claim verification: a multi-agent pipeline that matches cloud-only accuracy at about half the cost",
@@ -275,6 +278,16 @@ export const EXPERIENCE: Role[] = [
       "Wired the booking form to email the coach through Resend, so every request reaches his phone with the visitor's details and preferred time.",
     ],
     link: "https://hitwithluke.com",
+  },
+  {
+    slug: "private-tutor",
+    blurb: "Python, C++, math and science for 6+ students in Grades 5 to 12",
+    role: "Private Tutor",
+    start: "Oct 2024",
+    end: "Present",
+    bullets: [
+      "Taught Python and C++ fundamentals alongside math and science to 6+ students in Grades 5–12, breaking down technical concepts for students with no prior programming background.",
+    ],
   },
 ];
 

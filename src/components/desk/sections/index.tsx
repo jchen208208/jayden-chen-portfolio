@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import ScreenCard from "../ScreenCard";
 import { experienceCards } from "./experience";
+import { Panorama } from "./panorama";
 import { personalCards } from "./personal";
 import { projectsCards } from "./projects";
 import type { CardOptions, SectionCard } from "./shared";
@@ -32,21 +33,29 @@ export function SectionTitle({ id }: { id: SectionId }) {
   return <span className="skills-heading section-title">{SECTIONS[id].screenLabel}</span>;
 }
 
-/** What a section lays out under everything else, filling (nearly) the whole
- *  view behind its header and cards — Skills' cutting mat. Both the desktop
- *  overlay (`DeskScene`) and the stacked page (`FocusFrame`) draw it; a
- *  section with one isn't closed by clicking the ground, since the ground is
- *  now the mat. */
-const BACKDROPS: Partial<Record<SectionId, () => ReactNode>> = {
-  skills: () => <SkillsMat />,
+/** What a section lays out under everything else, behind its header and
+ *  cards — Skills' cutting mat, Experience's dotted Vancouver. Both the
+ *  desktop overlay (`DeskScene`) and the stacked page (`FocusFrame`) draw it.
+ *
+ *  `coversGround`: the backdrop fills the view (the mat), so clicking around
+ *  the cards lands on it rather than on empty ground — and doesn't close the
+ *  section. One that only decorates the edges (the panorama) leaves the
+ *  ground closing it as usual. */
+const BACKDROPS: Partial<Record<SectionId, { draw: () => ReactNode; coversGround: boolean }>> = {
+  skills: { draw: () => <SkillsMat />, coversGround: true },
+  experience: { draw: () => <Panorama />, coversGround: false },
 };
 
 export function hasBackdrop(id: SectionId) {
   return id in BACKDROPS;
 }
 
+export function backdropCoversGround(id: SectionId) {
+  return BACKDROPS[id]?.coversGround ?? false;
+}
+
 export function SectionBackdrop({ id }: { id: SectionId }) {
-  return BACKDROPS[id]?.() ?? null;
+  return BACKDROPS[id]?.draw() ?? null;
 }
 
 export function sectionCards(id: SectionId, opts: CardOptions): SectionCard[] {
