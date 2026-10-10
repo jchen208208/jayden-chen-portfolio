@@ -474,6 +474,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const rowMaxWidth = cards[0]?.maxWidth;
   const rowFitsContent = cards[0]?.fitContent ?? false;
   const rowOwnEntrance = cards[0]?.ownEntrance ?? false;
+  const rowGapAbove = cards[0]?.gapAbove;
   const backdrop = content !== null && hasBackdrop(content);
   // a backdrop that fills the view (Skills' mat) takes the ground's clicks
   const groundCovered = content !== null && backdropCoversGround(content);
@@ -513,7 +514,10 @@ export default function DeskScene({ className }: { className?: string }) {
       // cards' — see `CARD_HEIGHT_SCALE`
       const available = window.innerHeight - baseTop - CARD_V_GAP;
       const height = available * CARD_HEIGHT_SCALE;
-      const top = baseTop + Math.min(CARD_TOP_SHIFT, available - height);
+      const top =
+        rowGapAbove !== undefined
+          ? headerBottom + rowGapAbove
+          : baseTop + Math.min(CARD_TOP_SHIFT, available - height);
       // `flushSync` commits the new layout to the DOM right now, so the
       // (still invisible) real cards can be measured at their actual final
       // rects below. Each warp then ends exactly where its card already
@@ -625,7 +629,7 @@ export default function DeskScene({ className }: { className?: string }) {
       // don't leave a half-drawn frame behind for the next open
       canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
     };
-  }, [content, stage, cardCount, reduced, rowOwnEntrance]);
+  }, [content, stage, cardCount, reduced, rowOwnEntrance, rowGapAbove]);
 
   useEffect(() => {
     if (!zoomed) return;

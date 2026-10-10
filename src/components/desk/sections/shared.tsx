@@ -33,6 +33,10 @@ export type SectionCard = {
    *  warp — it is simply revealed once the header has settled, and its own
    *  CSS takes it from there (first card's value is used) */
   ownEntrance?: boolean;
+  /** the gap between the header and the row, px, in place of the usual one
+   *  (`CARD_V_GAP` + `CARD_TOP_SHIFT` in `DeskScene`) — for a row that sits
+   *  closer under its header (first card's value is used) */
+  gapAbove?: number;
 };
 
 /** the scrolling text body most cards use — mono, one consistent padding */
