@@ -68,6 +68,29 @@ export function Bullets({ items, large = false }: { items: string[]; large?: boo
   );
 }
 
+/** stands in for a project's or a role's picture until it has one — the file
+ *  it's waiting for, on the desk screens' umber glass */
+export function ShotPlaceholder({ slug }: { slug: string }) {
+  return (
+    <div className="shot-placeholder flex h-full w-full flex-col items-center justify-center gap-[4%]">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        aria-hidden
+        className="w-[18%]"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="1" />
+        <circle cx="9" cy="9.5" r="1.75" />
+        <path d="M3 17l5-5 4 4 3-3 5 5" />
+      </svg>
+      <span className="font-screen text-lg leading-none">{slug}.png</span>
+    </div>
+  );
+}
+
 export function CardLink({ href, children }: { href: string; children: ReactNode }) {
   const external = /^https?:/.test(href);
   return (

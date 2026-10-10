@@ -378,21 +378,285 @@ body {
   animation-delay: calc(var(--i, 0) * 110ms);
 }
 
-/* Experience rows (`sections/experience.tsx`) open by animating the grid
-   track from 0fr to 1fr, which reaches the content's real height without
-   measuring it. The triangle turns with it. */
+/* An Experience box (`sections/experience.tsx`) opens to its bullets by
+   animating the grid track from 0fr to 1fr, which reaches the content's real
+   height without measuring it. */
 .exp-reveal {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 250ms ease-out;
+  transition: grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .exp-reveal[data-open="true"] {
   grid-template-rows: 1fr;
 }
 
-.exp-caret {
-  transition: transform 250ms ease-out;
+/* Experience (`sections/experience.tsx`): a zigzag of pictures, each with a
+   box tucked behind it that slides out into the empty side — "pulled out
+   from behind the photo".
+
+   An entry is lit while its picture (or the box, once it's out) is hovered,
+   while anything in it has keyboard focus, and while it's pinned open by a
+   click (`data-open`). Lit, in order:
+   - the picture's light comes on: grey and dim → full colour, easing in a
+     touch inside its frame (colour only where it's lit — the colour rule);
+   - an amber hinge grows from the middle of the picture's open edge, the
+     slot the box comes out of, and the only amber on the entry;
+   - a beat later the box slides out from behind the picture, clipped at
+     that edge (`.xp-slot` clips sideways only, so a pinned box can still
+     grow down);
+   - its lines arrive one after another (`--k`), each following the box out.
+   Going back it's quicker and all at once — the box tucks in on an ease-in,
+   and the hinge goes out only once the box is behind the picture.
+
+   `--xp-dir` is the side the box hides on: -1 for a picture on the left (the
+   box tucks leftwards behind it), 1 for a picture on the right. */
+.xp-entry {
+  --xp-dir: -1;
+  --xp-out: cubic-bezier(0.22, 1, 0.36, 1); /* outQuint-ish */
+  --xp-in: cubic-bezier(0.55, 0, 0.75, 0.2); /* a quick ease-in */
+  --xp-radius: 14px;
+}
+
+.xp-entry[data-side="right"] {
+  --xp-dir: 1;
+}
+
+/* picture | box, or box | picture. The picture's column holds the frame and
+   the caption under it; the box sits level with the frame's top. */
+.xp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: start;
+}
+
+.xp-entry[data-side="right"] .xp-grid {
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+}
+
+.xp-entry[data-side="right"] .xp-figure {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.xp-entry[data-side="right"] .xp-slot {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.xp-pic {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  border-radius: var(--xp-radius);
+  outline: none;
+}
+
+.xp-pic:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 4px;
+}
+
+.xp-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--xp-radius);
+  background: var(--card);
+}
+
+/* the frame's edge, drawn over the picture so it reads on a dark one too —
+   faint at rest, brighter once lit */
+.xp-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.26);
+  transition: box-shadow 300ms ease-out;
+  pointer-events: none;
+}
+
+.xp-shot {
+  position: absolute;
+  inset: 0;
+  display: block;
+  filter: grayscale(1) brightness(0.72);
+  transition:
+    filter 260ms ease-in,
+    scale 300ms ease-in;
+}
+
+/* the hinge: on the picture's open edge, straddling the seam with the box */
+.xp-hinge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1.5px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--glow);
+  transform: scaleY(0);
+  /* going out, it waits for the box to tuck in behind the picture first */
+  transition: transform 220ms var(--xp-in) 200ms;
+}
+
+.xp-entry[data-side="right"] .xp-hinge {
+  right: auto;
+  left: -1.5px;
+}
+
+.xp-caption {
+  transition: color 300ms ease-out;
+  color: rgb(255 255 255 / 0.82);
+}
+
+.xp-slot {
+  overflow-x: clip;
+  padding-top: 1.75rem;
+}
+
+.xp-panel {
+  width: min(100%, 32rem);
+  padding: 1.5rem 1.75rem 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 var(--xp-radius) var(--xp-radius) 0;
+  translate: calc(var(--xp-dir) * 100%) 0;
+  transition: translate 280ms var(--xp-in);
+}
+
+.xp-entry[data-side="right"] .xp-panel {
+  margin-left: auto;
+  border-left: 1px solid var(--line);
+  border-right: 0;
+  border-radius: var(--xp-radius) 0 0 var(--xp-radius);
+}
+
+.xp-line {
+  opacity: 0;
+  translate: calc(var(--xp-dir) * 12px) 0;
+  transition:
+    opacity 140ms ease-in,
+    translate 140ms ease-in;
+}
+
+.xp-chevron {
+  transition: rotate 300ms var(--xp-out);
+}
+
+/* lit — the same four moves for each way in: pinned or keyboard-focused
+   here, hovered just below (only where there's a real hover) */
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-shot {
+  filter: none;
+  scale: 1.03;
+  transition:
+    filter 420ms ease-out,
+    scale 700ms var(--xp-out);
+}
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-hinge {
+  transform: scaleY(1);
+  transition: transform 240ms var(--xp-out);
+}
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-caption {
+  color: #fff;
+}
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-frame::after {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-panel {
+  translate: 0 0;
+  transition: translate 560ms var(--xp-out) 90ms;
+}
+.xp-entry:is([data-open="true"], :has(:focus-visible)) .xp-line {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 380ms ease-out calc(260ms + var(--k, 0) * 55ms),
+    translate 520ms var(--xp-out) calc(260ms + var(--k, 0) * 55ms);
+}
+
+@media (hover: hover) {
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-shot {
+    filter: none;
+    scale: 1.03;
+    transition:
+      filter 420ms ease-out,
+      scale 700ms var(--xp-out);
+  }
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-hinge {
+    transform: scaleY(1);
+    transition: transform 240ms var(--xp-out);
+  }
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-caption {
+    color: #fff;
+  }
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-frame::after {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5);
+  }
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-panel {
+    translate: 0 0;
+    transition: translate 560ms var(--xp-out) 90ms;
+  }
+  .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-line {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+      opacity 380ms ease-out calc(260ms + var(--k, 0) * 55ms),
+      translate 520ms var(--xp-out) calc(260ms + var(--k, 0) * 55ms);
+  }
+}
+
+/* the way in: each entry glides in from its own side, one after another,
+   once the overlay has settled (`data-cards-revealed`, as for Projects) */
+@keyframes xp-arrive {
+  from {
+    opacity: 0;
+    translate: calc(var(--xp-dir) * 56px) 0;
+  }
+}
+
+[data-cards-revealed="true"] .xp-entry {
+  animation: xp-arrive 760ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+/* the stacked page: no hover to wait for, so each entry is just picture,
+   caption and box, one under another, the box always out and the picture
+   always lit */
+.xp-entry[data-layout="stack"] .xp-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.xp-entry[data-layout="stack"] .xp-slot {
+  padding-top: 1.25rem;
+}
+
+.xp-entry[data-layout="stack"] .xp-panel {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--xp-radius);
+}
+
+.xp-entry[data-layout="stack"] :is(.xp-panel, .xp-line) {
+  opacity: 1;
+  translate: none;
+  transition: none;
+}
+
+.xp-entry[data-layout="stack"] .xp-shot {
+  filter: none;
+}
+
+.xp-entry[data-layout="stack"] .xp-hinge {
+  display: none;
 }
 
 /* Projects (`sections/projects.tsx`) is a grid of little program windows,
@@ -464,7 +728,8 @@ body {
   transition: translate 200ms var(--proj-ease);
 }
 
-.proj-placeholder {
+/* a picture still to come (`ShotPlaceholder`, Projects and Experience) */
+.shot-placeholder {
   background: radial-gradient(
     circle at 30% 25%,
     var(--screen-bg),
@@ -684,13 +949,40 @@ body {
     animation: none !important;
   }
   .exp-reveal,
-  .exp-caret,
+  .xp-chevron,
+  .xp-line,
   .sweep-bar,
   .mosaic-tile {
     transition: none !important;
   }
-  [data-cards-revealed="true"] .exp-row {
+  [data-cards-revealed="true"] :is(.exp-row, .xp-entry) {
     animation: none !important;
+  }
+  /* an Experience picture still lights up, but stays put, and its box fades
+     in beside it instead of sliding out (hidden, not just clear, at rest —
+     so the empty side can't be hovered) */
+  .xp-shot,
+  .xp-panel,
+  .xp-line {
+    scale: none !important;
+    translate: none !important;
+  }
+  .xp-entry .xp-panel {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 150ms ease-out,
+      visibility 150ms !important;
+  }
+  .xp-entry:is([data-open="true"], :has(:focus-visible), [data-layout="stack"]) .xp-panel {
+    opacity: 1;
+    visibility: visible;
+  }
+  @media (hover: hover) {
+    .xp-entry:has(.xp-figure:hover, .xp-panel:hover) .xp-panel {
+      opacity: 1;
+      visibility: visible;
+    }
   }
   /* a project window still lights up on hover, but stays where it is */
   .proj-window,

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import { PROJECTS, type Project } from "@/lib/site";
-import { Bullets, CardLink, Meta, type SectionCard } from "./shared";
+import { Bullets, CardLink, Meta, ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
  * Projects is a grid of little program windows, one per project: a picture
@@ -16,29 +16,6 @@ import { Bullets, CardLink, Meta, type SectionCard } from "./shared";
  */
 
 const LIST_MAX_WIDTH = "72rem";
-
-/** stands in for a project's picture until it has one — the file it's
- *  waiting for, on the desk screens' umber glass */
-function ShotPlaceholder({ slug }: { slug: string }) {
-  return (
-    <div className="proj-placeholder flex h-full w-full flex-col items-center justify-center gap-[4%]">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        aria-hidden
-        className="w-[18%]"
-      >
-        <rect x="3" y="4" width="18" height="16" rx="1" />
-        <circle cx="9" cy="9.5" r="1.75" />
-        <path d="M3 17l5-5 4 4 3-3 5 5" />
-      </svg>
-      <span className="font-screen text-lg leading-none">{slug}.png</span>
-    </div>
-  );
-}
 
 function ProjectCard({ project: p, index }: { project: Project; index: number }) {
   return (

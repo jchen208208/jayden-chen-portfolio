@@ -1,104 +1,155 @@
 "use client";
 
+import Image from "next/image";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import { EXPERIENCE, type Role } from "@/lib/site";
-import type { CardOptions, SectionCard } from "./shared";
+import { Bullets, CardLink, ShotPlaceholder, type CardOptions, type SectionCard } from "./shared";
 
 /**
- * Experience is a stack of entries, one per role, set edge to edge. Each
- * entry is a white label (the title exactly as the résumé has it, the dates,
- * a triangle) over a black box with a white border holding one line about the
- * work. Opening an entry extends that black box downward with where, the
- * tools and the résumé bullets. Entries open independently.
+ * Experience is a zigzag of pictures, one per role — left, right, left —
+ * each captioned with the title and dates. Hovering a picture switches its
+ * light on (it comes up from grey into colour), an amber hinge lights along
+ * its open edge, and a box slides out from behind it into the empty side
+ * with the short version: where, the one line, the tools. Clicking pins the
+ * box out and it grows down to the résumé bullets. `.xp-*` in globals.css
+ * has the choreography.
  *
- * It sits in the page, not in a window of its own: the card is as tall as the
- * list, and the open view scrolls as a whole when entries run long.
+ * On the stacked page (phones, deep links) there's no hover to rely on, so
+ * every entry is simply picture, caption, box, one under another, with the
+ * bullets behind "Details".
  *
- * Opening the section doesn't use the genie warp the other three do: the
- * entries hinge down one after another, like a ladder unrolling (`ownEntrance`
- * on the card, `.exp-row` in globals.css).
+ * Like Projects it sits in the page rather than a window of its own, and it
+ * brings itself in: each entry glides in from its own side, one after
+ * another, once the overlay has settled.
  */
 
-/** wide enough for a description on one line, narrow enough to read */
-const LIST_MAX_WIDTH = "84rem";
+const LIST_MAX_WIDTH = "72rem";
 
-function Triangle({ open }: { open: boolean }) {
+function Chevron({ open }: { open: boolean }) {
   return (
     <svg
       viewBox="0 0 12 8"
       aria-hidden
-      className={`exp-caret h-2.5 w-4 shrink-0 fill-black/70 ${open ? "rotate-180" : ""}`}
+      className={`xp-chevron h-2 w-3 fill-none stroke-current ${open ? "rotate-180" : ""}`}
+      strokeWidth={1.6}
     >
-      <path d="M0 0 L12 0 L6 8 Z" />
+      <path d="M1 1.5 L6 6.5 L11 1.5" />
     </svg>
   );
 }
 
-function Row({
+function Entry({
   role,
   index,
+  stacked,
   open,
   onToggle,
 }: {
   role: Role;
   index: number;
+  stacked: boolean;
   open: boolean;
   onToggle: () => void;
 }) {
-  const bodyId = useId();
+  const panelId = useId();
+  const side = stacked || index % 2 === 0 ? "left" : "right";
+  const name = role.project ? `${role.role} (${role.project})` : role.role;
+  // `--k` is each line's place in the box, for the stagger as it slides out
+  const line = (k: number) => ({ "--k": k }) as CSSProperties;
+
   return (
-    // `--i` is this entry's place in the chain; the CSS turns it into the
-    // delay before this rung swings down (see `.exp-row` in globals.css)
-    <li className="exp-row group flex flex-col" style={{ "--i": index } as CSSProperties}>
-      {/* the label is the one real control; the description line below is
-          also clickable, as a convenience for the mouse */}
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={onToggle}
-        className="flex w-full items-center gap-6 bg-white px-8 py-4 text-left text-black outline-none transition-colors hover:bg-white/90 focus-visible:bg-white/85"
-      >
-        <span className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-          <span className="font-title text-3xl uppercase tracking-wide">{role.role}</span>
-          <span className="font-mono text-sm uppercase tracking-wide text-black/55">
-            {role.start} – {role.end}
-          </span>
-        </span>
-        <Triangle open={open} />
-      </button>
-      {/* the last box rounds its own bottom corners to match the list's
-          clip — otherwise the clip cuts its white border off at the curve */}
-      <div className="border-x-[3px] border-b-[3px] border-white bg-paper font-mono text-base group-last:rounded-b-[16px]">
-        <p
-          onClick={onToggle}
-          className="cursor-pointer px-8 py-4 leading-snug text-white/80"
-        >
-          {role.blurb}
-        </p>
-        {/* `grid-template-rows` 0fr → 1fr animates to the content's real
-            height without measuring it; `inert` keeps a closed entry out of
-            the tab order and the accessibility tree */}
-        <div id={bodyId} className="exp-reveal" data-open={open} inert={!open}>
-          <div className="min-h-0 overflow-hidden">
-            <div className="space-y-4 px-8 pb-6 leading-relaxed">
-              {role.place && <p className="text-white/90">{role.place}</p>}
-              {role.stack && (
-                <p className="text-sm uppercase tracking-wide text-white/50">
-                  {role.stack.join(" · ")}
-                </p>
+    <li
+      className="xp-entry"
+      data-side={side}
+      data-layout={stacked ? "stack" : "row"}
+      data-open={open}
+      style={{ "--i": index } as CSSProperties}
+    >
+      <div className="xp-grid">
+        <div className="xp-figure">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={name}
+            onClick={onToggle}
+            className="xp-pic"
+          >
+            <span className="xp-frame">
+              <span className="xp-shot">
+                {role.image ? (
+                  <Image
+                    src={role.image}
+                    alt=""
+                    fill
+                    // the first picture is in view as soon as the page opens
+                    loading={index === 0 ? "eager" : undefined}
+                    sizes="(min-width: 640px) 32rem, 100vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <ShotPlaceholder slug={role.slug} />
+                )}
+              </span>
+            </span>
+            <span aria-hidden className="xp-hinge" />
+          </button>
+          <div className="xp-caption mt-4">
+            <h3 className="font-title text-xl uppercase leading-tight tracking-wide">
+              {role.role}
+            </h3>
+            <p className="mt-1.5 font-mono text-xs uppercase tracking-wide text-white/55">
+              {role.project && <>{role.project} · </>}
+              {role.start} – {role.end}
+            </p>
+          </div>
+        </div>
+
+        <div className="xp-slot">
+          <div id={panelId} className="xp-panel font-mono text-white">
+            {role.place && (
+              <p className="xp-line text-sm text-white/90" style={line(0)}>
+                {role.place}
+              </p>
+            )}
+            <p className="xp-line mt-3 text-[0.95rem] leading-relaxed text-white/80" style={line(1)}>
+              {role.blurb}
+            </p>
+            {role.stack && (
+              <p className="xp-line mt-4 text-[0.7rem] uppercase tracking-wide text-white/45" style={line(2)}>
+                {role.stack.join(" · ")}
+              </p>
+            )}
+            {/* `grid-template-rows` 0fr → 1fr opens to the bullets' real
+                height without measuring them; `inert` keeps them out of the
+                tab order and the accessibility tree while closed */}
+            <div className="exp-reveal" data-open={open} inert={!open}>
+              <div className="min-h-0 overflow-hidden">
+                <div className="pt-5">
+                  <Bullets items={role.bullets} />
+                </div>
+              </div>
+            </div>
+            <div
+              className="xp-line mt-5 flex items-center justify-between gap-4 text-xs uppercase tracking-wide"
+              style={line(3)}
+            >
+              {role.link ? (
+                <CardLink href={role.link}>Visit site ↗</CardLink>
+              ) : (
+                <span />
               )}
-              <ul className="space-y-2.5 text-white/80">
-                {role.bullets.map((b) => (
-                  <li key={b} className="flex gap-3">
-                    <span aria-hidden className="text-white/35">
-                      —
-                    </span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-controls={panelId}
+                onClick={onToggle}
+                className="flex items-center gap-2 text-white/60 transition-colors hover:text-white"
+              >
+                {open ? "Less" : "Details"}
+                <Chevron open={open} />
+              </button>
             </div>
           </div>
         </div>
@@ -107,12 +158,11 @@ function Row({
   );
 }
 
-function ExperienceList({ active }: CardOptions) {
+function ExperienceList({ layout, active }: CardOptions) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  // Every time the section opens it starts fully collapsed. Adjusted during
-  // render (React's own pattern for resetting state on a prop change) rather
-  // than in an effect, so the reset lands before the open animation
-  // snapshots the card.
+  // Every time the section opens it starts with nothing pinned. Adjusted
+  // during render (React's own pattern for resetting state on a prop change)
+  // rather than in an effect, so the reset lands before the open animation.
   const [wasActive, setWasActive] = useState(active);
   if (active !== wasActive) {
     setWasActive(active);
@@ -127,16 +177,14 @@ function ExperienceList({ active }: CardOptions) {
       return next;
     });
 
-  // entries meet edge to edge; the rounded clip softens the stack's outer
-  // corners. The same list in the overlay and on the stacked page — either
-  // way the page around it does the scrolling.
   return (
-    <ul className="flex flex-col overflow-hidden rounded-[16px]">
+    <ul className="flex flex-col gap-16 px-[3%] pb-4">
       {EXPERIENCE.map((role, i) => (
-        <Row
+        <Entry
           key={role.slug}
           role={role}
           index={i}
+          stacked={layout === "stack"}
           open={open.has(role.slug)}
           onToggle={() => toggle(role.slug)}
         />

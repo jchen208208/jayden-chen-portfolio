@@ -6,6 +6,8 @@
  */
 
 import type { StaticImageData } from "next/image";
+import findverDiagram from "@/assets/experience/findver-diagram.webp";
+import hitWithLukeShot from "@/assets/experience/hitwithluke.webp";
 
 /** the tagline's parts — the hero highlights the school on its own */
 const STUDY = {
@@ -172,24 +174,35 @@ export const PROJECTS: Project[] = [
 
 export type Role = {
   slug: string;
-  /** the title held, exactly as the résumé has it — the row's label */
+  /** the title held, exactly as the résumé has it — the caption under the
+   *  picture */
   role: string;
-  /** one line under the title while the row is collapsed; names the project,
-   *  since two research roles share a title */
+  /** what it was about, beside the dates in the caption — two research
+   *  roles share a title, so this is what tells them apart */
+  project?: string;
+  /** the one line the slide-out box leads with */
   blurb: string;
-  /** where, and under whom — shown once the row is opened */
+  /** where, and under whom */
   place?: string;
   /** display dates, as the résumé writes them */
   start: string;
   end: string;
   stack?: string[];
   bullets: string[];
+  /** the work itself, when it's out in the world */
+  link?: string;
+  /** the role's picture, imported from `src/assets/experience`, 16:10 — a
+   *  placeholder stands in until there is one.
+   *  TODO — user: pictures for TRACE, C3M and IT Technician */
+  image?: StaticImageData;
 };
 
 /** In résumé order, lead role first. Bullets are the résumé's own words. */
 export const EXPERIENCE: Role[] = [
   {
     slug: "claim-verification",
+    project: "FinDVer",
+    image: findverDiagram,
     blurb: "Financial claim verification: a multi-agent pipeline that matches cloud-only accuracy at about half the cost",
     role: "Lead Student Researcher/First Author",
     place: "Supervised by Prof. Zhen Bi, Huzhou Normal University",
@@ -205,6 +218,7 @@ export const EXPERIENCE: Role[] = [
   },
   {
     slug: "trace",
+    project: "TRACE",
     blurb: "TRACE: text-to-image steering that cuts attack success by nearly half at about 1% latency",
     role: "Research Assistant/Co-author",
     place: "Under Prof. Zhen Bi, Huzhou Normal University",
@@ -220,6 +234,7 @@ export const EXPERIENCE: Role[] = [
   },
   {
     slug: "c3m",
+    project: "C3M",
     blurb: "C3M: a multimodal memory framework for long-horizon AI agents",
     role: "Research Assistant/Co-author",
     place: "Under Prof. Zhen Bi, Huzhou Normal University",
@@ -245,14 +260,21 @@ export const EXPERIENCE: Role[] = [
     ],
   },
   {
-    slug: "private-tutor",
-    blurb: "Python, C++, math and science for 6+ students in Grades 5 to 12",
-    role: "Private Tutor",
-    start: "Oct 2024",
+    slug: "web-developer",
+    project: "Hit with Luke",
+    image: hitWithLukeShot,
+    blurb: "A booking site for a tennis coach's hitting sessions",
+    role: "Freelance Web Developer",
+    place: "Client: Hit with Luke",
+    start: "Oct 2026",
     end: "Present",
+    stack: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Resend"],
+    // TODO — user: confirm these, drafted from the client-website-1 repo
     bullets: [
-      "Taught Python and C++ fundamentals alongside math and science to 6+ students in Grades 5–12, breaking down technical concepts for students with no prior programming background.",
+      "Designed and built hitwithluke.com, a tennis coach's booking site, in Next.js and Tailwind CSS.",
+      "Wired the booking form to email the coach through Resend, so every request reaches his phone with the visitor's details and preferred time.",
     ],
+    link: "https://hitwithluke.com",
   },
 ];
 
