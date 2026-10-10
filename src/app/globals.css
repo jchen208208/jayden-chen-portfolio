@@ -537,35 +537,46 @@ body {
   color: #fff;
 }
 
-/* Experience's backdrop (`panorama.tsx`): dotted Vancouver along the bottom
-   of the view, the full width of the screen, fading out under the column
-   of roles (`--col`, a little wider than the column). It rises up from the
+/* Experience's backdrop (`panorama.tsx`): dotted Shanghai along the bottom
+   of the view, the full width of the screen and unbroken — at its own
+   proportions (`--map-aspect`, set on the canvas) up to 80% of the view's
+   height, past which its top is cropped. Two masks, intersected: under the
+   column of roles (`--col`, a little wider than the column) it dims to
+   `--under-col` rather than cutting out, so the text over it stays readable
+   and the skyline still runs straight across; and its top edge fades in,
+   so a cropped spire doesn't end in a hard line. It rises up from the
    bottom edge once it's drawn and the section's backdrop is showing
    (`data-backdrop-shown`). Phones don't get it. */
 .panorama {
   --col: 42rem;
+  --under-col: rgb(0 0 0 / 0.45);
   position: fixed;
   left: 0;
   bottom: 0;
   display: block;
   width: 100%;
-  aspect-ratio: 1200 / 260;
-  max-height: 45vh;
+  height: min(calc(100vw / var(--map-aspect, 2)), 80vh);
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    #000 calc(50% - var(--col) / 2 - 2rem),
-    transparent calc(50% - var(--col) / 2 + 6rem),
-    transparent calc(50% + var(--col) / 2 - 6rem),
-    #000 calc(50% + var(--col) / 2 + 2rem)
-  );
-  mask-image: linear-gradient(
-    to right,
-    #000 calc(50% - var(--col) / 2 - 2rem),
-    transparent calc(50% - var(--col) / 2 + 6rem),
-    transparent calc(50% + var(--col) / 2 - 6rem),
-    #000 calc(50% + var(--col) / 2 + 2rem)
-  );
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      #000 calc(50% - var(--col) / 2 - 4rem),
+      var(--under-col) calc(50% - var(--col) / 2 + 6rem),
+      var(--under-col) calc(50% + var(--col) / 2 - 6rem),
+      #000 calc(50% + var(--col) / 2 + 4rem)
+    ),
+    linear-gradient(to bottom, transparent, #000 8%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to right,
+      #000 calc(50% - var(--col) / 2 - 4rem),
+      var(--under-col) calc(50% - var(--col) / 2 + 6rem),
+      var(--under-col) calc(50% + var(--col) / 2 - 6rem),
+      #000 calc(50% + var(--col) / 2 + 4rem)
+    ),
+    linear-gradient(to bottom, transparent, #000 8%);
+  mask-composite: intersect;
   clip-path: inset(100% 0 0 0);
   translate: 0 1.5rem;
   transition:

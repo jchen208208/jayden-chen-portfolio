@@ -26,10 +26,10 @@ import { ShotPlaceholder, type SectionCard } from "./shared";
 const LIST_MAX_WIDTH = "38rem";
 
 /** px between the EXPERIENCE heading's box and the list, in the desk view —
- *  closer than other sections' rows. The first picture ends up ~70px under
+ *  closer than other sections' rows. The first picture ends up ~80px under
  *  the letters (the heading's box runs ~20px below them, and each card has
  *  10px of padding on top). */
-const GAP_UNDER_HEADER = 40;
+const GAP_UNDER_HEADER = 50;
 
 /** the dates' spin on hover — quicker than the desk screens' load-in.
  *  Module-level: `useSlotReel` restarts if this changes identity. */

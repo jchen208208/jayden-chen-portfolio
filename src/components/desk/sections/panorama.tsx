@@ -1,27 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import densityMap from "@/assets/experience/panorama-density.png";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import densityMap from "@/assets/experience/shanghai-density.png";
 
 /**
- * Experience's backdrop: Vancouver along the bottom of the view — downtown
- * towers either side, the North Shore mountains behind them — drawn as a
- * field of small amber dots, fading out under the column of roles so the
- * black either side of it isn't empty. After matthewhamilton.dev's
- * dotted mountains, minus their cursor glow: this is drawn once (and again
- * if the window is resized) and then just sits there — no pointer
- * listeners, nothing redrawn per frame.
+ * Experience's backdrop: Shanghai's Bund skyline at night along the bottom
+ * of the view, edge to edge — the Oriental Pearl Tower on the left, the
+ * Shanghai Tower on the right, the moon beside it — drawn as a field of
+ * small amber dots, dimmed (not cut) under the column of roles so the text
+ * stays readable. After matthewhamilton.dev's dotted mountains, minus their
+ * cursor glow: this is drawn once (and again if the window is resized) and
+ * then just sits there — no pointer listeners, nothing redrawn per frame.
  *
- * The picture is a density map (`panorama-density.png`, grey = how many dots,
- * black = sky), built offline from three CC0 Wikimedia Commons photos — the
- * mountains from Daderot's "Burrard Inlet with seaplanes", the towers from
- * Bernard Spragg's "Vancouver Skyline." and "Vancouver City (8)" — with
- * each photo's sky cut out, the mountains mirrored about the middle so both
- * sides get peaks, and the towers set in front. It's stretched to the
- * window's width and sampled on an even lattice, each point kept or dropped
- * by an 8×8 Bayer matrix, so the tones come out as an ordered dither. Denser
- * stretches also draw their dots brighter, so the towers stand off the
- * mountains behind them.
+ * The picture is a density map (`shanghai-density.png`, grey = how many
+ * dots, black = sky), built offline from `designs/reference/
+ * experience_background.jpg`: cropped from the Pearl Tower's spire down to
+ * the waterline, the sky cut out (each pixel compared with the sky's own
+ * colour at that height, so the Shanghai Tower's blue glass survives), and
+ * each building's brightness turned into density, with a floor so dark
+ * facades still read as a silhouette. It's drawn at its own proportions —
+ * the window's full width, standing on the bottom edge, its top cropped
+ * when the view is too short for all of it — and sampled on an even
+ * lattice, each point kept or dropped by an 8×8 Bayer matrix, so the tones
+ * come out as an ordered dither. Denser stretches also draw their dots
+ * brighter, so lit facades stand out.
  *
  * It rises in from the bottom edge once it's drawn (`.panorama` in
  * globals.css). Phones don't get it: the column is the whole width there.
@@ -71,13 +73,21 @@ function draw(canvas: HTMLCanvasElement, tones: Tones) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
+  // the map's own proportions: the full width, standing on the bottom edge —
+  // a view too short for all of it loses the top (the Pearl Tower's spire
+  // first), never the sides
+  const scale = w / tones.w;
+  const top = h - tones.h * scale;
+
   const paths = Array.from({ length: LEVELS }, () => new Path2D());
   for (let j = 0; j * STEP < h; j++) {
     const cy = j * STEP + STEP / 2;
-    const row = Math.min(tones.h - 1, Math.floor((cy / h) * tones.h)) * tones.w;
+    const my = Math.floor((cy - top) / scale);
+    if (my < 0) continue;
+    const row = Math.min(tones.h - 1, my) * tones.w;
     for (let i = 0; i * STEP < w; i++) {
       const cx = i * STEP + STEP / 2;
-      const v = tones.data[row + Math.min(tones.w - 1, Math.floor((cx / w) * tones.w))] / 255;
+      const v = tones.data[row + Math.min(tones.w - 1, Math.floor(cx / scale))] / 255;
       if (v <= (BAYER[(j % 8) * 8 + (i % 8)] + 0.5) / 64) continue;
       const p = paths[Math.min(LEVELS - 1, Math.floor(v * LEVELS))];
       p.moveTo(cx + DOT, cy);
@@ -127,5 +137,14 @@ export function Panorama() {
     };
   }, []);
 
-  return <canvas ref={ref} aria-hidden data-drawn={drawn || undefined} className="panorama" />;
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden
+      data-drawn={drawn || undefined}
+      className="panorama"
+      // the CSS sizes the canvas to the map's proportions
+      style={{ "--map-aspect": densityMap.width / densityMap.height } as CSSProperties}
+    />
+  );
 }
