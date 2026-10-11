@@ -19,8 +19,9 @@ import densityMap from "@/assets/experience/shanghai-density.png";
  * colour at that height, so the Shanghai Tower's blue glass survives), and
  * each building's brightness turned into density, with a floor so dark
  * facades still read as a silhouette. It's drawn at its own proportions —
- * the window's full width, standing on the bottom edge, its top cropped
- * when the view is too short for all of it — and sampled on an even
+ * the window's full width, standing on the bottom edge, squashed a little
+ * rather than cropped when the view is too short for all of it — and
+ * sampled on an even
  * lattice, each point kept or dropped by an 8×8 Bayer matrix, so the tones
  * come out as an ordered dither. Denser stretches also draw their dots
  * brighter, so lit facades stand out.
@@ -73,21 +74,22 @@ function draw(canvas: HTMLCanvasElement, tones: Tones) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  // the map's own proportions: the full width, standing on the bottom edge —
-  // a view too short for all of it loses the top (the Pearl Tower's spire
-  // first), never the sides
-  const scale = w / tones.w;
-  const top = h - tones.h * scale;
+  // the map's own proportions: the full width, standing on the bottom edge.
+  // Nothing is ever cropped — a view too short for its full height squashes
+  // it a little instead, so the Pearl Tower keeps its spire.
+  const sx = w / tones.w;
+  const sy = Math.min(sx, h / tones.h);
+  const top = h - tones.h * sy;
 
   const paths = Array.from({ length: LEVELS }, () => new Path2D());
   for (let j = 0; j * STEP < h; j++) {
     const cy = j * STEP + STEP / 2;
-    const my = Math.floor((cy - top) / scale);
+    const my = Math.floor((cy - top) / sy);
     if (my < 0) continue;
     const row = Math.min(tones.h - 1, my) * tones.w;
     for (let i = 0; i * STEP < w; i++) {
       const cx = i * STEP + STEP / 2;
-      const v = tones.data[row + Math.min(tones.w - 1, Math.floor(cx / scale))] / 255;
+      const v = tones.data[row + Math.min(tones.w - 1, Math.floor(cx / sx))] / 255;
       if (v <= (BAYER[(j % 8) * 8 + (i % 8)] + 0.5) / 64) continue;
       const p = paths[Math.min(LEVELS - 1, Math.floor(v * LEVELS))];
       p.moveTo(cx + DOT, cy);
