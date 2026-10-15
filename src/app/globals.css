@@ -741,6 +741,36 @@ body {
   font-size: 1.3em;
 }
 
+/* Experience's title casts a shadow off the cursor (`ExperienceTitle`): a
+   flat copy of the letters — stroke and all, so it's their whole silhouette —
+   in a dim amber (the screens' umber vanished on the black), stacked in the
+   same grid cell under them and pushed
+   along `--cast-x` / `--cast-y` (-1…1, set by script) up to `--cast-reach`.
+   With no mouse to follow it rests down and to the right, lit from the upper
+   left. The letters are `position: relative` so they paint over the shadow,
+   which its transform lifts into the positioned layer. */
+.cast-title {
+  --cast-reach: 0.14em;
+  --cast-rest-x: 0.5;
+  --cast-rest-y: 0.6;
+  --cast: color-mix(in srgb, var(--glow, #ffbe5c) 42%, #000);
+  display: inline-grid;
+}
+.cast-title > * {
+  grid-area: 1 / 1;
+}
+.cast-shadow {
+  color: var(--cast);
+  -webkit-text-stroke-color: var(--cast);
+  transform: translate(
+    calc(var(--cast-x, var(--cast-rest-x)) * var(--cast-reach)),
+    calc(var(--cast-y, var(--cast-rest-y)) * var(--cast-reach))
+  );
+}
+.cast-text {
+  position: relative;
+}
+
 /* Skills stickers (`sections/skills.tsx`). On the way in, each cluster's
    label fades up and its stickers slap down one after another — inside a
    `.reveal-gate` (the desktop overlay) only once the overlay reveals its
