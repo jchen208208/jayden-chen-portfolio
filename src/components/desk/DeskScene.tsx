@@ -475,6 +475,7 @@ export default function DeskScene({ className }: { className?: string }) {
   const rowFitsContent = cards[0]?.fitContent ?? false;
   const rowOwnEntrance = cards[0]?.ownEntrance ?? false;
   const rowGapAbove = cards[0]?.gapAbove;
+  const headerDrop = cards[0]?.headerDrop ?? 0;
   const backdrop = content !== null && hasBackdrop(content);
   // a backdrop that fills the view (Skills' mat) takes the ground's clicks
   const groundCovered = content !== null && backdropCoversGround(content);
@@ -483,7 +484,9 @@ export default function DeskScene({ className }: { className?: string }) {
     stage === "closed"
       ? `scale(${startScale})`
       : stage === "top"
-        ? `scale(1) translateY(-${HEADER_LIFT_VH}vh)` // glide up to sit high on the page
+        ? headerDrop // glide up to sit high on the page
+          ? `scale(1) translateY(calc(${headerDrop}px - ${HEADER_LIFT_VH}vh))`
+          : `scale(1) translateY(-${HEADER_LIFT_VH}vh)`
         : "scale(1)";
   // Pivots on the click point while zooming in and out, and on the viewport
   // centre once open, so the glide-up stays centred horizontally.

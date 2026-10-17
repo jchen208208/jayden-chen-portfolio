@@ -37,6 +37,10 @@ export type SectionCard = {
    *  (`CARD_V_GAP` + `CARD_TOP_SHIFT` in `DeskScene`) — for a row that sits
    *  closer under its header (first card's value is used) */
   gapAbove?: number;
+  /** px the header stops short of its usual glide up (`HEADER_LIFT_VH` in
+   *  `DeskScene`), so it sits that much lower on the page — the row follows
+   *  it down (first card's value is used) */
+  headerDrop?: number;
 };
 
 /** the scrolling text body most cards use — mono, one consistent padding */

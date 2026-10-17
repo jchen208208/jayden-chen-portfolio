@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import ScreenCard from "../ScreenCard";
-import { ExperienceTitle, experienceCards } from "./experience";
+import { experienceCards } from "./experience";
 import { Panorama } from "./panorama";
 import { personalCards } from "./personal";
 import { projectsCards } from "./projects";
@@ -28,9 +28,8 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
 /** the section header's title (the big one above the cards) — every section
  *  alike, in the desk screens' face (`.section-title`) and the amber
  *  lettering of Skills' mat. Sized in `em`, so it follows the header's own
- *  font size. Experience's casts a shadow off the cursor (`ExperienceTitle`). */
+ *  font size. */
 export function SectionTitle({ id }: { id: SectionId }) {
-  if (id === "experience") return <ExperienceTitle />;
   return <span className="skills-heading section-title">{SECTIONS[id].screenLabel}</span>;
 }
 

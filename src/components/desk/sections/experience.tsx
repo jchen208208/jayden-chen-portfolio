@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { EXPERIENCE, SECTIONS, type Role } from "@/lib/site";
+import { useState, type CSSProperties } from "react";
+import { EXPERIENCE, type Role } from "@/lib/site";
 import { markFromList } from "@/lib/experienceNav";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSlotReel, type ReelTiming } from "@/hooks/useSlotReel";
 import { ShotPlaceholder, type SectionCard } from "./shared";
 
@@ -27,10 +26,14 @@ import { ShotPlaceholder, type SectionCard } from "./shared";
 const LIST_MAX_WIDTH = "38rem";
 
 /** px between the EXPERIENCE heading's box and the list, in the desk view —
- *  closer than other sections' rows. The first picture ends up ~80px under
+ *  a little further than other sections' rows. The first picture ends up ~130px under
  *  the letters (the heading's box runs ~20px below them, and each card has
  *  10px of padding on top). */
-const GAP_UNDER_HEADER = 50;
+const GAP_UNDER_HEADER = 100;
+
+/** px the EXPERIENCE heading sits lower than other sections' headings, in
+ *  the desk view (the list moves down with it) */
+const HEADER_DROP = 24;
 
 /** the dates' spin on hover — quicker than the desk screens' load-in.
  *  Module-level: `useSlotReel` restarts if this changes identity. */
@@ -42,106 +45,6 @@ const CARD_REEL: ReelTiming = {
   slowMs: 130,
   decelMs: 200,
 };
-
-/** the title's shadow eases this far toward where the cursor says it should
- *  be each 60fps frame — a soft follow, not a snap */
-const SHADOW_EASE = 0.12;
-
-/**
- * The EXPERIENCE heading, casting a shadow as if the cursor were its light
- * (lars-olson.com's pineapple and thumb): a flat copy of the letters sits
- * behind them and falls away from the pointer, further the further off the
- * pointer is, up to its reach at half the viewport's long side. It eases
- * after the pointer, and settles back to rest — the light up and to the left
- * — when the pointer leaves the window. Touch and reduced motion keep it at
- * rest.
- *
- * The shadow's direction is `--cast-x` / `--cast-y` (-1…1) on the title; how
- * far that throws it, and its colour, are `.cast-title` in globals.css.
- */
-export function ExperienceTitle() {
-  const ref = useRef<HTMLSpanElement>(null);
-  const reduced = usePrefersReducedMotion();
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (reduced) {
-      el.style.removeProperty("--cast-x");
-      el.style.removeProperty("--cast-y");
-      return;
-    }
-
-    // the CSS's resting direction, so the first move eases off from it
-    const rest = getComputedStyle(el);
-    const REST_X = parseFloat(rest.getPropertyValue("--cast-rest-x")) || 0;
-    const REST_Y = parseFloat(rest.getPropertyValue("--cast-rest-y")) || 0;
-    let x = REST_X;
-    let y = REST_Y;
-    let toX = REST_X;
-    let toY = REST_Y;
-    let raf = 0;
-    let last = 0;
-
-    const tick = (now: number) => {
-      const dt = last ? Math.min(now - last, 100) : 1000 / 60;
-      last = now;
-      const k = 1 - Math.pow(1 - SHADOW_EASE, dt / (1000 / 60));
-      x += (toX - x) * k;
-      y += (toY - y) * k;
-      el.style.setProperty("--cast-x", x.toFixed(3));
-      el.style.setProperty("--cast-y", y.toFixed(3));
-      if (Math.abs(toX - x) + Math.abs(toY - y) > 0.002) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        raf = 0;
-        last = 0;
-      }
-    };
-    const aim = (ax: number, ay: number) => {
-      toX = ax;
-      toY = ay;
-      if (!raf) raf = requestAnimationFrame(tick);
-    };
-
-    const onMove = (e: PointerEvent) => {
-      if (e.pointerType !== "mouse") return;
-      const box = el.getBoundingClientRect();
-      const reach = Math.max(window.innerWidth, window.innerHeight) / 2;
-      // from the light (the pointer) through the title, and on past it
-      let ax = (box.left + box.width / 2 - e.clientX) / reach;
-      let ay = (box.top + box.height / 2 - e.clientY) / reach;
-      const len = Math.hypot(ax, ay);
-      if (len > 1) {
-        ax /= len;
-        ay /= len;
-      }
-      aim(ax, ay);
-    };
-    // out of the window altogether (`relatedTarget` is null only then)
-    const onOut = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && !e.relatedTarget) aim(REST_X, REST_Y);
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.addEventListener("pointerout", onOut);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerout", onOut);
-      cancelAnimationFrame(raf);
-    };
-  }, [reduced]);
-
-  const label = SECTIONS.experience.screenLabel;
-  return (
-    <span ref={ref} className="skills-heading section-title cast-title">
-      <span aria-hidden className="cast-shadow">
-        {label}
-      </span>
-      <span className="cast-text">{label}</span>
-    </span>
-  );
-}
 
 /** "FinDVer · June 2026 – Present" */
 export function roleWhen(role: Role) {
@@ -223,7 +126,7 @@ function RoleCard({ role, index }: { role: Role; index: number }) {
 function ExperienceList() {
   return (
     // capped here too, so the stacked page's wider column keeps the same size
-    <ul className="flex w-full max-w-[38rem] flex-col gap-2 px-[3%] pb-4">
+    <ul className="flex w-full max-w-[38rem] flex-col gap-12 px-[3%] pb-4">
       {EXPERIENCE.map((role, i) => (
         <RoleCard key={role.slug} role={role} index={i} />
       ))}
@@ -242,6 +145,7 @@ export function experienceCards(): SectionCard[] {
       fitContent: true,
       ownEntrance: true,
       gapAbove: GAP_UNDER_HEADER,
+      headerDrop: HEADER_DROP,
     },
   ];
 }
