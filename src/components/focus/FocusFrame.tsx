@@ -135,7 +135,7 @@ export default function FocusFrame({
 
   return (
     <div
-      className={`fixed inset-0 overflow-y-auto bg-paper ${raised ? "z-[60]" : "z-50"}`}
+      className={`fixed inset-0 overflow-x-hidden overflow-y-auto bg-paper ${raised ? "z-[60]" : "z-50"}`}
       onMouseDown={(e) => {
         const ground =
           e.target === e.currentTarget ||

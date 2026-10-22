@@ -3,19 +3,18 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ROLL, type Shot } from "@/lib/site";
-import { mulberry32 } from "@/lib/svg";
 import { Print } from "./print";
 import { ShotPlaceholder } from "./shared";
 
 /**
- * About's contact sheet: the roll of film cut into strips and laid on the
- * black page, each a little askew, as if put down by hand. Every frame is an
- * amber negative of its picture. Hovering one develops it — the negative
- * fades and the print comes up out of a pale ghost into colour, like paper
- * in the developer tray — and clicking one lifts it out as a print
- * (`print.tsx`). On a phone there's no hover to wait for, so each frame
- * develops as it scrolls into view. All of the look is CSS (`.film-*` in
- * globals.css), off one switch, `--lit`.
+ * About's roll of film: one strip right across the screen, sliding slowly
+ * leftward on a loop, as if being wound through. Every frame is an amber
+ * negative of its picture. Hovering one stops the film and develops the frame
+ * — the negative fades and the print comes up out of a pale ghost into
+ * colour, like paper in the developer tray — and clicking one lifts it out as
+ * a print (`print.tsx`). On a phone there's no hover to wait for, so each
+ * frame develops as it comes into view. All of the look and the slide is CSS
+ * (`.film-*` in globals.css); the frames' is off one switch, `--lit`.
  *
  * The film is drawn to a real 35mm frame's measurements: 38mm from one frame
  * to the next (8 perforations of 4.75mm), a 36 × 24mm picture with 1mm of base
@@ -33,8 +32,13 @@ const EDGE = 4.2;
 /** the film stock's name, printed faintly along the top edge */
 const STOCK = "JC 400";
 
-/** the strips' hand-laid tilts and nudges — the same every render */
-const LAY_SEED = 35;
+/** frames in one pass of the loop, at least — the roll repeats until a pass
+ *  runs past the edges of even a very wide screen */
+const MIN_PASS = 12;
+
+/** seconds for one frame to slide its own width — a slow, steady drift
+ *  (~40px a second on a wide screen) */
+const SECONDS_PER_FRAME = 9;
 
 /** one frame's worth of perforations — a cell's are the same, so the
  *  holes run on unbroken from frame to frame along the strip. The top edge
@@ -70,18 +74,25 @@ function Perforations({ top = false, stock }: { top?: boolean; stock?: string })
 function Frame({
   shot,
   number,
+  clone,
   printing,
   onPrint,
 }: {
   shot: Shot;
   number: number;
+  /** a repeat further along the loop — clickable, but skipped by the
+   *  keyboard and screen readers, which have the first of each */
+  clone: boolean;
   printing: boolean;
   onPrint: (button: HTMLButtonElement) => void;
 }) {
   return (
-    <li className="film-cell">
+    <li className="film-cell" aria-hidden={clone || undefined}>
       <button
         type="button"
+        tabIndex={clone ? -1 : undefined}
+        // a click mustn't leave focus inside the hidden repeat
+        onMouseDown={clone ? (e) => e.preventDefault() : undefined}
         data-printing={printing || undefined}
         onClick={(e) => onPrint(e.currentTarget)}
         aria-label={`Print frame ${number}: ${shot.label}`}
@@ -93,10 +104,10 @@ function Frame({
           {shot.image ? (
             <>
               <span className="film-pos">
-                <Image src={shot.image} alt="" fill sizes="(min-width: 1024px) 22rem, 50vw" className="object-cover" />
+                <Image src={shot.image} alt="" fill sizes="21rem" className="object-cover" />
               </span>
               <span className="film-neg">
-                <Image src={shot.image} alt="" fill sizes="(min-width: 1024px) 22rem, 50vw" className="object-cover" />
+                <Image src={shot.image} alt="" fill sizes="21rem" className="object-cover" />
               </span>
             </>
           ) : (
@@ -128,19 +139,19 @@ function Frame({
 }
 
 export function ContactSheet({
-  perStrip,
   active,
   firstIndex,
 }: {
-  /** frames to a strip */
-  perStrip: number;
-  /** false while the desk view is closed — a print left out goes away */
+  /** false while the desk view is closed — a print left out goes away, and
+   *  the film stops */
   active: boolean;
-  /** where the strips come in the page's order of arrival (`--i`) */
+  /** where the roll comes in the page's order of arrival (`--i`) */
   firstIndex: number;
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [print, setPrint] = useState<{ index: number; button: HTMLButtonElement } | null>(null);
+  const [print, setPrint] = useState<{ index: number; key: string; button: HTMLButtonElement } | null>(
+    null,
+  );
 
   // the desk view closing takes any print with it
   if (!active && print) setPrint(null);
@@ -161,54 +172,47 @@ export function ContactSheet({
     );
     sheet.querySelectorAll(".film-frame").forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [perStrip]);
+  }, []);
 
-  const strips: Shot[][] = [];
-  for (let i = 0; i < ROLL.length; i += perStrip) strips.push(ROLL.slice(i, i + perStrip));
-  const rnd = mulberry32(LAY_SEED);
+  // one pass of the loop is the roll as many times over as it takes; the
+  // track holds two passes, so sliding by one lands exactly where it began
+  const pass = Array.from({ length: Math.ceil(MIN_PASS / ROLL.length) }, () => ROLL).flat();
 
   return (
     <div ref={sheetRef} className="flex flex-col gap-6">
       <p
-        className="about-in film-hint font-screen text-lg uppercase leading-none tracking-wide"
+        className="about-in film-hint text-center font-screen text-lg uppercase leading-none tracking-wide"
         style={{ "--i": firstIndex - 1 } as CSSProperties}
       >
         <span className="film-hint-hover">▸ Hover a frame to develop it · click to print</span>
         <span className="film-hint-touch">▸ Tap a frame to print it</span>
       </p>
-      <div className="flex flex-col gap-[clamp(1.25rem,3vw,2.25rem)]">
-        {strips.map((strip, s) => {
-          const tilt = ((rnd() * 2 - 1) * 0.45).toFixed(2);
-          const shift = ((rnd() * 2 - 1) * 1.2).toFixed(2);
-          return (
-            <ul
-              key={s}
-              className="film-strip"
-              style={
-                {
-                  "--i": firstIndex + s,
-                  "--tilt": `${tilt}deg`,
-                  "--shift": `${shift}%`,
-                  // a short strip is a short length of film, not stretched
-                  width: `${(strip.length / perStrip) * 100}%`,
-                } as CSSProperties
-              }
-            >
-              {strip.map((shot, f) => {
-                const index = s * perStrip + f;
-                return (
-                  <Frame
-                    key={shot.slug}
-                    shot={shot}
-                    number={index + 1}
-                    printing={print?.index === index}
-                    onPrint={(button) => setPrint({ index, button })}
-                  />
-                );
-              })}
-            </ul>
-          );
-        })}
+      <div
+        className="about-in film-reel"
+        data-paused={!active || print !== null || undefined}
+        style={{ "--i": firstIndex } as CSSProperties}
+      >
+        <ul
+          className="film-track"
+          style={{ "--run": `${pass.length * SECONDS_PER_FRAME}s` } as CSSProperties}
+        >
+          {[0, 1].map((half) =>
+            pass.map((shot, j) => {
+              const index = j % ROLL.length;
+              const key = `${half}-${j}`;
+              return (
+                <Frame
+                  key={key}
+                  shot={shot}
+                  number={index + 1}
+                  clone={half > 0 || j >= ROLL.length}
+                  printing={print?.key === key}
+                  onPrint={(button) => setPrint({ index, key, button })}
+                />
+              );
+            }),
+          )}
+        </ul>
       </div>
       {print && (
         <Print
@@ -217,7 +221,8 @@ export function ContactSheet({
           origin={print.button}
           onClosed={() => {
             setPrint(null);
-            print.button.focus({ preventScroll: true });
+            // back to the frame it came from, unless that's a repeat
+            if (print.button.tabIndex >= 0) print.button.focus({ preventScroll: true });
           }}
         />
       )}

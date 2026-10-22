@@ -747,9 +747,11 @@ export default function DeskScene({ className }: { className?: string }) {
             // no scrollbar drawn. The desk page runs Lenis, which listens for
             // wheel events on the whole window; `data-lenis-prevent` hands
             // this element's scrolling back to the browser, and
-            // `overscroll-contain` stops it chaining to the desk behind.
+            // `overscroll-contain` stops it chaining to the desk behind. It
+            // only ever scrolls down: what runs to the screen's edges
+            // (About's film) is clipped there, not scrolled to.
             data-lenis-prevent={smoothOverlay ? undefined : true}
-            className={`no-scrollbar fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain ${groundCovered ? "" : "cursor-pointer"}`}
+            className={`no-scrollbar fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto overscroll-contain ${groundCovered ? "" : "cursor-pointer"}`}
             style={{
               backgroundColor: "var(--paper, #000)",
               opacity: zoomed ? 1 : 0,

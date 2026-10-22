@@ -3,15 +3,15 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import crest from "@/assets/waterloo-crest.png";
-import { PROFILE, ROLL } from "@/lib/site";
+import { PROFILE } from "@/lib/site";
 import { ContactSheet } from "./contactSheet";
 import type { CardOptions, SectionCard } from "./shared";
 import { TrophyShelf } from "./trophyShelf";
 
 /**
- * About is a page in three parts, top to bottom: a few lines of intro, a
- * contact sheet of the roll of film his life is on (`contactSheet.tsx` —
- * negatives that develop on hover and lift out as prints that come alive),
+ * About is a page in three parts, top to bottom: a few lines of intro, the
+ * roll of film his life is on, sliding across the screen (`contactSheet.tsx`
+ * — negatives that develop on hover and lift out as prints that come alive),
  * and a trophy shelf for the awards (`trophyShelf.tsx`). Each part drifts in
  * one after another once the section's header has settled
  * (`data-cards-revealed`); on the stacked page they're simply there.
@@ -20,9 +20,6 @@ import { TrophyShelf } from "./trophyShelf";
 const MAX_WIDTH = "72rem";
 
 function About({ layout, active }: CardOptions) {
-  // three frames to a strip across the desk view, two on the stacked page
-  const perStrip = layout === "row" ? 3 : 2;
-  const strips = Math.ceil(ROLL.length / perStrip);
   return (
     <div className="flex flex-col gap-14 px-[3%] pb-6">
       {/* TODO — user: the intro, in your own words */}
@@ -44,8 +41,8 @@ function About({ layout, active }: CardOptions) {
           below has the evidence.
         </p>
       </div>
-      <ContactSheet perStrip={perStrip} active={active} firstIndex={2} />
-      <TrophyShelf perShelf={layout === "row" ? 5 : 3} firstIndex={2 + strips} />
+      <ContactSheet active={active} firstIndex={2} />
+      <TrophyShelf perShelf={layout === "row" ? 5 : 3} firstIndex={3} />
     </div>
   );
 }

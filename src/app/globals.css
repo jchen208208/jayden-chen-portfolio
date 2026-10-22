@@ -869,9 +869,8 @@ body {
   animation-delay: calc(var(--i, 0) * 120ms);
 }
 
-/* About's contact sheet (`sections/contactSheet.tsx`): strips of 35mm film,
-   each laid down a little askew (`--tilt`, `--shift`) — and laid down for
-   real, sliding in and settling, one after another.
+/* About's roll of film (`sections/contactSheet.tsx`): one strip of 35mm film
+   right across the screen, sliding slowly leftward on a loop.
 
    A frame is lit while it's hovered or keyboard-focused, while its print is
    out, and — where there's no hover — once it has scrolled into view
@@ -897,30 +896,48 @@ body {
   }
 }
 
-.film-strip {
-  display: flex;
-  border-radius: 2px;
-  background: var(--screen-bg);
-  rotate: var(--tilt, 0deg);
-  translate: var(--shift, 0%) 0;
+/* The reel runs out past the page's column to the screen's edges (the
+   section views clip anything wider than the screen). Its track holds the
+   same pass of frames twice, so sliding it by one pass — half its length —
+   lands exactly where it began, and the loop never shows a seam. `--run` is
+   one pass's time, set from the number of frames so every frame drifts by
+   at the same slow speed. The film holds still under the pointer, so a
+   frame can develop and be clicked, and while a frame has keyboard focus or
+   a print is out (`data-paused`). */
+.film-reel {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  overflow: hidden;
 }
 
-@keyframes film-lay {
-  from {
-    opacity: 0;
-    translate: calc(var(--shift, 0%) - 48px) -8px;
-    rotate: calc(var(--tilt, 0deg) - 1.5deg);
+.film-track {
+  --cell: clamp(13rem, 22vw, 21rem);
+  display: flex;
+  width: max-content;
+  background: var(--screen-bg);
+  animation: film-run var(--run, 108s) linear infinite;
+}
+
+@keyframes film-run {
+  to {
+    translate: -50% 0;
   }
 }
 
-[data-cards-revealed="true"] .film-strip {
-  animation: film-lay 650ms cubic-bezier(0.25, 1, 0.5, 1) both;
-  animation-delay: calc(var(--i, 0) * 120ms);
+@media (hover: hover) {
+  .film-reel:hover .film-track {
+    animation-play-state: paused;
+  }
+}
+
+.film-reel:has(.film-frame:focus-visible) .film-track,
+.film-reel[data-paused] .film-track {
+  animation-play-state: paused;
 }
 
 .film-cell {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 var(--cell);
+  width: var(--cell);
 }
 
 .film-frame {
@@ -1291,10 +1308,15 @@ body {
     translate: none !important;
     rotate: none !important;
   }
-  /* About: everything is simply there; a frame swaps to its print at once,
-     and an award lights where it stands */
-  [data-cards-revealed="true"] :is(.about-in, .film-strip) {
+  /* About: everything is simply there; the film stands still (and scrolls
+     by hand instead), a frame swaps to its print at once, and an award
+     lights where it stands */
+  [data-cards-revealed="true"] .about-in,
+  .film-track {
     animation: none !important;
+  }
+  .film-reel {
+    overflow-x: auto;
   }
   .film-neg,
   .film-pos,
