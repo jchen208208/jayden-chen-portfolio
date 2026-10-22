@@ -101,8 +101,8 @@ body {
   animation: float-cue 2.6s ease-in-out infinite;
 }
 
-/* A school name marked like a highlighter (after matthewhamilton.dev) — kept
-   for the About section, not yet used: a flat, translucent wash of the glow
+/* A school name marked like a highlighter (after matthewhamilton.dev) — the
+   About intro's "University of Waterloo": a flat, translucent wash of the glow
    behind the words — a lighter amber than the glow itself, on the black
    page — with the crest (`assets/waterloo-crest.png`) tucked in after them
    as `.school-crest`, and the words brightened to read on it.
@@ -854,6 +854,396 @@ body {
   }
 }
 
+/* About (`sections/about.tsx`): the intro, the contact sheet and the trophy
+   shelf drift up one after another, by their `--i`, once the overlay has
+   settled (`data-cards-revealed`, as for Experience). */
+@keyframes about-in {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+
+[data-cards-revealed="true"] .about-in {
+  animation: about-in 700ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+/* About's contact sheet (`sections/contactSheet.tsx`): strips of 35mm film,
+   each laid down a little askew (`--tilt`, `--shift`) — and laid down for
+   real, sliding in and settling, one after another.
+
+   A frame is lit while it's hovered or keyboard-focused, while its print is
+   out, and — where there's no hover — once it has scrolled into view
+   (`data-developed`). Lit, it develops: the amber negative fades and the
+   print comes up from a pale ghost (bright, flat, grey) into its full colour
+   over ~1.4s, as a print does in the developer tray. Unlit, it goes back
+   quicker. Like Experience's pictures it's all one switch, `--lit`, and the
+   new value's durations are the ones that apply. */
+.film-hint {
+  color: color-mix(in srgb, var(--glow) 55%, transparent);
+}
+
+.film-hint-touch {
+  display: none;
+}
+
+@media (hover: none) {
+  .film-hint-hover {
+    display: none;
+  }
+  .film-hint-touch {
+    display: inline;
+  }
+}
+
+.film-strip {
+  display: flex;
+  border-radius: 2px;
+  background: var(--screen-bg);
+  rotate: var(--tilt, 0deg);
+  translate: var(--shift, 0%) 0;
+}
+
+@keyframes film-lay {
+  from {
+    opacity: 0;
+    translate: calc(var(--shift, 0%) - 48px) -8px;
+    rotate: calc(var(--tilt, 0deg) - 1.5deg);
+  }
+}
+
+[data-cards-revealed="true"] .film-strip {
+  animation: film-lay 650ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+.film-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.film-frame {
+  --lit: 0;
+  display: block;
+  width: 100%;
+  cursor: zoom-in;
+  outline: none;
+  text-align: left;
+}
+
+.film-frame:focus-visible,
+.film-frame[data-printing] {
+  --lit: 1;
+}
+
+@media (hover: hover) {
+  .film-frame:hover {
+    --lit: 1;
+  }
+}
+
+@media (hover: none) {
+  .film-frame[data-developed] {
+    --lit: 1;
+  }
+}
+
+/* the perforations show the page through */
+.film-perfs rect {
+  fill: var(--paper);
+}
+
+.film-stock {
+  font-family: var(--font-vt323), monospace;
+  font-size: 1.5px;
+  fill: color-mix(in srgb, var(--glow) 40%, transparent);
+}
+
+/* the picture: 36 × 24mm, with 1mm of base either side of it (the cell is
+   38mm, so a 38th of its width) */
+.film-window {
+  position: relative;
+  display: block;
+  margin-inline: calc(100% / 38);
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: 1.5px;
+}
+
+.film-frame:focus-visible .film-window {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+}
+
+.film-neg,
+.film-pos {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.film-neg {
+  opacity: calc(1 - var(--lit));
+  transition: opacity calc(450ms - var(--lit) * 100ms) ease-out;
+}
+
+.film-neg img {
+  filter: grayscale(1) invert(1) contrast(0.9);
+}
+
+/* the film's own amber over the negative: its whites go amber, its blacks
+   stay black — a colour negative's orange, in the one light */
+.film-neg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--glow) 88%, var(--screen-bg));
+  mix-blend-mode: multiply;
+}
+
+/* a frame never shot is clear base */
+.film-unexposed {
+  background: color-mix(in srgb, var(--glow) 24%, var(--screen-bg));
+}
+
+.film-unexposed::after {
+  display: none;
+}
+
+.film-pos {
+  opacity: var(--lit);
+  filter: brightness(calc(1.9 - var(--lit) * 0.9)) contrast(calc(0.35 + var(--lit) * 0.65))
+    saturate(var(--lit));
+  transition-property: opacity, filter;
+  transition-duration: calc(450ms - var(--lit) * 100ms), calc(450ms + var(--lit) * 950ms);
+  transition-timing-function: ease-out, cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+/* the edge printing: the frame's number and label, dim amber, full once lit */
+.film-edge {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding: 0.45em calc(100% / 38 + 0.15em) 0.2em;
+  font-size: clamp(0.85rem, 1.2vw, 1.15rem);
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--glow) calc(50% + var(--lit) * 50%), transparent);
+  transition: color calc(250ms + var(--lit) * 250ms) ease-out;
+}
+
+.film-edge-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.film-edge-marks {
+  margin-left: 0.6em;
+  letter-spacing: 0.25em;
+}
+
+.film-edge-half {
+  opacity: 0.5;
+}
+
+/* a print (`sections/print.tsx`): white paper over the page dimmed nearly to
+   black, sized to leave room under it for the voice note and caption. The
+   dimming and those fade in once it's out, and out as it drops back. */
+.print-root {
+  --print-w: min(88vw, 60rem, max(18rem, calc((100svh - 17rem) * 1.5)));
+}
+
+.print-backdrop {
+  background: rgb(0 0 0 / 0.86);
+  animation: print-in 280ms ease-out both;
+}
+
+.print-paper {
+  width: var(--print-w);
+  max-width: 100%;
+  padding: calc(var(--print-w) * 0.028);
+  border-radius: 2px;
+  background: var(--ink);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.6);
+}
+
+.print-meta {
+  animation: print-in 420ms ease-out 260ms both;
+}
+
+.print-root[data-leaving] :is(.print-backdrop, .print-meta) {
+  animation: print-out 260ms ease-in both;
+}
+
+@keyframes print-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes print-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* the caption following its voice note */
+.print-word {
+  transition: color 120ms ease-out;
+}
+
+.print-word[data-said="past"] {
+  color: #fff;
+}
+
+.print-word[data-said="now"] {
+  color: var(--glow);
+}
+
+.print-word[data-said="next"] {
+  color: rgb(255 255 255 / 0.35);
+}
+
+/* About's trophy shelf (`sections/trophyShelf.tsx`): a wall shelf of boards
+   that meet end to end, one per award, two brackets under it; each award's
+   object stands on its board, its label hangs below. Hovering one lights it
+   (`--lit`): the object hops and swings — the Projects/Experience hover's
+   cousin — and turns solid amber, its faint details gone; its rank lands
+   amber. */
+.shelf {
+  --award-pad: clamp(0.5rem, 2cqw, 1.5rem);
+  display: grid;
+  margin-inline: auto;
+}
+
+.award {
+  --lit: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: var(--award-pad);
+}
+
+@media (hover: hover) {
+  .award:hover {
+    --lit: 1;
+  }
+}
+
+.award-art {
+  display: block;
+  width: min(100%, 8.5rem);
+  aspect-ratio: 120 / 150;
+  overflow: visible;
+  transform-origin: 50% 100%;
+  transition:
+    translate 220ms cubic-bezier(0.25, 1, 0.5, 1),
+    rotate 220ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (hover: hover) {
+  .award:hover .award-art {
+    translate: 0 -7%;
+    rotate: -3deg;
+    transition:
+      translate 200ms cubic-bezier(0.25, 1, 0.5, 1),
+      rotate 1s var(--ease-elastic);
+  }
+}
+
+.award-art * {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.award-body,
+.award-line {
+  stroke: color-mix(in srgb, var(--glow) calc(var(--lit) * 100%), var(--ink));
+  transition:
+    fill 300ms ease-out,
+    stroke 300ms ease-out;
+}
+
+.award-body {
+  fill: color-mix(in srgb, var(--glow) calc(var(--lit) * 100%), var(--paper));
+}
+
+.award-line,
+.award-detail {
+  fill: none;
+}
+
+.award-detail {
+  stroke: var(--ink);
+  opacity: calc((1 - var(--lit)) * 0.45);
+  transition: opacity 200ms ease-out;
+}
+
+/* the board under each object, drawn over the foot of its outline; boards
+   meet end to end, and the shelf's two ends are rounded off */
+.shelf-board {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  height: 0.85rem;
+  margin: -1px calc(-1 * var(--award-pad)) 0;
+  border-block: 2px solid var(--ink);
+  background: var(--paper);
+}
+
+.award:first-child .shelf-board {
+  border-left: 2px solid var(--ink);
+  border-radius: 3px 0 0 3px;
+}
+
+.award:last-child .shelf-board {
+  border-right: 2px solid var(--ink);
+  border-radius: 0 3px 3px 0;
+}
+
+/* a bracket under each end of the shelf — the tool wall's hanging frustum.
+   The others keep its room, so every label starts level. */
+.shelf-bracket {
+  visibility: hidden;
+  width: 0.95rem;
+  height: 1.6rem;
+  margin-top: -2px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'%3E%3Cpath d='M1 1H15L12 27H4Z' fill='black' stroke='%23f4f6f8' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+}
+
+.award:first-child .shelf-bracket {
+  visibility: visible;
+  align-self: flex-start;
+  margin-left: 18%;
+}
+
+.award:last-child .shelf-bracket {
+  visibility: visible;
+  align-self: flex-end;
+  margin-right: 18%;
+}
+
+.award-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  text-align: center;
+}
+
+.award-rank {
+  font-size: clamp(1.15rem, calc(100cqw / var(--cols, 5) * 0.16), 2rem);
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--glow) calc(var(--lit) * 100%), rgb(255 255 255 / 0.85));
+  transition: color calc(200ms + var(--lit) * 200ms) ease-out calc(var(--lit) * 120ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -898,6 +1288,20 @@ body {
   /* a project window still lights up on hover, but stays where it is */
   .proj-window,
   .proj-title {
+    translate: none !important;
+    rotate: none !important;
+  }
+  /* About: everything is simply there; a frame swaps to its print at once,
+     and an award lights where it stands */
+  [data-cards-revealed="true"] :is(.about-in, .film-strip) {
+    animation: none !important;
+  }
+  .film-neg,
+  .film-pos,
+  .film-edge {
+    transition: none !important;
+  }
+  .award-art {
     translate: none !important;
     rotate: none !important;
   }

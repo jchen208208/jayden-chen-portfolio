@@ -291,7 +291,68 @@ export const EXPERIENCE: Role[] = [
   },
 ];
 
+/* ── about: the roll ─────────────────────────────────────────────────────────── */
+
+/** A frame on the About page's roll of film — and the print it lifts out as
+ *  when it's clicked. Stills are imported from `src/assets/about`; clips and
+ *  voice notes are served from `public/about`. Until a frame has its picture
+ *  it shows as an unexposed one. */
+export type Shot = {
+  slug: string;
+  /** printed on the film's edge under the frame */
+  label: string;
+  /** what the voice note says, word for word — shown under the print, and
+   *  followed along as it plays */
+  caption: string;
+  /** the frame's picture, 3:2 — and the clip's first frame, if it has one */
+  image?: StaticImageData;
+  /** `/about/{slug}.mp4`: a few seconds that loop silently in the print */
+  clip?: string;
+  /** `/about/{slug}.m4a` — or `"clip"` when the clip's own sound is the voice
+   *  note (the intro, talking to camera) */
+  voice?: string;
+  /** each word's start, in seconds, for when following at an even pace drifts */
+  cues?: number[];
+};
+
+/** In the roll's order. TODO — user: photos, clips and voice notes for each
+ *  frame; these captions are drafts for you to rewrite in your own words. */
+export const ROLL: Shot[] = [
+  {
+    slug: "hello",
+    label: "Hello",
+    caption:
+      "Hi, I'm Jayden. I study Computer Engineering at Waterloo, and most of what I make sits somewhere between a circuit board and a screen. Away from the desk, I'm on a tennis court, training MMA, or in the kitchen.",
+  },
+  {
+    slug: "tennis",
+    label: "On court",
+    caption:
+      "Tennis is the one thing I'll always make time for. A long rally clears my head better than anything else.",
+  },
+  {
+    slug: "mma",
+    label: "MMA",
+    caption:
+      "MMA keeps me honest. You can't fake a sparring round: either you've put the hours in or you find out.",
+  },
+  {
+    slug: "baking",
+    label: "Baking",
+    caption:
+      "Baking is engineering you can eat. Exact measurements, careful timing, and the oven tells you straight away if you got it wrong.",
+  },
+  {
+    slug: "cooking",
+    label: "Cooking",
+    caption: "Cooking is the opposite: taste as you go and adjust. I like having both.",
+  },
+];
+
 /* ── awards ──────────────────────────────────────────────────────────────────── */
+
+/** what stands on the About page's trophy shelf for an award */
+export type AwardObject = "cup" | "medal" | "plaque" | "certificate" | "rosette";
 
 export type Award = {
   /** ISO date (YYYY-MM-DD) — sorts the list; its year is shown */
@@ -299,39 +360,52 @@ export type Award = {
   /** competition / organiser */
   org: string;
   title: string;
+  /** the placing, short — the big line on the award's label */
+  rank: string;
   summary?: string;
+  object: AwardObject;
 };
 
+// TODO — user: confirm each rank and which object stands for it
 export const AWARDS: Award[] = [
   {
     date: "2025-04-01",
     org: "AAPT",
     title: "PhysicsBowl",
-    summary: "Top 80 worldwide, 1st regionally.",
+    rank: "1st",
+    summary: "1st regionally, top 80 worldwide.",
+    object: "cup",
   },
   {
     date: "2025-05-01",
     org: "Waterloo CEMC",
     title: "Canadian Computing Competition",
-    summary: "Top 20 nationally, Junior division.",
+    rank: "Top 20",
+    summary: "Nationally, Junior division.",
+    object: "medal",
   },
   {
     date: "2025-02-01",
     org: "Waterloo CEMC",
     title: "Fermat Mathematics Contest",
-    summary: "Top 10 regionally.",
+    rank: "Top 10",
+    summary: "Regionally.",
+    object: "plaque",
   },
   {
     date: "2026-04-01",
     org: "Waterloo CEMC",
     title: "Euclid Mathematics Contest",
-    summary: "Top 25%.",
+    rank: "Top 25%",
+    object: "certificate",
   },
   {
     date: "2025-06-01",
     org: "Academic",
-    title: "AP Scholar with Distinction",
+    title: "AP Scholar",
+    rank: "Distinction",
     summary: "Also on the Principal's List.",
+    object: "rosette",
   },
 ];
 

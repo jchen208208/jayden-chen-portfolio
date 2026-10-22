@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import ScreenCard from "../ScreenCard";
+import { aboutCards } from "./about";
 import { experienceCards } from "./experience";
 import { Panorama } from "./panorama";
-import { personalCards } from "./personal";
 import { projectsCards } from "./projects";
 import type { CardOptions, SectionCard } from "./shared";
 import { SkillsMat, skillsCards } from "./skills";
@@ -22,7 +22,7 @@ const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   projects: projectsCards,
   skills: skillsCards,
   experience: experienceCards,
-  about: personalCards,
+  about: aboutCards,
 };
 
 /** the section header's title (the big one above the cards) — every section

@@ -442,12 +442,12 @@ export default function DeskScene({ className }: { className?: string }) {
   }, [pcFans, reduced, nextPcMode]);
 
   const zoomed = openId !== null;
-  // Experience can run past the screen's bottom, so its overlay scrolls, and
-  // gets its own Lenis to smooth it. `data-lenis-prevent` comes off for it —
-  // that attribute is read from the whole event path by *every* Lenis, so
-  // leaving it on would mute this instance too; the wheel handler below keeps
-  // the events off the page-level Lenis instead.
-  const smoothOverlay = zoomed && content === "experience" && !reduced;
+  // Experience and About run past the screen's bottom, so their overlay
+  // scrolls, and gets its own Lenis to smooth it. `data-lenis-prevent` comes
+  // off for it — that attribute is read from the whole event path by *every*
+  // Lenis, so leaving it on would mute this instance too; the wheel handler
+  // below keeps the events off the page-level Lenis instead.
+  const smoothOverlay = zoomed && (content === "experience" || content === "about") && !reduced;
   useEffect(() => {
     const wrapper = overlayRef.current;
     const grid = cardGridRef.current;
