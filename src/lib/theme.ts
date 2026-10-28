@@ -6,8 +6,8 @@
 export const THEMES = [
   { id: "amber", swatch: "#ffbe5c" },
   { id: "blue", swatch: "#63b8ff" },
-  { id: "green", swatch: "#5fe48c" },
-  { id: "pink", swatch: "#ff8fbf" },
+  { id: "green", swatch: "#56d281" },
+  { id: "pink", swatch: "#ec81af" },
 ] as const;
 
 export type Theme = (typeof THEMES)[number]["id"];

@@ -74,21 +74,21 @@
   --neon-core: #eef7ff;
 }
 :root[data-theme="green"] {
-  --glow: #5fe48c;
+  --glow: #56d281;
   --glow-pale: #c4f5cf;
-  --glow-deep: #4da569;
-  --glow-bronze: #4f805d;
-  --glow-burnt: #048342;
+  --glow-deep: #3c955b;
+  --glow-bronze: #41714f;
+  --glow-burnt: #007338;
   --screen-bg: #224a2e;
   --screen-deep: #0a160d;
   --neon-core: #e9fbed;
 }
 :root[data-theme="pink"] {
-  --glow: #ff8fbf;
+  --glow: #ec81af;
   --glow-pale: #fedce9;
-  --glow-deep: #bc6289;
-  --glow-bronze: #89546a;
-  --glow-burnt: #9d3668;
+  --glow-deep: #ab537a;
+  --glow-bronze: #7a465c;
+  --glow-burnt: #8c2659;
   --screen-bg: #5b3143;
   --screen-deep: #1c0e14;
   --neon-core: #fef2f6;
