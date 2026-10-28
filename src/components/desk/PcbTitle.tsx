@@ -328,7 +328,7 @@ export default function PcbTitle({
                 className="pcb-trace"
                 d={d(t.pts)}
                 pathLength={100}
-                stroke="#c18a2e"
+                stroke="var(--glow-deep, #c18a2e)"
                 strokeWidth={TRACE_W}
                 style={{ animationDelay: `${start}ms`, animationDuration: `${ROUTE_MS}ms` }}
               />

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ROLL, type Shot } from "@/lib/site";
 import { warmCloth } from "./cloth";
 import { Print } from "./print";
-import { PrintLab, SAMPLE_SHOT, usePrintLab } from "./printLab";
 import { ShotPlaceholder } from "./shared";
 
 /**
@@ -156,19 +155,10 @@ export function ContactSheet({
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [print, setPrint] = useState<PrintOut | null>(null);
-  // the last frame printed, for the lab's replay
-  const [last, setLast] = useState<PrintOut | null>(null);
-  const lab = usePrintLab();
-  // while there are no photos, the lab can lend blank frames a sample one
-  const roll = lab.sample ? ROLL.map((s) => (s.image ? s : { ...s, image: SAMPLE_SHOT })) : ROLL;
 
   // the desk view closing takes any print with it
   if (!active && print) setPrint(null);
 
-  function printFrame(out: PrintOut) {
-    setPrint(out);
-    setLast(out);
-  }
 
   // no hover on a phone: a frame develops once it's mostly in view
   useEffect(() => {
@@ -190,7 +180,7 @@ export function ContactSheet({
 
   // one pass of the loop is the roll as many times over as it takes; the
   // track holds two passes, so sliding by one lands exactly where it began
-  const pass = Array.from({ length: Math.ceil(MIN_PASS / roll.length) }, () => roll).flat();
+  const pass = Array.from({ length: Math.ceil(MIN_PASS / ROLL.length) }, () => ROLL).flat();
 
   return (
     <div ref={sheetRef} className="flex flex-col gap-6">
@@ -215,16 +205,16 @@ export function ContactSheet({
         >
           {[0, 1].map((half) =>
             pass.map((shot, j) => {
-              const index = j % roll.length;
+              const index = j % ROLL.length;
               const key = `${half}-${j}`;
               return (
                 <Frame
                   key={key}
                   shot={shot}
                   number={index + 1}
-                  clone={half > 0 || j >= roll.length}
+                  clone={half > 0 || j >= ROLL.length}
                   printing={print?.key === key}
-                  onPrint={(button) => printFrame({ index, key, button })}
+                  onPrint={(button) => setPrint({ index, key, button })}
                 />
               );
             }),
@@ -233,24 +223,13 @@ export function ContactSheet({
       </div>
       {print && (
         <Print
-          shot={roll[print.index]}
+          shot={ROLL[print.index]}
           number={print.index + 1}
           origin={print.button}
-          motion={lab.motion}
-          pace={lab.pace}
-          curl={lab.curl}
           onClosed={() => {
             setPrint(null);
             // back to the frame it came from, unless that's a repeat
             if (print.button.tabIndex >= 0) print.button.focus({ preventScroll: true });
-          }}
-        />
-      )}
-      {active && (
-        <PrintLab
-          canReplay={last !== null && print === null}
-          onReplay={() => {
-            if (last && print === null && last.button.isConnected) setPrint(last);
           }}
         />
       )}

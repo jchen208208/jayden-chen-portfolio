@@ -471,9 +471,10 @@ export function placeholderPicture(slug: string) {
   const css = getComputedStyle(document.documentElement);
   const bg = css.getPropertyValue("--screen-bg").trim() || "#573914";
   const glow = css.getPropertyValue("--glow").trim() || "#ffbe5c";
+  const deep = css.getPropertyValue("--screen-deep").trim() || "#1a1106";
   const grad = g.createRadialGradient(180, 100, 0, 180, 100, 520);
   grad.addColorStop(0, bg);
-  grad.addColorStop(1, "#1a1106");
+  grad.addColorStop(1, deep);
   g.fillStyle = grad;
   g.fillRect(0, 0, 600, 400);
   g.fillStyle = glow;

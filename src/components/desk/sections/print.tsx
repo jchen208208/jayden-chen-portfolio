@@ -13,17 +13,17 @@ import {
 import { createPortal } from "react-dom";
 import type { Shot } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { markOut, printMotion, type MotionId, type PrintParts } from "./printMotion";
+import { markOut, peel, type PrintParts } from "./printMotion";
 import { ShotPlaceholder } from "./shared";
 
 /**
  * A frame off the About roll, lifted out as a print: it comes out of its
  * frame on the film into a big print on white paper, over the page dimmed
  * nearly to black, and goes back into the frame when it's closed (Esc, the
- * close button, or a click anywhere off it). How it comes and goes is one of
- * the motions in `printMotion.ts`, run across the print's layers — the
- * dimming, the paper, its white sheet, its shadow, the picture — and the
- * pieces a motion brings along. Until it has landed nothing else starts: the
+ * close button, or a click anywhere off it). It peels off the film like a soft
+ * handkerchief (`printMotion.ts`), run across the print's layers — the
+ * dimming, the paper, its white sheet, its shadow, the picture — and a
+ * canvas laid over them for the handkerchief itself. Until it has landed nothing else starts: the
  * sharp picture isn't loaded, the waveform isn't fetched and the clip
  * doesn't play, so nothing competes with the motion. Meanwhile the picture
  * shows from the frame's own copy, already loaded.
@@ -180,26 +180,16 @@ export function Print({
   shot,
   number,
   origin,
-  motion,
-  pace,
-  curl,
   onClosed,
 }: {
   shot: Shot;
   number: number;
   /** the frame's button on the film — what it came out of, and goes back into */
   origin: HTMLElement;
-  /** how it comes and goes (`printMotion.ts`) */
-  motion: MotionId;
-  /** stretches the motion's timing — 2 is twice as long */
-  pace: number;
-  /** how far Peel curls the paper — 1 is its usual curl */
-  curl: number;
   onClosed: () => void;
 }) {
   const reduced = usePrefersReducedMotion();
   const backdropRef = useRef<HTMLDivElement>(null);
-  const underRef = useRef<HTMLDivElement>(null);
   const overRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -220,8 +210,6 @@ export function Print({
   const [opened, setOpened] = useState(false);
   // the sharp picture has arrived, over the frame's own copy
   const [sharp, setSharp] = useState(false);
-  // a print goes back the way it came, whatever the lab is set to since
-  const [moves] = useState(() => ({ motion: printMotion(motion), pace, curl }));
 
   const voiceIsClip = shot.voice === "clip" && !!shot.clip;
   const voiceSrc = voiceIsClip ? shot.clip : shot.voice !== "clip" ? shot.voice : undefined;
@@ -239,15 +227,14 @@ export function Print({
 
   const parts = useCallback((): PrintParts | null => {
     const backdrop = backdropRef.current;
-    const under = underRef.current;
     const over = overRef.current;
     const paper = paperRef.current;
     const sheet = sheetRef.current;
     const shadow = shadowRef.current;
     const photo = photoRef.current;
-    if (!backdrop || !under || !over || !paper || !sheet || !shadow || !photo) return null;
+    if (!backdrop || !over || !paper || !sheet || !shadow || !photo) return null;
     const frame = origin.querySelector<HTMLElement>(".film-window") ?? origin;
-    return { backdrop, under, over, paper, sheet, shadow, photo, origin, frame };
+    return { backdrop, over, paper, sheet, shadow, photo, origin, frame };
   }, [origin]);
 
   // the picture has left the film — unless the print is already on its way
@@ -272,15 +259,7 @@ export function Print({
         ? [p.backdrop, p.paper].map((el) =>
             el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: "ease-out", fill: "both" }),
           )
-        : moves.motion.play({
-            ...p,
-            from,
-            to: p.photo.getBoundingClientRect(),
-            pace: moves.pace,
-            curl: moves.curl,
-            back: false,
-            empty,
-          });
+        : peel({ ...p, from, to: p.photo.getBoundingClientRect(), back: false, empty });
     opening.current = anims;
     started.current = [...anims];
     let live = true;
@@ -299,7 +278,7 @@ export function Print({
       clearPieces();
       markOut(origin, false);
     };
-  }, [clearPieces, empty, moves, origin, parts, reduced]);
+  }, [clearPieces, empty, origin, parts, reduced]);
 
   // only once it's landed does the clip start
   useEffect(() => {
@@ -333,18 +312,10 @@ export function Print({
         ? [p.backdrop, p.paper].map((el) =>
             el.animate([{ opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" }),
           )
-        : moves.motion.play({
-            ...p,
-            from,
-            to: p.photo.getBoundingClientRect(),
-            pace: moves.pace,
-            curl: moves.curl,
-            back: true,
-            empty,
-          });
+        : peel({ ...p, from, to: p.photo.getBoundingClientRect(), back: true, empty });
     started.current.push(...anims);
     void settle(anims);
-  }, [empty, moves, onClosed, origin, parts, reduced, voiceMedia]);
+  }, [empty, onClosed, origin, parts, reduced, voiceMedia]);
 
   // Esc puts the print back — listened for on `document` in the capture
   // phase, ahead of the section's own Esc (which would close everything),
@@ -466,8 +437,6 @@ export function Print({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div ref={backdropRef} aria-hidden className="print-backdrop fixed inset-0" />
-      {/* a motion's own pieces, under the print and over it (`printMotion.ts`) */}
-      <div ref={underRef} aria-hidden className="print-fx fixed inset-0" />
       <button
         ref={closeRef}
         type="button"
@@ -565,6 +534,7 @@ export function Print({
           />
         </div>
       </div>
+      {/* the peel's own pieces, over the print (`printMotion.ts`) */}
       <div ref={overRef} aria-hidden className="print-fx fixed inset-0" />
     </div>,
     document.body,

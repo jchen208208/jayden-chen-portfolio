@@ -132,9 +132,13 @@ export function Panorama() {
       timer = window.setTimeout(redraw, 150);
     });
     ro.observe(canvas);
+    // the dots are painted in the glow, so a new theme repaints them
+    const mo = new MutationObserver(redraw);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => {
       gone = true;
       ro.disconnect();
+      mo.disconnect();
       window.clearTimeout(timer);
     };
   }, []);

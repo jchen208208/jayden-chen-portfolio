@@ -444,7 +444,7 @@ function StickerBoard({ layout }: { layout: CardLayout }) {
     >
       <svg aria-hidden width="0" height="0" className="absolute">
         <StickerCut id={cutId} edge="#ffffff" close={wide ? 16 : 12} />
-        <StickerCut id={`${cutId}-hot`} edge="#ffbe5c" close={wide ? 16 : 12} />
+        <StickerCut id={`${cutId}-hot`} edge="var(--glow, #ffbe5c)" close={wide ? 16 : 12} />
       </svg>
       <div
         className={`relative ${wide ? "reveal-gate h-full" : ""}`}

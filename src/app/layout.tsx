@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Orbitron, VT323 } from "next/font/google";
+import ThemeBar from "@/components/site/ThemeBar";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 // Chakra Petch (SIL OFL — free for commercial use) — the title face: section
@@ -65,10 +67,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
       className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${chakraPetch.variable} ${orbitron.variable} ${vt323.variable} h-full antialiased`}
     >
+      <head>
+        {/* the saved colour theme (`ThemeBar`), on <html> before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       {/* suppressHydrationWarning: the user's browser runs an extension (QuillBot)
           that mutates the DOM before hydration. */}
       <body suppressHydrationWarning className="min-h-full bg-paper text-ink">
         {children}
+        <ThemeBar />
       </body>
     </html>
   );
