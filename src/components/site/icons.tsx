@@ -12,6 +12,10 @@ const PATHS = {
     "M4 15.5A8 8 0 0 1 20 15.5ZM10.5 9V6.5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1V9ZM3.25 17h17.5a1.25 1.25 0 0 1 0 2.5H3.25a1.25 1.25 0 0 1 0-2.5Z",
   openInNew:
     "M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7ZM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7Z",
+  // music player transport (Material Icons, Apache 2.0)
+  play: "M8 5v14l11-7Z",
+  skipPrevious: "M6 6h2v12H6Zm3.5 6 8.5 6V6Z",
+  skipNext: "M6 18l8.5-6L6 6v12ZM16 6v12h2V6h-2Z",
 } as const;
 
 type IconName = keyof typeof PATHS;

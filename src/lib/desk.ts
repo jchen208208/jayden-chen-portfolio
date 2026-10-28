@@ -8,7 +8,9 @@
 
 import type { SectionId } from "./site";
 
-export const DESK_VIEWBOX = { w: 1600, h: 740 } as const;
+/** `x` pans the view: the desk was widened 24 on its right end to fit the
+ *  speaker, so the view shifts right by half that to keep it centred */
+export const DESK_VIEWBOX = { x: 12, w: 1600, h: 740 } as const;
 
 export type Rect = { x: number; y: number; w: number; h: number };
 
@@ -41,6 +43,30 @@ export function laptop1Rect(r: Rect): Rect {
     h: r.h * scale,
   };
 }
+
+/** the upright speaker, right of the portrait monitor (`DeskSvg`): its
+ *  centreline, its body (rounded corners `r`), which stands on a 4-tall foot
+ *  on the desk, and the centres of the control row, the tweeter and the woofer
+ *  down its front */
+export const SPEAKER = {
+  cx: 1290,
+  top: 296,
+  bottom: 392,
+  w: 56,
+  r: 10,
+  controlsY: 304,
+  tweeterY: 323,
+  wooferY: 362,
+} as const;
+
+/** the whole speaker, top to foot — what's hovered to open its popup, and
+ *  where the popup stands */
+export const SPEAKER_RECT: Rect = {
+  x: SPEAKER.cx - SPEAKER.w / 2,
+  y: SPEAKER.top,
+  w: SPEAKER.w,
+  h: SPEAKER.bottom + 4 - SPEAKER.top,
+};
 
 export type ScreenSpec = {
   id: SectionId;
@@ -79,11 +105,15 @@ export const SCREENS: ScreenSpec[] = [
   },
 ];
 
+/** desk units → a CSS length that scales with the desk, via the container
+ *  query width of `[data-desk]` (the full viewBox width is 100cqw) */
+export const deskUnits = (u: number) => `${(u / DESK_VIEWBOX.w) * 100}cqw`;
+
 /** left/top/width/height as `%` strings, for absolutely positioning an HTML
  *  element over a desk rect */
 export function percentBox(r: Rect) {
   return {
-    left: `${(r.x / DESK_VIEWBOX.w) * 100}%`,
+    left: `${((r.x - DESK_VIEWBOX.x) / DESK_VIEWBOX.w) * 100}%`,
     top: `${(r.y / DESK_VIEWBOX.h) * 100}%`,
     width: `${(r.w / DESK_VIEWBOX.w) * 100}%`,
     height: `${(r.h / DESK_VIEWBOX.h) * 100}%`,

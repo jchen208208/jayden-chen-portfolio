@@ -1,4 +1,5 @@
-import { DESK_VIEWBOX, LAPTOP1_TRANSFORM } from "@/lib/desk";
+import type { CSSProperties } from "react";
+import { DESK_VIEWBOX, LAPTOP1_TRANSFORM, SPEAKER } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
 import PcFanLights, { type PcFanMode } from "./PcFanLights";
 
@@ -13,7 +14,7 @@ import PcFanLights, { type PcFanMode } from "./PcFanLights";
  * Painted strictly back-to-front:
  *
  *   tool wall → bookshelf → lamp pole → plant → 3D printer → desk →
- *   soldering station → cactus → four screens → PC tower → chair
+ *   soldering station → cactus → speaker → four screens → PC tower → chair
  */
 
 const INK = "var(--ink, #f4f6f8)";
@@ -32,6 +33,49 @@ const SOLDERING_SCALE = 0.36;
 /** the tool wall is drawn at its original size and scaled up by this much;
  *  its line weight is divided by it so it still draws at the desk's 2.4 */
 const TOOL_WALL_SCALE = 1.3;
+
+/** the music notes that drift up off the speaker and fade (`.speaker-note`,
+ *  globals.css): where each sets off, which way it drifts (`dx`), its size,
+ *  and how far into the shared 6s loop it starts — staggered so a couple are
+ *  always in the air, one rising as the last fades */
+const SPEAKER_NOTES = [
+  { kind: "eighth", x: 1304, y: 290, dx: 12, scale: 1.2, delay: 0 },
+  { kind: "beamed", x: 1283, y: 289, dx: 14, scale: 1.1, delay: -2 },
+  { kind: "eighth", x: 1296, y: 292, dx: 10, scale: 1, delay: -4 },
+] as const;
+
+/** one note, its head centred on the origin: ♪, or a beamed pair ♫ */
+function NoteGlyph({ kind, scale }: { kind: "eighth" | "beamed"; scale: number }) {
+  const head = (cx: number, cy: number) => (
+    <ellipse
+      cx={cx}
+      cy={cy}
+      rx={2.6}
+      ry={1.9}
+      transform={`rotate(-20 ${cx} ${cy})`}
+      fill={GLOW}
+      stroke="none"
+    />
+  );
+  return (
+    <g stroke={GLOW} strokeWidth={1.4 / scale}>
+      {kind === "eighth" ? (
+        <>
+          {head(0, 0)}
+          {/* stem, then the flag curling off its top */}
+          <path d="M2.3 -0.6 V-10 Q3 -7 5.8 -5.6 Q7.4 -4.6 6.4 -2.2" />
+        </>
+      ) : (
+        <>
+          {head(0, 0)}
+          {head(7, -2)}
+          <path d="M2.3 -0.6 V-10 M9.3 -2.6 V-12" />
+          <path d="M2.3 -10 L9.3 -12" strokeWidth={2.4 / scale} />
+        </>
+      )}
+    </g>
+  );
+}
 
 /** a monitor / laptop screen: opaque bezel + inset glass */
 function Screen({
@@ -79,17 +123,19 @@ export default function DeskSvg({
    *  pull, then the chain springs back — timed in DeskScene) */
   chainPulled?: boolean;
 }) {
-  const { w, h } = DESK_VIEWBOX;
+  const { x, w, h } = DESK_VIEWBOX;
 
   const FLOOR = 662;
   const DESK_TOP = 396; // top surface of the desktop
   const DESK_APRON = 422; // underside of the slab
   const DESK_L = 292;
-  const DESK_R = 1312;
+  // widened 24 from 1312 to fit the speaker — the view pans to keep the
+  // desk centred (`DESK_VIEWBOX.x`)
+  const DESK_R = 1336;
 
   return (
     <svg
-      viewBox={`0 0 ${w} ${h}`}
+      viewBox={`${x} 0 ${w} ${h}`}
       className={className}
       aria-hidden
       focusable="false"
@@ -103,7 +149,7 @@ export default function DeskSvg({
         strokeLinejoin="round"
       >
         {/* ── floor ─────────────────────────────────────────────────────── */}
-        <line x1={40} y1={FLOOR} x2={1560} y2={FLOOR} opacity={0.3} />
+        <line x1={x + 40} y1={FLOOR} x2={x + w - 40} y2={FLOOR} opacity={0.3} />
 
         {/* ── tool wall, relocated above the soldering station/3D printer on
             the far left of the desk (was: left half of the wall shelf,
@@ -313,8 +359,9 @@ export default function DeskSvg({
           <path d="M684 235 L681 238 M696 235 L699 238" />
         </g>
 
-        {/* ── snake plant in a tall pot, clear of the desk ─────────────── */}
-        <g transform="translate(-12 0)">
+        {/* ── snake plant in a tall pot, clear of the desk — moved out with
+            the desk's right end ───────────────────────────────────────── */}
+        <g transform="translate(12 0)">
           {/* sword leaves — broad blades, opaque, centre leaf behind the fan */}
           <path d="M1408 512 C 1394 420 1402 340 1422 288 C 1442 340 1450 420 1436 512 Z" fill={PAPER} />
           <path d="M1404 512 C 1382 424 1362 348 1382 298 C 1400 350 1414 428 1422 512 Z" fill={PAPER} />
@@ -413,8 +460,8 @@ export default function DeskSvg({
           <path d="M386 422 L402 422 L336 662 L320 662 Z" fill={PAPER} />
           <path d="M400 422 L416 422 L350 662 L334 662 Z" fill={PAPER} />
           {/* right pair — set nearer the right end, both raking right */}
-          <path d="M1212 422 L1228 422 L1294 662 L1278 662 Z" fill={PAPER} />
-          <path d="M1198 422 L1214 422 L1280 662 L1264 662 Z" fill={PAPER} />
+          <path d="M1236 422 L1252 422 L1318 662 L1302 662 Z" fill={PAPER} />
+          <path d="M1222 422 L1238 422 L1304 662 L1288 662 Z" fill={PAPER} />
 
           {/* the desktop — a plain slab: top surface line + front face */}
           <rect
@@ -482,6 +529,65 @@ export default function DeskSvg({
           {/* pot — terracotta shape: rim band, tapered body */}
           <path d="M310 362 L354 362 L351 378 L313 378 Z" fill={PAPER} />
           <path d="M313 378 L351 378 L342 396 L322 396 Z" fill={PAPER} />
+        </g>
+
+        {/* ── portable upright speaker, right of the portrait monitor: a
+            tall rounded box on a slim rubber foot, a row of controls along
+            the top, and its two drivers out in the open down the front —
+            a small tweeter over a big woofer cone ─────────────────────── */}
+        <g>
+          {/* rubber foot, peeking out under the body */}
+          <rect x={SPEAKER.cx - 18} y={SPEAKER.bottom - 4} width={36} height={DESK_TOP - SPEAKER.bottom + 4} rx={2} fill={PAPER} />
+          {/* body */}
+          <rect
+            x={SPEAKER.cx - SPEAKER.w / 2}
+            y={SPEAKER.top}
+            width={SPEAKER.w}
+            height={SPEAKER.bottom - SPEAKER.top}
+            rx={SPEAKER.r}
+            fill={PAPER}
+          />
+          {/* controls — volume down, play, volume up — over a faint seam
+              that sets the control strip off from the drivers */}
+          <path
+            d={`M${SPEAKER.cx - 15} ${SPEAKER.controlsY} h5
+               M${SPEAKER.cx + 10} ${SPEAKER.controlsY} h5 M${SPEAKER.cx + 12.5} ${SPEAKER.controlsY - 2.5} v5`}
+          />
+          <path
+            d={`M${SPEAKER.cx - 2} ${SPEAKER.controlsY - 3} L${SPEAKER.cx + 3} ${SPEAKER.controlsY}
+               L${SPEAKER.cx - 2} ${SPEAKER.controlsY + 3} Z`}
+            fill={INK}
+            strokeWidth={1.2}
+          />
+          <line
+            x1={SPEAKER.cx - SPEAKER.w / 2}
+            y1={SPEAKER.controlsY + 7}
+            x2={SPEAKER.cx + SPEAKER.w / 2}
+            y2={SPEAKER.controlsY + 7}
+            opacity={0.35}
+          />
+          {/* tweeter — a rim round a small dome */}
+          <circle cx={SPEAKER.cx} cy={SPEAKER.tweeterY} r={7.5} fill={PAPER} />
+          <circle cx={SPEAKER.cx} cy={SPEAKER.tweeterY} r={3.5} />
+          {/* woofer — the frame, the rubber surround's inner edge, a faint
+              ring down the cone, and the dust cap in the middle */}
+          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={22} fill={PAPER} />
+          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={17.5} />
+          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={12} opacity={0.35} />
+          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={6} fill={PAPER} />
+          {/* a couple of faint notes in the glow colour, drifting up off
+              the top and fading a short way above it — it's playing, and
+              there to be played with */}
+          {SPEAKER_NOTES.map((n) => (
+            <g key={n.x} transform={`translate(${n.x} ${n.y}) scale(${n.scale})`}>
+              <g
+                className="speaker-note"
+                style={{ "--note-dx": `${n.dx}px`, animationDelay: `${n.delay}s` } as CSSProperties}
+              >
+                <NoteGlyph kind={n.kind} scale={n.scale} />
+              </g>
+            </g>
+          ))}
         </g>
 
         {/* ── desk lamp: base like the monitors, arm bends left then down to the head ── */}
@@ -643,7 +749,7 @@ export default function DeskSvg({
         </g>
 
         {/* ── trash bin, tucked near the right desk legs ────────────────── */}
-        <g transform="translate(36 0)">
+        <g transform="translate(60 0)">
           {/* tapered body */}
           <path d="M1022 510 L1154 510 L1130 662 L1046 662 Z" fill={PAPER} />
           {/* rim — flat top, no opening curve */}
@@ -681,8 +787,8 @@ export default function DeskSvg({
             desk — so we see the back of it: the backrest with its spine
             running down over the seat into the mechanism, armrests on
             beams, the gas lift and a five-star base about as wide as the
-            seat ─────────────────────────────────────────────────────── */}
-        <g>
+            seat — kept on the view's centreline as the desk widened ─── */}
+        <g transform="translate(12 0)">
           {/* armrests — a beam up from each side of the seat to a pad */}
           <rect x={723} y={516} width={11} height={54} rx={2} fill={PAPER} />
           <rect x={866} y={516} width={11} height={54} rx={2} fill={PAPER} />

@@ -396,12 +396,70 @@ body {
   animation: pc-breathe 5s ease-in-out infinite;
 }
 
+/* the music notes off the speaker (`SPEAKER_NOTES` in DeskSvg): each fades
+   in just above it, rises a short way on an arc bending off to the right —
+   mostly up at first, then out along its drift (`--note-dx`), rocking as it
+   goes — and is gone by half way through the
+   loop, resting unseen until its turn comes round again. Staggered by
+   negative delays, so there's no first frame with every note showing.
+   Without motion they just sit, faint, over the speaker. */
+@keyframes speaker-note {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(-8deg);
+  }
+  10%,
+  22% {
+    opacity: 0.7;
+  }
+  28% {
+    transform: translate(calc(var(--note-dx) * 0.3), -12px) rotate(6deg);
+  }
+  50%,
+  100% {
+    opacity: 0;
+    transform: translate(var(--note-dx), -24px) rotate(-4deg);
+  }
+}
+
+.speaker-note {
+  opacity: 0.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: speaker-note 6s ease-in-out infinite;
+}
+
 /* a section open over the desk (`data-covered`, or a section's own page —
    `data-section-open`) holds the fans still: animating the SVG repaints it
    on the main thread every frame, under a view no one can see it through */
 :is([data-desk][data-covered], html[data-section-open] [data-desk])
-  :is(.pc-lights, .pc-spin, .pc-side-band, .pc-wave-band, .pc-breathe) {
+  :is(.pc-lights, .pc-spin, .pc-side-band, .pc-wave-band, .pc-breathe, .speaker-note) {
   animation-play-state: paused;
+}
+
+/* the speaker's popup (DeskScene): hidden until the speaker — or the popup
+   itself, which sits inside the same `[data-speaker]` box — is hovered or
+   focused. It rises a touch as it fades in, and on the way out lingers a
+   moment before it goes, so a pointer that slips off on its way up from the
+   speaker doesn't lose it. */
+.speaker-popup {
+  visibility: hidden;
+  opacity: 0;
+  translate: 0 6px;
+  transition:
+    opacity 180ms ease-out 120ms,
+    translate 180ms ease-out 120ms,
+    visibility 0s linear 300ms;
+}
+
+[data-speaker]:is(:hover, :focus-within) .speaker-popup {
+  visibility: visible;
+  opacity: 1;
+  translate: none;
+  transition:
+    opacity 180ms ease-out,
+    translate 180ms ease-out,
+    visibility 0s;
 }
 
 /* the title face is Chakra Petch (loaded in 500/600/700); titles are semibold */
@@ -1446,12 +1504,17 @@ body {
   .pc-spin,
   .pc-side-band,
   .pc-wave-band,
-  .pc-breathe {
+  .pc-breathe,
+  .speaker-note {
     animation: none !important;
   }
   .sweep-bar,
-  .mosaic-tile {
+  .mosaic-tile,
+  .speaker-popup {
     transition: none !important;
+  }
+  .speaker-popup {
+    translate: none !important;
   }
   [data-cards-revealed="true"] :is(.exp-row, .xp-item) {
     animation: none !important;

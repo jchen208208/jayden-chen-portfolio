@@ -11,7 +11,15 @@ import {
 import { createPortal, flushSync } from "react-dom";
 import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
-import { DESK_VIEWBOX, SCREENS, percentBox, type Rect, type ScreenSpec } from "@/lib/desk";
+import {
+  DESK_VIEWBOX,
+  SCREENS,
+  SPEAKER_RECT,
+  deskUnits,
+  percentBox,
+  type Rect,
+  type ScreenSpec,
+} from "@/lib/desk";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
@@ -20,6 +28,7 @@ import DeskCardList from "./DeskCardList";
 import ScreenCard from "./ScreenCard";
 import ScreenLabel from "./ScreenLabel";
 import ScreenMosaic from "./ScreenMosaic";
+import SpeakerPopup from "./SpeakerPopup";
 import {
   SectionBackdrop,
   SectionTitle,
@@ -207,9 +216,10 @@ const PC_IDLE_ON_MS: [number, number] = [12_000, 28_000];
 /** …and go dark again a while later */
 const PC_IDLE_OFF_MS: [number, number] = [8_000, 14_000];
 
-/** desk units → a CSS length that scales with the desk, via the container
- *  query width of `[data-desk]` (the full viewBox width is 100cqw) */
-const deskUnits = (u: number) => `${(u / DESK_VIEWBOX.w) * 100}cqw`;
+/** the speaker's popup, in desk units: how far it runs to the right from
+ *  the speaker's left edge, and the gap it leaves above the speaker */
+const SPEAKER_POPUP_W = 300;
+const SPEAKER_POPUP_GAP = 10;
 /** the section route on each glass, in desk units — one size for all four.
  *  VT323 is 0.4em a letter, so "/experience" (the longest) runs ~177 across
  *  the 202-wide glass with the tracking below. */
@@ -683,6 +693,28 @@ export default function DeskScene({ className }: { className?: string }) {
             className="absolute cursor-pointer rounded-full outline-none"
             style={percentBox(PC_BUTTON_HIT)}
           />
+          {/* the speaker: hovering it (or tabbing to it) opens its popup,
+              which stands just above it — flush with its left edge, running
+              off to the right (the `[data-speaker]` rules in globals.css).
+              The popup sits inside this same box, its own padding bridging
+              the gap, so moving up into it keeps it open. */}
+          <div data-speaker className="absolute z-10" style={percentBox(SPEAKER_RECT)}>
+            <button
+              type="button"
+              aria-label="Music"
+              onMouseDown={(e) => e.preventDefault()}
+              className="absolute inset-0 outline-none"
+            />
+            <div
+              className="speaker-popup absolute bottom-full left-0"
+              style={{
+                width: deskUnits(SPEAKER_POPUP_W),
+                paddingBottom: deskUnits(SPEAKER_POPUP_GAP),
+              }}
+            >
+              <SpeakerPopup />
+            </div>
+          </div>
           {SCREENS.map((s) => (
             <button
               key={s.id}
