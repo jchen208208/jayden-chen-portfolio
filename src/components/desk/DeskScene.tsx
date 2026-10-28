@@ -402,13 +402,14 @@ export default function DeskScene({ className }: { className?: string }) {
   // Left alone, the lamp pulls its own chain now and then, and pulls it
   // again a few seconds later to switch back off. One the visitor switched
   // on stays on until they pull it again. Skipped for reduced motion, since
-  // the light would flash on and off unbidden.
+  // the light would flash on and off unbidden — and while a section is open
+  // over the desk, where no one would see it.
   useEffect(() => {
-    if (reduced || (lampOn && !lampOnByIdle.current)) return;
+    if (reduced || openId !== null || (lampOn && !lampOnByIdle.current)) return;
     const [min, max] = lampOn ? LAMP_IDLE_OFF_MS : LAMP_IDLE_ON_MS;
     const id = window.setTimeout(() => pullChain(true), min + Math.random() * (max - min));
     return () => window.clearTimeout(id);
-  }, [lampOn, reduced, pullChain]);
+  }, [lampOn, reduced, pullChain, openId]);
 
   // The PC's fans work like the lamp: the power button toggles them, and left
   // alone they light up now and then and go dark again. Each switch-on is a
@@ -430,16 +431,17 @@ export default function DeskScene({ className }: { className?: string }) {
     setPcFans(pcFans === "off" ? (reduced ? "breathe" : nextPcMode(false)) : "off");
   }, [pcFans, nextPcMode, reduced]);
   // As with the lamp, fans the visitor switched on stay on until they switch
-  // them off, and reduced motion never lights them unbidden.
+  // them off, and reduced motion never lights them unbidden — nor does a
+  // section open over the desk.
   useEffect(() => {
-    if (reduced || (pcFans !== "off" && !pcOnByIdle.current)) return;
+    if (reduced || openId !== null || (pcFans !== "off" && !pcOnByIdle.current)) return;
     const [min, max] = pcFans === "off" ? PC_IDLE_ON_MS : PC_IDLE_OFF_MS;
     const id = window.setTimeout(() => {
       pcOnByIdle.current = true;
       setPcFans(pcFans === "off" ? nextPcMode(true) : "off");
     }, min + Math.random() * (max - min));
     return () => window.clearTimeout(id);
-  }, [pcFans, reduced, nextPcMode]);
+  }, [pcFans, reduced, nextPcMode, openId]);
 
   const zoomed = openId !== null;
   // Experience and About run past the screen's bottom, so their overlay
@@ -648,8 +650,12 @@ export default function DeskScene({ className }: { className?: string }) {
       <div className="mx-auto hidden w-full max-w-[1180px] px-4 md:block">
         {/* a size container, so the screen labels can be sized in desk
             units (`deskUnits`) and scale with the art */}
+        {/* `data-covered`: a section is open over it — its lights hold
+            still (globals.css), since animating the SVG repaints it on the
+            main thread every frame, under a view no one can see it through */}
         <div
           data-desk
+          data-covered={openId !== null || undefined}
           className="@container relative w-full"
           style={{ aspectRatio: `${DESK_VIEWBOX.w} / ${DESK_VIEWBOX.h}` }}
         >

@@ -13,13 +13,20 @@ import {
 import { createPortal } from "react-dom";
 import type { Shot } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { markOut, printMotion, type MotionId, type PrintParts } from "./printMotion";
 import { ShotPlaceholder } from "./shared";
 
 /**
- * A frame off the About roll, lifted out as a print: it grows out of its
- * frame on the contact sheet into a big print on white paper, over the page
- * dimmed nearly to black, and drops back into the frame when it's closed
- * (Esc, the close button, or a click anywhere off it).
+ * A frame off the About roll, lifted out as a print: it comes out of its
+ * frame on the film into a big print on white paper, over the page dimmed
+ * nearly to black, and goes back into the frame when it's closed (Esc, the
+ * close button, or a click anywhere off it). How it comes and goes is one of
+ * the motions in `printMotion.ts`, run across the print's layers — the
+ * dimming, the paper, its white sheet, its shadow, the picture — and the
+ * pieces a motion brings along. Until it has landed nothing else starts: the
+ * sharp picture isn't loaded, the waveform isn't fetched and the clip
+ * doesn't play, so nothing competes with the motion. Meanwhile the picture
+ * shows from the frame's own copy, already loaded.
  *
  * The print comes alive. A frame with a clip plays it silently on a loop in
  * the print, like a Live Photo — clicking the picture pauses it. A frame with
@@ -35,20 +42,8 @@ import { ShotPlaceholder } from "./shared";
  * view's ground and close the whole section.
  */
 
-const LIFT_MS = 520;
-const LIFT_EASE = "cubic-bezier(0.2, 0.9, 0.25, 1)";
-const DROP_MS = 380;
-const DROP_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
-
 /** bars in a voice note's waveform */
 const BARS = 72;
-
-/** the transform that puts `to` where `from` is */
-function flip(from: DOMRect, to: DOMRect) {
-  const dx = from.left + from.width / 2 - (to.left + to.width / 2);
-  const dy = from.top + from.height / 2 - (to.top + to.height / 2);
-  return `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`;
-}
 
 /* ── waveform ───────────────────────────────────────────────────────────────── */
 
@@ -185,27 +180,52 @@ export function Print({
   shot,
   number,
   origin,
+  motion,
+  pace,
+  curl,
   onClosed,
 }: {
   shot: Shot;
   number: number;
-  /** the frame it came out of, and drops back into */
+  /** the frame's button on the film — what it came out of, and goes back into */
   origin: HTMLElement;
+  /** how it comes and goes (`printMotion.ts`) */
+  motion: MotionId;
+  /** stretches the motion's timing — 2 is twice as long */
+  pace: number;
+  /** how far Peel curls the paper — 1 is its usual curl */
+  curl: number;
   onClosed: () => void;
 }) {
   const reduced = usePrefersReducedMotion();
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const underRef = useRef<HTMLDivElement>(null);
+  const overRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
   const photoRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const closing = useRef(false);
+  const opening = useRef<Animation[]>([]);
+  // everything a motion started, here or out on the film — all of it is
+  // cancelled once the print is gone, so nothing is left held in place
+  const started = useRef<Animation[]>([]);
   const [leaving, setLeaving] = useState(false);
+  // landed — only now does anything else start (the sharp picture, the
+  // waveform, the clip), so nothing competes with the motion
+  const [opened, setOpened] = useState(false);
+  // the sharp picture has arrived, over the frame's own copy
+  const [sharp, setSharp] = useState(false);
+  // a print goes back the way it came, whatever the lab is set to since
+  const [moves] = useState(() => ({ motion: printMotion(motion), pace, curl }));
 
   const voiceIsClip = shot.voice === "clip" && !!shot.clip;
   const voiceSrc = voiceIsClip ? shot.clip : shot.voice !== "clip" ? shot.voice : undefined;
-  const peaks = useWaveform(voiceSrc);
+  const peaks = useWaveform(opened ? voiceSrc : undefined);
   // the clip is talking — not just looping silently (`voice: "clip"` only)
   const voiced = useRef(false);
   const [speaking, setSpeaking] = useState(false);
@@ -217,67 +237,114 @@ export function Print({
     [voiceIsClip],
   );
 
-  const windowOf = useCallback(() => origin.querySelector(".film-window") ?? origin, [origin]);
-
-  // grow out of the frame
-  useLayoutEffect(() => {
+  const parts = useCallback((): PrintParts | null => {
+    const backdrop = backdropRef.current;
+    const under = underRef.current;
+    const over = overRef.current;
     const paper = paperRef.current;
+    const sheet = sheetRef.current;
+    const shadow = shadowRef.current;
     const photo = photoRef.current;
-    if (!paper || !photo) return;
-    closeRef.current?.focus({ preventScroll: true });
-    if (reduced) {
-      paper.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: "ease-out" });
-      return;
-    }
-    const from = windowOf().getBoundingClientRect();
-    if (!from.width) return;
-    paper.animate(
-      [
-        {
-          transform: flip(from, photo.getBoundingClientRect()),
-          backgroundColor: "rgb(244 246 248 / 0)",
-          boxShadow: "0 0 0 rgb(0 0 0 / 0)",
-        },
-        { transform: "none" },
-      ],
-      { duration: LIFT_MS, easing: LIFT_EASE },
-    );
-  }, [reduced, windowOf]);
+    if (!backdrop || !under || !over || !paper || !sheet || !shadow || !photo) return null;
+    const frame = origin.querySelector<HTMLElement>(".film-window") ?? origin;
+    return { backdrop, under, over, paper, sheet, shadow, photo, origin, frame };
+  }, [origin]);
 
-  // shrink back into the frame (wherever it is now — the page may have
-  // scrolled), then go
+  // the picture has left the film — unless the print is already on its way
+  // back
+  const empty = useCallback(() => {
+    if (!closing.current) markOut(origin, true);
+  }, [origin]);
+
+  /** the pieces a motion brought with it (shards, a loupe…), done with */
+  const clearPieces = useCallback(() => {
+    rootRef.current?.querySelectorAll("[data-fx]").forEach((el) => el.remove());
+  }, []);
+
+  // come out of the frame
+  useLayoutEffect(() => {
+    const p = parts();
+    if (!p) return;
+    closeRef.current?.focus({ preventScroll: true });
+    const from = p.frame.getBoundingClientRect();
+    const anims =
+      reduced || !from.width
+        ? [p.backdrop, p.paper].map((el) =>
+            el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: "ease-out", fill: "both" }),
+          )
+        : moves.motion.play({
+            ...p,
+            from,
+            to: p.photo.getBoundingClientRect(),
+            pace: moves.pace,
+            curl: moves.curl,
+            back: false,
+            empty,
+          });
+    opening.current = anims;
+    started.current = [...anims];
+    let live = true;
+    Promise.all(anims.map((a) => a.finished)).then(
+      () => {
+        // closed before it landed: its way back is under way instead
+        if (!live || closing.current) return;
+        clearPieces();
+        setOpened(true);
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+      for (const a of started.current) a.cancel();
+      clearPieces();
+      markOut(origin, false);
+    };
+  }, [clearPieces, empty, moves, origin, parts, reduced]);
+
+  // only once it's landed does the clip start
+  useEffect(() => {
+    if (opened && !reduced) void videoRef.current?.play().catch(() => {});
+  }, [opened, reduced]);
+
+  // back into the frame (wherever it is now — the page may have scrolled),
+  // then go. Closed before it has finished coming out, it goes back the way
+  // it came from wherever it got to.
   const close = useCallback(() => {
     if (closing.current) return;
     closing.current = true;
     setLeaving(true);
     voiceMedia()?.pause();
-    const paper = paperRef.current;
-    const photo = photoRef.current;
-    const to = windowOf();
-    const from = to.isConnected ? to.getBoundingClientRect() : null;
-    if (!paper || !photo || reduced || !from?.width) {
-      const fade = paper?.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration: 160,
-        fill: "forwards",
-      });
-      if (fade) fade.finished.then(onClosed, onClosed);
-      else onClosed();
+    const finish = () => {
+      // the picture is home: the frame shows it again as the print goes
+      markOut(origin, false);
+      onClosed();
+    };
+    const settle = (anims: Animation[]) => Promise.all(anims.map((a) => a.finished)).then(finish, finish);
+    const p = parts();
+    if (!p) return finish();
+    if (opening.current.some((a) => a.playState === "running")) {
+      for (const a of opening.current) a.reverse();
+      void settle(opening.current);
       return;
     }
-    paper
-      .animate(
-        [
-          { transform: "none" },
-          {
-            transform: flip(from, photo.getBoundingClientRect()),
-            backgroundColor: "rgb(244 246 248 / 0)",
-            boxShadow: "0 0 0 rgb(0 0 0 / 0)",
-          },
-        ],
-        { duration: DROP_MS, easing: DROP_EASE, fill: "forwards" },
-      )
-      .finished.then(onClosed, onClosed);
-  }, [onClosed, reduced, voiceMedia, windowOf]);
+    const from = p.frame.isConnected ? p.frame.getBoundingClientRect() : null;
+    const anims =
+      reduced || !from?.width
+        ? [p.backdrop, p.paper].map((el) =>
+            el.animate([{ opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" }),
+          )
+        : moves.motion.play({
+            ...p,
+            from,
+            to: p.photo.getBoundingClientRect(),
+            pace: moves.pace,
+            curl: moves.curl,
+            back: true,
+            empty,
+          });
+    started.current.push(...anims);
+    void settle(anims);
+  }, [empty, moves, onClosed, origin, parts, reduced, voiceMedia]);
 
   // Esc puts the print back — listened for on `document` in the capture
   // phase, ahead of the section's own Esc (which would close everything),
@@ -388,6 +455,7 @@ export function Print({
       aria-modal="true"
       aria-label={`Frame ${number}: ${shot.label}`}
       data-lenis-prevent
+      data-opened={opened || undefined}
       data-leaving={leaving || undefined}
       className="print-root no-scrollbar fixed inset-0 z-[70] overflow-y-auto overscroll-contain"
       onClick={(e) => {
@@ -397,13 +465,15 @@ export function Print({
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div aria-hidden className="print-backdrop fixed inset-0" />
+      <div ref={backdropRef} aria-hidden className="print-backdrop fixed inset-0" />
+      {/* a motion's own pieces, under the print and over it (`printMotion.ts`) */}
+      <div ref={underRef} aria-hidden className="print-fx fixed inset-0" />
       <button
         ref={closeRef}
         type="button"
         onClick={close}
         aria-label="Put the print back"
-        className="print-meta fixed right-4 top-4 z-10 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
+        className="print-close fixed right-4 top-4 z-10 rounded px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-inset ring-white/15 transition-colors hover:text-white"
       >
         esc ✕
       </button>
@@ -412,15 +482,26 @@ export function Print({
         className="relative flex min-h-full cursor-zoom-out flex-col items-center justify-center gap-6 px-4 py-16"
       >
         <div ref={paperRef} className="print-paper cursor-auto">
-          <div ref={photoRef} className="relative aspect-[3/2] w-full overflow-hidden bg-black">
+          <div ref={shadowRef} aria-hidden className="print-shadow" />
+          <div ref={sheetRef} aria-hidden className="print-sheet" />
+          <div ref={photoRef} className="print-photo relative aspect-[3/2] w-full overflow-hidden bg-black">
             {shot.image ? (
-              <Image
-                src={shot.image}
-                alt={shot.label}
-                fill
-                sizes="(min-width: 1024px) 60rem, 90vw"
-                className="object-cover"
-              />
+              <>
+                {/* the frame's own copy, already loaded — there from the very
+                    first frame — and, once the print has landed, the sharp
+                    one fading in over it */}
+                <Image src={shot.image} alt={opened ? "" : shot.label} fill sizes="21rem" className="object-cover" />
+                {opened && (
+                  <Image
+                    src={shot.image}
+                    alt={shot.label}
+                    fill
+                    sizes="(min-width: 1024px) 60rem, 90vw"
+                    onLoad={() => setSharp(true)}
+                    className={`object-cover transition-opacity duration-500 ${sharp ? "opacity-100" : "opacity-0"}`}
+                  />
+                )}
+              </>
             ) : (
               <ShotPlaceholder slug={shot.slug} />
             )}
@@ -433,8 +514,7 @@ export function Print({
                   muted
                   loop
                   playsInline
-                  autoPlay={!reduced}
-                  preload="auto"
+                  preload="metadata"
                   className="absolute inset-0 h-full w-full object-cover"
                   {...(voiceIsClip ? voiceEvents : {})}
                 />
@@ -485,6 +565,7 @@ export function Print({
           />
         </div>
       </div>
+      <div ref={overRef} aria-hidden className="print-fx fixed inset-0" />
     </div>,
     document.body,
   );

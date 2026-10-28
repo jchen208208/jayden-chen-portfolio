@@ -53,6 +53,15 @@ export default function FocusFrame({
 
   useScrollLock(true);
 
+  // the desk behind holds its lights still while this covers it (globals.css)
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.sectionOpen = "";
+    return () => {
+      delete root.dataset.sectionOpen;
+    };
+  }, []);
+
   const close = useCallback(() => {
     if (onClose) onClose();
     else router.push("/");
