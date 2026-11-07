@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PROFILE, SECTION_ORDER, SECTIONS } from "@/lib/site";
+import FooterBlocks from "./FooterBlocks";
 import { Icon } from "./icons";
 import ThemeBar from "./ThemeBar";
 
@@ -47,54 +48,59 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
 export default function SiteFooter() {
   return (
     <footer className="border-t border-line bg-paper text-ink-soft">
-      <div className="mx-auto max-w-6xl px-4 pt-10 pb-8 sm:px-6 sm:pt-12">
-        {/* on wide screens the four columns sit an equal space apart */}
-        <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:flex lg:justify-between">
-          <div className="space-y-4 sm:col-span-2">
-            <p className="font-title text-2xl font-semibold text-ink">{PROFILE.name}</p>
-            <p className="max-w-xs text-base leading-relaxed">
-              {PROFILE.program} at the {PROFILE.school}, class of {PROFILE.classOf}.
-            </p>
-          </div>
+      {/* the side gutters' fill sits behind the content and stops above the bottom bar */}
+      <div className="relative">
+        <FooterBlocks side="left" />
+        <FooterBlocks side="right" />
+        <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-8 sm:px-6 sm:pt-12">
+          {/* on wide screens the four columns sit an equal space apart */}
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:flex lg:justify-between">
+            <div className="space-y-4 sm:col-span-2">
+              <p className="font-title text-2xl font-semibold text-ink">{PROFILE.name}</p>
+              <p className="max-w-xs text-base leading-relaxed">
+                {PROFILE.program} at the {PROFILE.school}, class of {PROFILE.classOf}.
+              </p>
+            </div>
 
-          <Column title="Explore">
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-base sm:grid-cols-1">
-              {SECTION_ORDER.map((id) => (
-                <li key={id}>
-                  <Link href={SECTIONS[id].route} className={LINK}>
-                    {SECTIONS[id].deskLabel}
+            <Column title="Explore">
+              <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-base sm:grid-cols-1">
+                {SECTION_ORDER.map((id) => (
+                  <li key={id}>
+                    <Link href={SECTIONS[id].route} className={LINK}>
+                      {SECTIONS[id].deskLabel}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Column>
+
+            <Column title="Elsewhere">
+              <ul className="space-y-2 text-base">
+                <li>
+                  <ExternalLink href={PROFILE.github}>GitHub</ExternalLink>
+                </li>
+                <li>
+                  <ExternalLink href={PROFILE.linkedin}>LinkedIn</ExternalLink>
+                </li>
+                <li>
+                  <Link href={PROFILE.resume} className={LINK}>
+                    Résumé
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </Column>
+              </ul>
+            </Column>
 
-          <Column title="Elsewhere">
-            <ul className="space-y-2 text-base">
-              <li>
-                <ExternalLink href={PROFILE.github}>GitHub</ExternalLink>
-              </li>
-              <li>
-                <ExternalLink href={PROFILE.linkedin}>LinkedIn</ExternalLink>
-              </li>
-              <li>
-                <Link href={PROFILE.resume} className={LINK}>
-                  Résumé
-                </Link>
-              </li>
-            </ul>
-          </Column>
-
-          <Column title="Contact">
-            <p className="max-w-xs text-base leading-relaxed">Got a role, a project or a question? Get in touch.</p>
-            <a
-              href={mailto}
-              className="inline-flex max-w-full items-center gap-2 rounded-sm border-b-2 border-[var(--glow)]/70 pb-0.5 text-base font-semibold break-all text-ink transition-colors hover:border-[var(--glow)] hover:text-[var(--glow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--glow)]"
-            >
-              <Icon name="mail" size={16} className="shrink-0 text-[var(--glow)]" />
-              {PROFILE.email}
-            </a>
-          </Column>
+            <Column title="Contact">
+              <p className="max-w-xs text-base leading-relaxed">Got a role, a project or a question? Get in touch.</p>
+              <a
+                href={mailto}
+                className="inline-flex max-w-full items-center gap-2 rounded-sm border-b-2 border-[var(--glow)]/70 pb-0.5 text-base font-semibold break-all text-ink transition-colors hover:border-[var(--glow)] hover:text-[var(--glow)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--glow)]"
+              >
+                <Icon name="mail" size={16} className="shrink-0 text-[var(--glow)]" />
+                {PROFILE.email}
+              </a>
+            </Column>
+          </div>
         </div>
       </div>
 
