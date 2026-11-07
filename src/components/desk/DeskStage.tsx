@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Hero from "./Hero";
 import DeskScene from "./DeskScene";
+import type { Track } from "@/lib/playlist";
 import { clamp } from "@/lib/svg";
 import { DESK_RUNWAY_VH, DESK_SCROLL, deskRise, deskZoom } from "@/lib/deskScroll";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -52,7 +53,7 @@ const BEATS = {
   nextIn: 0.62,
 } as const;
 
-export default function DeskStage() {
+export default function DeskStage({ tracks }: { tracks: Track[] }) {
   const heroRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLElement>(null);
@@ -115,7 +116,7 @@ export default function DeskStage() {
     return (
       <div className="flex flex-col gap-16 py-16">
         <Hero />
-        <DeskScene />
+        <DeskScene tracks={tracks} />
         <NextSection />
       </div>
     );
@@ -129,7 +130,7 @@ export default function DeskStage() {
           ref={deskRef}
           className="absolute inset-0 flex items-center justify-center will-change-transform"
         >
-          <DeskScene className="w-full" />
+          <DeskScene className="w-full" tracks={tracks} />
         </div>
         {/* title — sits over the desk, lifts away on scroll */}
         <div
@@ -141,7 +142,7 @@ export default function DeskStage() {
         {/* next section — hidden under the framed desk until it zooms back out */}
         <NextSection
           ref={nextRef}
-          className="absolute inset-x-0 bottom-0 flex justify-center pb-[11vh] opacity-0 will-change-transform sm:pb-[13vh]"
+          className="absolute inset-x-0 bottom-0 flex justify-center pb-[15vh] opacity-0 will-change-transform sm:pb-[17vh]"
         />
       </div>
     </div>
@@ -160,7 +161,7 @@ function NextSection({
     <section ref={ref} aria-labelledby="after-desk" className={className}>
       <h2
         id="after-desk"
-        className="font-title text-[clamp(2.5rem,7vw,5rem)] leading-none text-white"
+        className="px-6 text-center font-title text-[clamp(2.5rem,7vw,5rem)] leading-none text-white"
       >
         Hi! Let&apos;s build something! #opentowork
       </h2>

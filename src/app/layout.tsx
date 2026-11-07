@@ -75,7 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           that mutates the DOM before hydration. */}
       <body suppressHydrationWarning className="min-h-full bg-paper text-ink">
         {children}
-        <ThemeBar />
+        <ThemeBar floating />
       </body>
     </html>
   );

@@ -12,7 +12,7 @@
   the scene reads as one room lit one way. Chrome (bezels, card frames,
   tile borders) is always ink.
 
-  The light can be swapped (`ThemeBar`, bottom right): blue, green and pink
+  The light can be swapped (`ThemeBar`, in the footer): blue, green and pink
   each restate the glow's tokens below under `[data-theme]` — the same
   shades in another hue — so it's still one light, just a different one.
 */
@@ -94,15 +94,12 @@
   --neon-core: #fef2f6;
 }
 
-/* The theme bar: a small dev-tools strip in the bottom-right corner, one
-   swatch per light — each split corner to corner, its colour over white.
-   Chrome stays ink; only the swatches carry colour, and the one that's on
-   gets a white ring. */
+/* The theme bar: a small dev-tools strip, one swatch per light — each split
+   corner to corner, its colour over white. Chrome stays ink; only the
+   swatches carry colour, and the one that's on gets a white ring. It sits in
+   the main page's footer, and floats in the bottom-right corner everywhere
+   else (`.theme-bar-float`). */
 .theme-bar {
-  position: fixed;
-  right: max(0.75rem, env(safe-area-inset-right));
-  bottom: max(0.75rem, env(safe-area-inset-bottom));
-  z-index: 70; /* over a section's focus frame (z-60) */
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -110,6 +107,12 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgb(12 14 18 / 0.85);
+}
+.theme-bar-float {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 70; /* over a section's focus frame (z-60) */
   backdrop-filter: blur(8px);
 }
 .theme-swatch {

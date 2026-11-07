@@ -20,6 +20,7 @@ import {
   type Rect,
   type ScreenSpec,
 } from "@/lib/desk";
+import type { Track } from "@/lib/playlist";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
@@ -238,7 +239,14 @@ const MOSAIC_SEED: Record<SectionId, number> = { projects: 7, skills: 19, experi
  *  `.mosaic-tile`), so they're seen flying before the view covers them */
 const BURST_LEAD_MS = 520;
 
-export default function DeskScene({ className }: { className?: string }) {
+export default function DeskScene({
+  className,
+  tracks,
+}: {
+  className?: string;
+  /** the speaker's songs (`lib/itunes`) */
+  tracks: Track[];
+}) {
   const [openId, setOpenId] = useState<SectionId | null>(null);
   const [lampOn, setLampOn] = useState(false);
   const [chainPulled, setChainPulled] = useState(false);
@@ -712,7 +720,7 @@ export default function DeskScene({ className }: { className?: string }) {
                 paddingBottom: deskUnits(SPEAKER_POPUP_GAP),
               }}
             >
-              <SpeakerPopup />
+              <SpeakerPopup tracks={tracks} />
             </div>
           </div>
           {SCREENS.map((s) => (
