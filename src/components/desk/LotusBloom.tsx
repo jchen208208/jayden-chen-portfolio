@@ -24,7 +24,7 @@ import { LOTUS_FRAMES, LOTUS_H, LOTUS_W } from "./lotusFrames";
 const SCALE = 4;
 /** how long each frame holds before the next, in ms: slow to stir, quicker
  *  through the middle, settling slowly into the open flower */
-const HOLDS = [320, 220, 170, 150, 160, 200, 260];
+const HOLDS = [400, 275, 215, 190, 200, 250, 325];
 /** the sign-off's opacity (`DeskStage` fades it in as it rises) at which it
  *  counts as arrived, and below which it counts as gone */
 const ARRIVED = 0.9;
