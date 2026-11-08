@@ -137,9 +137,11 @@
   outline-color: var(--ink-soft);
 }
 
-/* The footer's side fill (`FooterBlocks`): it fades out toward the content,
-   so its lines never end on a hard edge beside the text. The right side's
-   container is mirrored, mask and all, so both fade inward. */
+/* The faint lines of the footer's side fill (`FooterBlocks`) — not its
+   filled blocks, which stay opaque and thin out instead: they fade out
+   toward the content, so they never end on a hard edge beside the text.
+   The right side's container is mirrored, mask and all, so both fade
+   inward. */
 .footer-blocks {
   mask-image: linear-gradient(to right, #000 35%, transparent);
   -webkit-mask-image: linear-gradient(to right, #000 35%, transparent);

@@ -47,7 +47,9 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
  */
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-paper text-ink-soft">
+    // positioned, so it paints over the desk's pinned stage, whose bottom it
+    // tucks up over (`FOOTER_TUCK_VH` in `DeskStage`)
+    <footer className="relative bg-paper text-ink-soft">
       {/* the side gutters' fill sits behind the content and stops above the bottom bar */}
       <div className="relative">
         <FooterBlocks side="left" />
@@ -105,7 +107,7 @@ export default function SiteFooter() {
       </div>
 
       {/* the bottom bar runs the full width: © at the left edge, the theme bar at the right */}
-      <div className="border-t border-white/10">
+      <div>
         <div className="flex flex-col items-start gap-3 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>
             © {new Date().getFullYear()} {PROFILE.name}

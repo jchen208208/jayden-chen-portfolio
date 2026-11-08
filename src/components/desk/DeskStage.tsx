@@ -37,6 +37,17 @@ const DESK_POSE = {
   framed: 1.35,
 } as const;
 
+/**
+ * How far the footer tucks up over the bottom of the pinned stage, in `vh`,
+ * so less empty black sits between the parked desk's floor and the footer.
+ * It's the runway's negative bottom margin, so the pin still releases exactly
+ * as the move finishes; the footer only comes into view over the last ~10% of
+ * the move, when the desk is long clear of the stage's bottom. The next
+ * section's bottom padding (`pb-[…vh]` below) must stay above this, or the
+ * footer covers it.
+ */
+const FOOTER_TUCK_VH = 16;
+
 /** ease-out cubic */
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 /** ease-in-out sine — sets off and settles without a jolt */
@@ -123,7 +134,10 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
   }
 
   return (
-    <div className="desk-runway" style={{ height: `${DESK_RUNWAY_VH}vh` }}>
+    <div
+      className="desk-runway"
+      style={{ height: `${DESK_RUNWAY_VH}vh`, marginBottom: `-${FOOTER_TUCK_VH}vh` }}
+    >
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* desk — visible from the first frame, the scroll only reframes it */}
         <div
@@ -139,10 +153,12 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
         >
           <Hero />
         </div>
-        {/* next section — hidden under the framed desk until it zooms back out */}
+        {/* next section — hidden under the framed desk until it zooms back out.
+            Its padding clears the footer tucked over the stage's bottom
+            (`FOOTER_TUCK_VH`) by 7–9vh. */}
         <NextSection
           ref={nextRef}
-          className="absolute inset-x-0 bottom-0 flex justify-center pb-[15vh] opacity-0 will-change-transform sm:pb-[17vh]"
+          className="absolute inset-x-0 bottom-0 flex justify-center pb-[23vh] opacity-0 will-change-transform sm:pb-[25vh]"
         />
       </div>
     </div>
