@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Hero from "./Hero";
 import DeskScene from "./DeskScene";
 import { ContributionWord } from "./ContributionName";
+import LotusBloom from "./LotusBloom";
 import { DESK_FLOOR_INSET, DESK_VIEWBOX } from "@/lib/desk";
 import type { Track } from "@/lib/playlist";
 import { clamp } from "@/lib/svg";
@@ -47,7 +48,7 @@ const DESK_POSE = {
  * the move, when the desk is long clear of the stage's bottom. The next
  * section's bottom padding (`pb-[…vh]` below) must stay above this — it's
  * 4–5vh above now — or the footer covers it. (It was 16 until the sign-off
- * grew to a big mosaic "Hi!" and needed the room.)
+ * grew to three lines under a big "Hi!" and needed the room.)
  */
 const FOOTER_TUCK_VH = 12;
 /** the "Hi!"'s shades (`ContributionWord`) — picked so the gold strokes (the
@@ -179,7 +180,9 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
  * (`ContributionWord`, squares the same size), then, in the desk screens'
  * face (VT323, `font-screen`, as their `/projects`-style labels), an
  * invitation and what Jayden's looking for, with `#opentowork` in the one
- * light (`--glow`). Update the term once it's filled.
+ * light (`--glow`). Update the term once it's filled. To its right, on a
+ * still pond under the floor's right end, a pixel-art lotus blooms as the
+ * sign-off arrives (`LotusBloom`).
  */
 function NextSection({
   ref,
@@ -191,20 +194,26 @@ function NextSection({
   return (
     <section ref={ref} aria-labelledby="after-desk" className={className}>
       {/* the desk scene's own frame (`DeskScene`: centred, capped at 1180px,
-          `px-4`), so the left padding — the floor line's inset, as a share
-          of that width — starts the text right under the floor's left end */}
+          `px-4`), so the floor line's inset, as a share of that width,
+          starts the text right under the floor's left end, and ends the
+          lotus beside it right under its right end */}
       <div className="mx-auto w-full max-w-[1180px] px-4">
-        <div className="flex flex-col items-start text-left" style={{ paddingLeft: FLOOR_START }}>
-          <h2 id="after-desk">
-            <span className="sr-only">Hi!</span>
-            <ContributionWord text="Hi!" seed={HI_SEED} />
-          </h2>
-          <p className="mt-4 font-screen text-2xl text-white/80 sm:text-4xl">
-            Like my work? Let&apos;s build something together!
-          </p>
-          <p className="mt-2 font-screen text-xl text-white/65 sm:text-[1.625rem]">
-            <span className="text-[var(--glow)]">#opentowork</span> · Looking for a Summer 2027 co-op
-          </p>
+        <div className="relative" style={{ paddingLeft: FLOOR_START }}>
+          {/* level with the text's foot, on the wide screens with room for
+              it beside the text */}
+          <LotusBloom className="absolute bottom-0 hidden xl:block" style={{ right: FLOOR_START }} />
+          <div className="relative flex flex-col items-start text-left">
+            <h2 id="after-desk">
+              <span className="sr-only">Hi!</span>
+              <ContributionWord text="Hi!" seed={HI_SEED} />
+            </h2>
+            <p className="mt-4 font-screen text-2xl text-white/80 sm:text-4xl">
+              Like my work? Let&apos;s build something together!
+            </p>
+            <p className="mt-2 font-screen text-xl text-white/65 sm:text-[1.625rem]">
+              <span className="text-[var(--glow)]">#opentowork</span> · Looking for a Summer 2027 co-op
+            </p>
+          </div>
         </div>
       </div>
     </section>
