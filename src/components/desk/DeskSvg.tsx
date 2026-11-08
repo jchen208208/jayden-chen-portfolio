@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { DESK_VIEWBOX, LAPTOP1_TRANSFORM, SPEAKER } from "@/lib/desk";
+import { DESK_FLOOR_INSET, DESK_VIEWBOX, LAPTOP1_TRANSFORM, SPEAKER } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
 import PcFanLights, { type PcFanMode } from "./PcFanLights";
 
@@ -149,7 +149,13 @@ export default function DeskSvg({
         strokeLinejoin="round"
       >
         {/* ── floor ─────────────────────────────────────────────────────── */}
-        <line x1={x + 40} y1={FLOOR} x2={x + w - 40} y2={FLOOR} opacity={0.3} />
+        <line
+          x1={x + DESK_FLOOR_INSET}
+          y1={FLOOR}
+          x2={x + w - DESK_FLOOR_INSET}
+          y2={FLOOR}
+          opacity={0.3}
+        />
 
         {/* ── tool wall, relocated above the soldering station/3D printer on
             the far left of the desk (was: left half of the wall shelf,

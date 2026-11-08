@@ -12,6 +12,10 @@ import type { SectionId } from "./site";
  *  speaker, so the view shifts right by half that to keep it centred */
 export const DESK_VIEWBOX = { x: 12, w: 1600, h: 740 } as const;
 
+/** how far in from each end of the view the floor line stops, in desk
+ *  units — the sign-off under the desk (`DeskStage`) starts where it does */
+export const DESK_FLOOR_INSET = 40;
+
 export type Rect = { x: number; y: number; w: number; h: number };
 
 /**

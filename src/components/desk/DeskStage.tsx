@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import Hero from "./Hero";
 import DeskScene from "./DeskScene";
+import { ContributionWord } from "./ContributionName";
+import { DESK_FLOOR_INSET, DESK_VIEWBOX } from "@/lib/desk";
 import type { Track } from "@/lib/playlist";
 import { clamp } from "@/lib/svg";
 import { DESK_RUNWAY_VH, DESK_SCROLL, deskRise, deskZoom } from "@/lib/deskScroll";
@@ -43,10 +45,16 @@ const DESK_POSE = {
  * It's the runway's negative bottom margin, so the pin still releases exactly
  * as the move finishes; the footer only comes into view over the last ~10% of
  * the move, when the desk is long clear of the stage's bottom. The next
- * section's bottom padding (`pb-[…vh]` below) must stay above this, or the
- * footer covers it.
+ * section's bottom padding (`pb-[…vh]` below) must stay above this — it's
+ * 4–5vh above now — or the footer covers it. (It was 16 until the sign-off
+ * grew to a big mosaic "Hi!" and needed the room.)
  */
-const FOOTER_TUCK_VH = 16;
+const FOOTER_TUCK_VH = 12;
+/** the "Hi!"'s shades (`ContributionWord`) — picked so the gold strokes (the
+ *  H's left column, the "!") each carry a couple of grey squares, apart */
+const HI_SEED = 62;
+/** where the desk's floor line starts, as a share of the desk scene's width */
+const FLOOR_START = `${(DESK_FLOOR_INSET / DESK_VIEWBOX.w) * 100}%`;
 
 /** ease-out cubic */
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -155,17 +163,24 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
         </div>
         {/* next section — hidden under the framed desk until it zooms back out.
             Its padding clears the footer tucked over the stage's bottom
-            (`FOOTER_TUCK_VH`) by 7–9vh. */}
+            (`FOOTER_TUCK_VH`) by 4–5vh. */}
         <NextSection
           ref={nextRef}
-          className="absolute inset-x-0 bottom-0 flex justify-center pb-[23vh] opacity-0 will-change-transform sm:pb-[25vh]"
+          className="absolute inset-x-0 bottom-0 flex justify-center pb-[16vh] opacity-0 will-change-transform sm:pb-[17vh]"
         />
       </div>
     </div>
   );
 }
 
-/** placeholder for whatever follows the desk. */
+/**
+ * The sign-off under the parked desk, left-aligned under the start of the
+ * desk's floor line: a "Hi!" in contribution squares like the hero name
+ * (`ContributionWord`, squares the same size), then, in the desk screens'
+ * face (VT323, `font-screen`, as their `/projects`-style labels), an
+ * invitation and what Jayden's looking for, with `#opentowork` in the one
+ * light (`--glow`). Update the term once it's filled.
+ */
 function NextSection({
   ref,
   className = "",
@@ -175,12 +190,23 @@ function NextSection({
 }) {
   return (
     <section ref={ref} aria-labelledby="after-desk" className={className}>
-      <h2
-        id="after-desk"
-        className="px-6 text-center font-title text-[clamp(2.5rem,7vw,5rem)] leading-none text-white"
-      >
-        Hi! Let&apos;s build something! #opentowork
-      </h2>
+      {/* the desk scene's own frame (`DeskScene`: centred, capped at 1180px,
+          `px-4`), so the left padding — the floor line's inset, as a share
+          of that width — starts the text right under the floor's left end */}
+      <div className="mx-auto w-full max-w-[1180px] px-4">
+        <div className="flex flex-col items-start text-left" style={{ paddingLeft: FLOOR_START }}>
+          <h2 id="after-desk">
+            <span className="sr-only">Hi!</span>
+            <ContributionWord text="Hi!" seed={HI_SEED} />
+          </h2>
+          <p className="mt-4 font-screen text-2xl text-white/80 sm:text-4xl">
+            Like my work? Let&apos;s build something together!
+          </p>
+          <p className="mt-2 font-screen text-xl text-white/65 sm:text-[1.625rem]">
+            <span className="text-[var(--glow)]">#opentowork</span> · Looking for a Summer 2027 co-op
+          </p>
+        </div>
+      </div>
     </section>
   );
 }
