@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PROFILE, SECTION_ORDER, SECTIONS } from "@/lib/site";
-import FooterBlocks from "./FooterBlocks";
+import FooterBlocks, { FooterDrift, FooterScatter } from "./FooterBlocks";
 import { Icon } from "./icons";
 import ThemeBar from "./ThemeBar";
 
@@ -50,10 +50,14 @@ export default function SiteFooter() {
     // positioned, so it paints over the desk's pinned stage, whose bottom it
     // tucks up over (`FOOTER_TUCK_VH` in `DeskStage`)
     <footer className="relative bg-paper text-ink-soft">
-      {/* the side gutters' fill sits behind the content and stops above the bottom bar */}
+      {/* the blocks sit behind the content and stop above the bottom bar:
+          the side gutters' fill, and a sparser scatter behind the text —
+          all drifting into place as the footer scrolls in */}
+      <FooterDrift />
       <div className="relative">
         <FooterBlocks side="left" />
         <FooterBlocks side="right" />
+        <FooterScatter />
         <div className="relative mx-auto max-w-6xl px-4 pt-10 pb-8 sm:px-6 sm:pt-12">
           {/* on wide screens the four columns sit an equal space apart */}
           <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:flex lg:justify-between">
