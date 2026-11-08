@@ -13,6 +13,7 @@ import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
 import {
   DESK_VIEWBOX,
+  PLANT_TOP,
   SCREENS,
   SPEAKER_RECT,
   deskUnits,
@@ -218,9 +219,12 @@ const PC_IDLE_ON_MS: [number, number] = [12_000, 28_000];
 const PC_IDLE_OFF_MS: [number, number] = [8_000, 14_000];
 
 /** the speaker's popup, in desk units: how far it runs to the right from
- *  the speaker's left edge, and the gap it leaves above the speaker */
+ *  the speaker's left edge — out over the plant — and how far its bottom
+ *  stands clear above the plant's tallest leaf, so it never covers it */
 const SPEAKER_POPUP_W = 300;
-const SPEAKER_POPUP_GAP = 10;
+const SPEAKER_POPUP_CLEAR = 12;
+/** …which sets the gap it leaves above the speaker (never less than 10) */
+const SPEAKER_POPUP_GAP = Math.max(10, SPEAKER_RECT.y - (PLANT_TOP - SPEAKER_POPUP_CLEAR));
 /** the section route on each glass, in desk units — one size for all four.
  *  VT323 is 0.4em a letter, so "/experience" (the longest) runs ~177 across
  *  the 202-wide glass with the tracking below. */
@@ -702,8 +706,9 @@ export default function DeskScene({
             style={percentBox(PC_BUTTON_HIT)}
           />
           {/* the speaker: hovering it (or tabbing to it) opens its popup,
-              which stands just above it — flush with its left edge, running
-              off to the right (the `[data-speaker]` rules in globals.css).
+              which stands above it, clear of the plant's top — flush with
+              its left edge, running off to the right (the `[data-speaker]`
+              rules in globals.css).
               The popup sits inside this same box, its own padding bridging
               the gap, so moving up into it keeps it open. */}
           <div data-speaker className="absolute z-10" style={percentBox(SPEAKER_RECT)}>

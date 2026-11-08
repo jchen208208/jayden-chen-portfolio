@@ -35,14 +35,112 @@ const SOLDERING_SCALE = 0.36;
 const TOOL_WALL_SCALE = 1.3;
 
 /** the music notes that drift up off the speaker and fade (`.speaker-note`,
- *  globals.css): where each sets off, which way it drifts (`dx`), its size,
- *  and how far into the shared 6s loop it starts — staggered so a couple are
- *  always in the air, one rising as the last fades */
+ *  globals.css): where each sets off, just over the speaker's top, which way
+ *  it drifts (`dx`), its size, and how far into the shared 6s loop it starts
+ *  — staggered so a couple are always in the air, one rising as the last
+ *  fades */
 const SPEAKER_NOTES = [
-  { kind: "eighth", x: 1304, y: 290, dx: 12, scale: 1.2, delay: 0 },
-  { kind: "beamed", x: 1283, y: 289, dx: 14, scale: 1.1, delay: -2 },
-  { kind: "eighth", x: 1296, y: 292, dx: 10, scale: 1, delay: -4 },
+  { kind: "eighth", x: SPEAKER.cx + 14, y: SPEAKER.top - 6, dx: 12, scale: 1.2, delay: 0 },
+  { kind: "beamed", x: SPEAKER.cx - 7, y: SPEAKER.top - 7, dx: 14, scale: 1.1, delay: -2 },
+  { kind: "eighth", x: SPEAKER.cx + 6, y: SPEAKER.top - 4, dx: 10, scale: 1, delay: -4 },
 ] as const;
+
+/**
+ * The speaker is a cylinder — a Bose Revolve or a UE Boom — seen a touch
+ * from above. So every ring round it shows as the front half of an ellipse
+ * `SPEAKER_BOW` deep, bowing down at the middle: the seams under its top cap
+ * and over its base, and each row of its grille. Its domed top and its
+ * bottom edge bulge out by the same.
+ */
+const SPEAKER_BOW = 2;
+/** coordinates to 2dp, so the trig below writes the same path on the server
+ *  and in every browser (no hydration mismatch) */
+const round2 = (n: number) => Math.round(n * 100) / 100;
+/** its sides, and its radius round */
+const SPEAKER_L = SPEAKER.cx - SPEAKER.w / 2;
+const SPEAKER_R = SPEAKER.cx + SPEAKER.w / 2;
+const SPEAKER_RADIUS = SPEAKER.w / 2;
+/** its shoulders: where its top corners turn, a bow below the dome's crest */
+const SPEAKER_SHOULDER = SPEAKER.top + SPEAKER_BOW;
+/** the seams under the top cap and over the base, at the sides */
+const SPEAKER_CAP_SEAM = SPEAKER_SHOULDER + 15;
+const SPEAKER_BASE_SEAM = SPEAKER.bottom - 16;
+/** the grille's middle row, at the sides — where the play button sits */
+const SPEAKER_GRILLE_Y = (SPEAKER_CAP_SEAM + SPEAKER_BASE_SEAM) / 2;
+/** the play button, on the front of that row */
+const SPEAKER_BUTTON_Y = SPEAKER_GRILLE_Y + SPEAKER_BOW;
+/** the clear round patch the play button sits on */
+const SPEAKER_BUTTON_R = 7.5;
+/** the grille's holes: how far apart they sit along a row, face on, and how
+ *  big each is — about two-thirds of that gap across, as on the perforated
+ *  metal grille of a Klipsch speaker */
+const SPEAKER_HOLE_PITCH = 4.2;
+const SPEAKER_HOLE_R = 1.4;
+
+/** the speaker's outline: straight sides, filleted corners (10 at the top,
+ *  8 at the bottom), and a shallow arch over the top and under the bottom.
+ *  Each corner ends lifted 0.35 of a bow toward its arch, and each arch's
+ *  control point sits 1.65 bows out, so its crest lands one bow past the
+ *  shoulders. */
+const SPEAKER_OUTLINE = (() => {
+  const { cx, bottom } = SPEAKER;
+  const top = SPEAKER_SHOULDER;
+  const b = SPEAKER_BOW;
+  const L = SPEAKER_L;
+  const R = SPEAKER_R;
+  return [
+    `M${L} ${top + 10}`,
+    `Q${L} ${top} ${L + 10} ${round2(top - b * 0.35)}`,
+    `Q${cx} ${round2(top - b * 1.65)} ${R - 10} ${round2(top - b * 0.35)}`,
+    `Q${R} ${top} ${R} ${top + 10}`,
+    `V${bottom - 8}`,
+    `Q${R} ${bottom} ${R - 8} ${round2(bottom + b * 0.35)}`,
+    `Q${cx} ${round2(bottom + b * 1.65)} ${L + 8} ${round2(bottom + b * 0.35)}`,
+    `Q${L} ${bottom} ${L} ${bottom - 8} Z`,
+  ].join(" ");
+})();
+
+/** the two seams: each the front half of an ellipse round the cylinder */
+const SPEAKER_SEAMS = [SPEAKER_CAP_SEAM, SPEAKER_BASE_SEAM]
+  .map((y) => `M${SPEAKER_L} ${y} A${SPEAKER_RADIUS} ${SPEAKER_BOW} 0 0 0 ${SPEAKER_R} ${y}`)
+  .join(" ");
+
+/**
+ * The grille, as one path of small holes wrapped round the cylinder between
+ * the seams. The holes sit in staggered rows — each a hole's height below
+ * the last (0.87 of the pitch), every other one shifted half a hole round —
+ * spaced evenly by ANGLE round the cylinder, so seen face on they crowd
+ * together toward the sides and squeeze narrow as the surface turns away.
+ * Each row bows like the seams. Holes are kept 0.8 clear of the outline and
+ * the seams, and any the button's patch would mostly hide are left out.
+ */
+const SPEAKER_GRILLE = (() => {
+  const { cx } = SPEAKER;
+  const r = SPEAKER_HOLE_R;
+  // half a 2.4 stroke plus the gap
+  const clear = 1.2 + 0.8;
+  const step = SPEAKER_HOLE_PITCH / SPEAKER_RADIUS;
+  const rowGap = (SPEAKER_HOLE_PITCH * Math.sqrt(3)) / 2;
+  const rows = Math.ceil((SPEAKER_BASE_SEAM - SPEAKER_CAP_SEAM) / 2 / rowGap);
+  const cols = Math.ceil(Math.PI / 2 / step) + 1;
+  let d = "";
+  for (let i = -rows; i <= rows; i++) {
+    const row = SPEAKER_GRILLE_Y + i * rowGap;
+    if (row - r < SPEAKER_CAP_SEAM + clear || row + r > SPEAKER_BASE_SEAM - clear) continue;
+    const shift = i % 2 === 0 ? 0 : 0.5;
+    for (let k = -cols; k <= cols; k++) {
+      const angle = (k + shift) * step;
+      if (Math.abs(angle) >= Math.PI / 2) continue;
+      const x = round2(cx + SPEAKER_RADIUS * Math.sin(angle));
+      const rx = round2(r * Math.cos(angle));
+      const y = round2(row + SPEAKER_BOW * Math.cos(angle));
+      if (Math.abs(x - cx) + rx > SPEAKER_RADIUS - clear) continue;
+      if (Math.hypot(x - cx, y - SPEAKER_BUTTON_Y) < SPEAKER_BUTTON_R - r / 2) continue;
+      d += `M${round2(x - rx)} ${y}a${rx} ${r} 0 1 0 ${round2(2 * rx)} 0a${rx} ${r} 0 1 0 ${round2(-2 * rx)} 0`;
+    }
+  }
+  return d;
+})();
 
 /** one note, its head centred on the origin: ♪, or a beamed pair ♫ */
 function NoteGlyph({ kind, scale }: { kind: "eighth" | "beamed"; scale: number }) {
@@ -368,7 +466,9 @@ export default function DeskSvg({
         {/* ── snake plant in a tall pot, clear of the desk — moved out with
             the desk's right end ───────────────────────────────────────── */}
         <g transform="translate(12 0)">
-          {/* sword leaves — broad blades, opaque, centre leaf behind the fan */}
+          {/* sword leaves — broad blades, opaque, centre leaf behind the fan.
+              The centre leaf is the tallest: its tip (y 288) is `PLANT_TOP`
+              in lib/desk, which the speaker's popup stands clear above. */}
           <path d="M1408 512 C 1394 420 1402 340 1422 288 C 1442 340 1450 420 1436 512 Z" fill={PAPER} />
           <path d="M1404 512 C 1382 424 1362 348 1382 298 C 1400 350 1414 428 1422 512 Z" fill={PAPER} />
           <path d="M1418 512 C 1430 424 1450 350 1462 302 C 1458 356 1440 430 1428 512 Z" fill={PAPER} />
@@ -537,50 +637,39 @@ export default function DeskSvg({
           <path d="M313 378 L351 378 L342 396 L322 396 Z" fill={PAPER} />
         </g>
 
-        {/* ── portable upright speaker, right of the portrait monitor: a
-            tall rounded box on a slim rubber foot, a row of controls along
-            the top, and its two drivers out in the open down the front —
-            a small tweeter over a big woofer cone ─────────────────────── */}
+        {/* ── portable speaker, standing upright right of the portrait
+            monitor — a cylinder seen a touch from above (`SPEAKER_BOW`): a
+            domed top cap, a perforated grille wrapped round the middle with
+            a play button on its front, and a base band on a slim rubber
+            foot ─────────────────────────────────────────────────────────── */}
         <g>
-          {/* rubber foot, peeking out under the body */}
-          <rect x={SPEAKER.cx - 18} y={SPEAKER.bottom - 4} width={36} height={DESK_TOP - SPEAKER.bottom + 4} rx={2} fill={PAPER} />
-          {/* body */}
-          <rect
-            x={SPEAKER.cx - SPEAKER.w / 2}
-            y={SPEAKER.top}
-            width={SPEAKER.w}
-            height={SPEAKER.bottom - SPEAKER.top}
-            rx={SPEAKER.r}
+          {/* the rubber base it stands on — a little narrower than the
+              body, its sides slanting in toward the desk like the laptop
+              bases, its top tucked up under the body */}
+          <path
+            d={`M${SPEAKER_L + 4} ${SPEAKER.bottom - 3} H${SPEAKER_R - 4}
+               L${SPEAKER_R - 6} ${SPEAKER.bottom + SPEAKER.base} H${SPEAKER_L + 6} Z`}
             fill={PAPER}
           />
-          {/* controls — volume down, play, volume up — over a faint seam
-              that sets the control strip off from the drivers */}
-          <path
-            d={`M${SPEAKER.cx - 15} ${SPEAKER.controlsY} h5
-               M${SPEAKER.cx + 10} ${SPEAKER.controlsY} h5 M${SPEAKER.cx + 12.5} ${SPEAKER.controlsY - 2.5} v5`}
+          <path d={SPEAKER_OUTLINE} fill={PAPER} />
+          {/* the grille, faint, then the seams that bound it */}
+          <path d={SPEAKER_GRILLE} fill={INK} stroke="none" opacity={0.45} />
+          <path d={SPEAKER_SEAMS} />
+          {/* the play button on its clear patch — the triangle centred on
+              its centroid, its corners softened by the stroke */}
+          <circle
+            cx={SPEAKER.cx}
+            cy={SPEAKER_BUTTON_Y}
+            r={SPEAKER_BUTTON_R}
+            fill={PAPER}
+            stroke="none"
           />
           <path
-            d={`M${SPEAKER.cx - 2} ${SPEAKER.controlsY - 3} L${SPEAKER.cx + 3} ${SPEAKER.controlsY}
-               L${SPEAKER.cx - 2} ${SPEAKER.controlsY + 3} Z`}
+            d={`M${SPEAKER.cx - 2} ${SPEAKER_BUTTON_Y - 3.5} L${SPEAKER.cx + 4} ${SPEAKER_BUTTON_Y}
+               L${SPEAKER.cx - 2} ${SPEAKER_BUTTON_Y + 3.5} Z`}
             fill={INK}
             strokeWidth={1.2}
           />
-          <line
-            x1={SPEAKER.cx - SPEAKER.w / 2}
-            y1={SPEAKER.controlsY + 7}
-            x2={SPEAKER.cx + SPEAKER.w / 2}
-            y2={SPEAKER.controlsY + 7}
-            opacity={0.35}
-          />
-          {/* tweeter — a rim round a small dome */}
-          <circle cx={SPEAKER.cx} cy={SPEAKER.tweeterY} r={7.5} fill={PAPER} />
-          <circle cx={SPEAKER.cx} cy={SPEAKER.tweeterY} r={3.5} />
-          {/* woofer — the frame, the rubber surround's inner edge, a faint
-              ring down the cone, and the dust cap in the middle */}
-          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={22} fill={PAPER} />
-          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={17.5} />
-          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={12} opacity={0.35} />
-          <circle cx={SPEAKER.cx} cy={SPEAKER.wooferY} r={6} fill={PAPER} />
           {/* a couple of faint notes in the glow colour, drifting up off
               the top and fading a short way above it — it's playing, and
               there to be played with */}

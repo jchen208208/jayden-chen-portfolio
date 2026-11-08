@@ -48,29 +48,31 @@ export function laptop1Rect(r: Rect): Rect {
   };
 }
 
-/** the upright speaker, right of the portrait monitor (`DeskSvg`): its
- *  centreline, its body (rounded corners `r`), which stands on a 4-tall foot
- *  on the desk, and the centres of the control row, the tweeter and the woofer
- *  down its front */
+/** the cylindrical portable speaker standing upright right of the portrait
+ *  monitor (`DeskSvg`): its centreline, its width, the crest of its domed
+ *  top, and the bottom of its body at the sides — it stands on a rubber
+ *  base `base` tall, on the desk */
 export const SPEAKER = {
   cx: 1290,
-  top: 296,
-  bottom: 392,
-  w: 56,
-  r: 10,
-  controlsY: 304,
-  tweeterY: 323,
-  wooferY: 362,
+  w: 48,
+  top: 292,
+  bottom: 390,
+  base: 6,
 } as const;
 
-/** the whole speaker, top to foot — what's hovered to open its popup, and
+/** the whole speaker, crest to base — what's hovered to open its popup, and
  *  where the popup stands */
 export const SPEAKER_RECT: Rect = {
   x: SPEAKER.cx - SPEAKER.w / 2,
   y: SPEAKER.top,
   w: SPEAKER.w,
-  h: SPEAKER.bottom + 4 - SPEAKER.top,
+  h: SPEAKER.bottom + SPEAKER.base - SPEAKER.top,
 };
+
+/** the tip of the tallest leaf of the snake plant beside the speaker
+ *  (`DeskSvg`) — the speaker's popup stands clear above it, so it never
+ *  covers the plant */
+export const PLANT_TOP = 288;
 
 export type ScreenSpec = {
   id: SectionId;
