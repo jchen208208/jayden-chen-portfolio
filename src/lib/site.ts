@@ -6,8 +6,16 @@
  */
 
 import type { StaticImageData } from "next/image";
-import findverDiagram from "@/assets/experience/findver-diagram.webp";
+import c3mPhoto from "@/assets/experience/c3m.jpeg";
+import findverPhoto from "@/assets/experience/findver.jpeg";
 import hitWithLukeShot from "@/assets/experience/hitwithluke.webp";
+import itTechnicianPhoto from "@/assets/experience/it-technician.jpeg";
+import privateTutorPhoto from "@/assets/experience/private-tutor.jpeg";
+import tracePhoto from "@/assets/experience/trace.jpeg";
+import sparcBreadboardPhoto from "@/assets/projects/sparc-1.jpeg";
+import sparcPcbPhoto from "@/assets/projects/sparc-2.jpeg";
+import sparcEnclosurePhoto from "@/assets/projects/sparc-3.jpeg";
+import sparcHeroPhoto from "@/assets/projects/sparc-hero.jpeg";
 import breakfastPhoto from "@/assets/about/breakfast!.jpeg";
 import canolaFlowersPhoto from "@/assets/about/canola flowers.jpeg";
 import championsPhoto from "@/assets/about/champions!.jpeg";
@@ -18,6 +26,7 @@ import htvPhoto from "@/assets/about/HTV 26.jpeg";
 import hunaglongPhoto from "@/assets/about/Hunaglong 26.jpeg";
 import jcInActionPhoto from "@/assets/about/jc in action.jpeg";
 import metaPhoto from "@/assets/about/Meta.jpeg";
+import mmaPhoto from "@/assets/about/MMA.jpeg";
 import pbCookiesPhoto from "@/assets/about/PB cookies.jpeg";
 import pineappleBunsPhoto from "@/assets/about/pineapple buns.jpeg";
 import shanghaiPhoto from "@/assets/about/Shanghai 26.jpeg";
@@ -115,6 +124,12 @@ export const SECTION_ORDER: SectionId[] = [
 
 /* ── projects ───────────────────────────────────────────────────────────────── */
 
+/** a picture on a project's own page, with the line under it */
+export type Figure = {
+  image: StaticImageData;
+  caption: string;
+};
+
 export type Project = {
   slug: string;
   name: string;
@@ -130,6 +145,9 @@ export type Project = {
    *  — a placeholder stands in until there is one.
    *  TODO — user: a screenshot or photo for each project */
   image?: StaticImageData;
+  /** the build, in order, on the project's own page (`/projects/{slug}`).
+   *  A project with these gets that page, and its card opens it. */
+  gallery?: Figure[];
 };
 
 export const PROJECTS: Project[] = [
@@ -138,6 +156,13 @@ export const PROJECTS: Project[] = [
     name: "Gesture-Controlled Audio Device (SPARC)",
     period: "May 2026 – Present",
     tags: ["Embedded C++", "Python", "PCB Design", "CAD Modelling", "Soldering"],
+    image: sparcHeroPhoto,
+    // TODO — user: confirm the captions
+    gallery: [
+      { image: sparcBreadboardPhoto, caption: "Breadboard prototype on an Arduino" },
+      { image: sparcPcbPhoto, caption: "Laying out the 2-layer PCB in KiCad" },
+      { image: sparcEnclosurePhoto, caption: "The enclosure, modelled in Fusion 360" },
+    ],
     highlights: [
       "Developing an embedded-system device mapping hand gestures to audio playback controls using a light sensor with an ESP32 MCU.",
       "Designed a custom 2-layer PCB in KiCad and a 3D-printed enclosure in Fusion 360, advancing the project through many stages from breadboard components to now a working and tested MVP ready for production and scaling.",
@@ -185,6 +210,9 @@ export const PROJECTS: Project[] = [
   },
 ];
 
+/** the projects that have a page of their own, in the grid's order */
+export const PROJECT_PAGES = PROJECTS.filter((p) => p.gallery?.length);
+
 /* ── experience ─────────────────────────────────────────────────────────────── */
 
 export type Role = {
@@ -208,9 +236,9 @@ export type Role = {
   bullets: string[];
   /** the work itself, when it's out in the world */
   link?: string;
-  /** the role's picture, imported from `src/assets/experience`, 16:10 — a
-   *  placeholder stands in until there is one.
-   *  TODO — user: pictures for TRACE, C3M, IT Technician and Private Tutor */
+  /** the role's picture, imported from `src/assets/experience`, shown 16:10
+   *  (a 4:3 photo loses a little off its top and bottom) — a placeholder
+   *  stands in until there is one */
   image?: StaticImageData;
 };
 
@@ -220,7 +248,7 @@ export const EXPERIENCE: Role[] = [
   {
     slug: "findver",
     project: "FinDVer",
-    image: findverDiagram,
+    image: findverPhoto,
     blurb: "Financial claim verification: a multi-agent pipeline that matches cloud-only accuracy at about half the cost",
     role: "Lead Student Researcher/First Author",
     place: "Supervised by Prof. Zhen Bi, Huzhou Normal University",
@@ -237,6 +265,7 @@ export const EXPERIENCE: Role[] = [
   {
     slug: "trace",
     project: "TRACE",
+    image: tracePhoto,
     blurb: "TRACE: text-to-image steering that cuts attack success by nearly half at about 1% latency",
     role: "Research Assistant/Co-author",
     place: "Under Prof. Zhen Bi, Huzhou Normal University",
@@ -253,6 +282,7 @@ export const EXPERIENCE: Role[] = [
   {
     slug: "c3m",
     project: "C3M",
+    image: c3mPhoto,
     blurb: "C3M: a multimodal memory framework for long-horizon AI agents",
     role: "Research Assistant/Co-author",
     place: "Under Prof. Zhen Bi, Huzhou Normal University",
@@ -268,6 +298,7 @@ export const EXPERIENCE: Role[] = [
   },
   {
     slug: "it-technician",
+    image: itTechnicianPhoto,
     blurb: "Hardware and software support for a ~2,000-student school",
     role: "IT Technician",
     place: "Burnaby South Secondary, BC",
@@ -296,6 +327,7 @@ export const EXPERIENCE: Role[] = [
   },
   {
     slug: "private-tutor",
+    image: privateTutorPhoto,
     blurb: "Python, C++, math and science for 6+ students in Grades 5 to 12",
     role: "Private Tutor",
     start: "Oct 2024",
@@ -343,6 +375,7 @@ export const ROLL: Shot[] = [
   { slug: "hunaglong-26", label: "Hunaglong 26", image: hunaglongPhoto },
   { slug: "jc-in-action", label: "jc in action", image: jcInActionPhoto },
   { slug: "meta", label: "Meta", image: metaPhoto },
+  { slug: "mma", label: "MMA", image: mmaPhoto },
   { slug: "pb-cookies", label: "PB cookies", image: pbCookiesPhoto },
   { slug: "pineapple-buns", label: "pineapple buns", image: pineappleBunsPhoto },
   { slug: "shanghai-26", label: "Shanghai 26", image: shanghaiPhoto },

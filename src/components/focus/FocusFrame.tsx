@@ -23,10 +23,11 @@ import {
  * - `Esc`, the close button, and a click on the ground around the cards all
  *   return to `/` — except where a section lays its own backdrop over that
  *   ground (Skills' mat), which runs the length of the page behind it.
- * - A page under a section (a role's page, `/experience/{slug}`) passes its
- *   own `heading` (the way back) and `onClose`, and is `raised` over the
- *   desk's open section view, which stays open behind it. Its `Esc` stops
- *   here, so it doesn't also close that view.
+ * - A page under a section (a role's or a project's, `/experience/{slug}`,
+ *   `/projects/{slug}`) passes its own `heading` (the way back) and
+ *   `onClose`, and is `raised` over the desk's open section view, which
+ *   stays open behind it. Its `Esc` stops here, so it doesn't also close
+ *   that view.
  * - Page scroll is locked while open; the frame scrolls itself.
  * - Focus is trapped and returned to the opener on close.
  */

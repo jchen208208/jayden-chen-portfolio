@@ -772,6 +772,42 @@ body {
   .proj-card:hover .proj-title {
     translate: 3% 0;
   }
+  .proj-card:hover .proj-go {
+    color: var(--glow);
+    translate: 8px 0;
+  }
+}
+
+/* a card that opens its project's page (`/projects/{slug}`) — "View →" under
+   its lines, amber once lit */
+.proj-link {
+  outline: none;
+}
+.proj-link:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 6px;
+}
+.proj-go {
+  color: rgb(255 255 255 / 0.4);
+  transition:
+    color 250ms ease-out,
+    translate 350ms var(--proj-ease);
+}
+
+/* the project's page: its window comes up lit as the page opens, the shade
+   lifting off the picture — the card's hover carried through (no hop) */
+.proj-lit .proj-window {
+  background: linear-gradient(90deg, var(--proj-deep), var(--glow) 45%, var(--neon-core));
+}
+.proj-lit .proj-shade {
+  opacity: 0;
+  transition: opacity 500ms ease-out;
+}
+
+/* a picture of the build on a project's page */
+.proj-figure {
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18);
 }
 
 /* A title drawn as circuit-board traces (`PcbTitle`): each trace routes

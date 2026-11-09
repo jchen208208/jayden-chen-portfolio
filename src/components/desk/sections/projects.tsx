@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import { PROJECTS, type Project } from "@/lib/site";
+import { markFromList } from "@/lib/experienceNav";
 import { Bullets, CardLink, Meta, ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
@@ -13,47 +15,71 @@ import { Bullets, CardLink, Meta, ShotPlaceholder, type SectionCard } from "./sh
  * Olson's portfolio (`.proj-*` in globals.css has the timings). Like
  * Experience it sits in the page rather than a window of its own, and its
  * cards drop in one after another (`.exp-row`).
+ *
+ * A project with a build gallery has its own page (`/projects/{slug}`,
+ * `ProjectPage`), and its whole card opens it.
  */
 
 const LIST_MAX_WIDTH = "72rem";
 
-function ProjectCard({ project: p, index }: { project: Project; index: number }) {
+/** the project's picture in its amber program window — lit (`.proj-lit`, or
+ *  a hovered `.proj-card`) it drops its shade and the frame turns gradient */
+export function ProjectWindow({
+  project: p,
+  sizes,
+  eager = false,
+  file = true,
+}: {
+  project: Project;
+  sizes: string;
+  eager?: boolean;
+  /** the dog-eared page hung off its bottom corner */
+  file?: boolean;
+}) {
   return (
-    <li className="exp-row proj-card" style={{ "--i": index } as CSSProperties}>
-      <div className="relative">
-        <div className="proj-window">
+    <div className="relative">
+      <div className="proj-window">
           {/* the title bar's three buttons */}
-          <svg
-            viewBox="0 0 76 32"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={4}
-            aria-hidden
-            className="absolute top-0 left-0 w-[21.1%] text-black"
-          >
-            <rect x="8" y="8" width="14" height="14" />
-            <rect x="32" y="8" width="14" height="14" />
-            <rect x="56" y="8" width="14" height="14" />
-          </svg>
-          <div className="proj-screen">
-            <div className="proj-shot">
-              {p.image ? (
-                <Image
-                  src={p.image}
-                  alt={p.name}
-                  fill
-                  sizes="(min-width: 640px) 24rem, 100vw"
-                  className="object-cover"
-                />
-              ) : (
-                <ShotPlaceholder slug={p.slug} />
-              )}
-              <div className="proj-shade" />
-            </div>
+        <svg
+          viewBox="0 0 76 32"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={4}
+          aria-hidden
+          className="absolute top-0 left-0 w-[21.1%] text-black"
+        >
+          <rect x="8" y="8" width="14" height="14" />
+          <rect x="32" y="8" width="14" height="14" />
+          <rect x="56" y="8" width="14" height="14" />
+        </svg>
+        <div className="proj-screen">
+          <div className="proj-shot">
+            {p.image ? (
+              <Image
+                src={p.image}
+                alt={p.name}
+                fill
+                loading={eager ? "eager" : undefined}
+                sizes={sizes}
+                className="object-cover"
+              />
+            ) : (
+              <ShotPlaceholder slug={p.slug} />
+            )}
+            <div className="proj-shade" />
           </div>
         </div>
-        <span aria-hidden className="proj-file" />
       </div>
+      {file && <span aria-hidden className="proj-file" />}
+    </div>
+  );
+}
+
+function ProjectCard({ project: p, index }: { project: Project; index: number }) {
+  const opens = Boolean(p.gallery?.length);
+  const face = (
+    <>
+      <ProjectWindow project={p} sizes="(min-width: 640px) 24rem, 100vw" />
       <h3 className="proj-title mt-3 font-title text-xl uppercase leading-tight tracking-wide text-white">
         {p.name}
       </h3>
@@ -61,13 +87,31 @@ function ProjectCard({ project: p, index }: { project: Project; index: number })
         <Meta>{p.period}</Meta>
         <Meta>{p.tags.join(" · ")}</Meta>
         <Bullets items={p.highlights} />
-        {(p.repo || p.demo) && (
-          <div className="flex gap-4 text-xs uppercase tracking-wide">
-            {p.repo && <CardLink href={p.repo}>Source</CardLink>}
-            {p.demo && <CardLink href={p.demo}>Demo</CardLink>}
-          </div>
+        {opens && (
+          <span aria-hidden className="proj-go text-xs uppercase tracking-wide">
+            View →
+          </span>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <li className="exp-row proj-card" style={{ "--i": index } as CSSProperties}>
+      {opens ? (
+        <Link href={`/projects/${p.slug}`} onClick={markFromList} className="proj-link block">
+          {face}
+        </Link>
+      ) : (
+        face
+      )}
+      {/* outside the card's own link — links can't nest */}
+      {(p.repo || p.demo) && (
+        <div className="mt-3 flex gap-4 font-mono text-xs uppercase tracking-wide text-white">
+          {p.repo && <CardLink href={p.repo}>Source</CardLink>}
+          {p.demo && <CardLink href={p.demo}>Demo</CardLink>}
+        </div>
+      )}
     </li>
   );
 }
