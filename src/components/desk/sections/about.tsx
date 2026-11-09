@@ -32,13 +32,13 @@ function About({ layout, active }: CardOptions) {
           <a href={PROFILE.schoolUrl} target="_blank" rel="noreferrer" className="school-mark whitespace-nowrap">
             {PROFILE.school}
             <Image src={crest} alt="" className="school-crest ml-1.5" />
-          </a>{" "}
-          who likes building things on the line between software and hardware: a web app, a PCB, and
-          the firmware in between.
+          </a>
+          . I like to build, and above all I like to learn! I love software like researching ML and
+          AI, hardware like PCB design and soldering, and also the lower level systems and embedded
+          firmware that live in between.
         </p>
         <p>
-          Away from the desk I&apos;m on a tennis court, training MMA, or in the kitchen. The roll
-          below has the evidence.
+          Away from the desk I&apos;m on a tennis court, training MMA, or in the kitchen.
         </p>
       </div>
       <ContactSheet active={active} firstIndex={2} />

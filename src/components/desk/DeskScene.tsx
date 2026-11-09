@@ -652,6 +652,17 @@ export default function DeskScene({
     return () => window.removeEventListener("keydown", onKey);
   }, [zoomed, close]);
 
+  // a section is open over the desk — and over the footer, with its theme
+  // swatches, so the floating ones come out instead (`ThemeBar`)
+  useEffect(() => {
+    if (!zoomed) return;
+    const root = document.documentElement;
+    root.dataset.deskOpen = "";
+    return () => {
+      delete root.dataset.deskOpen;
+    };
+  }, [zoomed]);
+
   return (
     <div className={className}>
       <div className="mx-auto hidden w-full max-w-[1180px] px-4 md:block">
