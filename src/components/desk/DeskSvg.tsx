@@ -70,12 +70,12 @@ const SPEAKER_GRILLE_Y = (SPEAKER_CAP_SEAM + SPEAKER_BASE_SEAM) / 2;
 /** the play button, on the front of that row */
 const SPEAKER_BUTTON_Y = SPEAKER_GRILLE_Y + SPEAKER_BOW;
 /** the clear round patch the play button sits on */
-const SPEAKER_BUTTON_R = 7.5;
+const SPEAKER_BUTTON_R = 9;
 /** the grille's holes: how far apart they sit along a row, face on, and how
  *  big each is — about two-thirds of that gap across, as on the perforated
  *  metal grille of a Klipsch speaker */
-const SPEAKER_HOLE_PITCH = 4.2;
-const SPEAKER_HOLE_R = 1.4;
+const SPEAKER_HOLE_PITCH = 5.2;
+const SPEAKER_HOLE_R = 1.8;
 
 /** the speaker's outline: straight sides, filleted corners (10 at the top,
  *  8 at the bottom), and a shallow arch over the top and under the bottom.
@@ -665,8 +665,8 @@ export default function DeskSvg({
             stroke="none"
           />
           <path
-            d={`M${SPEAKER.cx - 2} ${SPEAKER_BUTTON_Y - 3.5} L${SPEAKER.cx + 4} ${SPEAKER_BUTTON_Y}
-               L${SPEAKER.cx - 2} ${SPEAKER_BUTTON_Y + 3.5} Z`}
+            d={`M${SPEAKER.cx - 2.5} ${SPEAKER_BUTTON_Y - 4.3} L${SPEAKER.cx + 5} ${SPEAKER_BUTTON_Y}
+               L${SPEAKER.cx - 2.5} ${SPEAKER_BUTTON_Y + 4.3} Z`}
             fill={INK}
             strokeWidth={1.2}
           />

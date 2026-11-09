@@ -9,9 +9,12 @@
  * fetches each one's details. No account or API key is involved.
  */
 export const PLAYLIST: readonly number[] = [
-  617154366, // Daft Punk — Get Lucky (stand-in)
-  594061856, // Fleetwood Mac — Dreams (stand-in)
-  1499378607, // The Weeknd — Blinding Lights (stand-in)
+  1716760722, // Jordana & TV Girl — Better in the Dark
+  1623923868, // TV Girl — Blue Hair
+  1623929724, // TV Girl — Louise
+  1097862845, // Radiohead — Fake Plastic Trees
+  6814986953, // Panchiko — D>E>A>T>H>M>E>T>A>L
+  6789828849, // Mac DeMarco — No Other Heart
 ];
 
 /** the side, in px, of the album covers asked of Apple */
