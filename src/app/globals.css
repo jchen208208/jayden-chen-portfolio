@@ -994,11 +994,21 @@ body {
    one pass's time, set from the number of frames so every frame drifts by
    at the same slow speed. The film holds still under the pointer, so a
    frame can develop and be clicked, and while a frame has keyboard focus or
-   a print is out (`data-paused`). */
+   a print is out (`data-paused`), or it's being wound by hand
+   (`data-winding`, `contactSheet.tsx`). A sideways drag on a touch screen
+   winds the film; an up-and-down one still scrolls the page. */
 .film-reel {
   width: 100vw;
   margin-inline: calc(50% - 50vw);
   overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.film-reel[data-winding],
+.film-reel[data-winding] * {
+  cursor: grabbing;
 }
 
 .film-track {
@@ -1022,7 +1032,8 @@ body {
 }
 
 .film-reel:has(.film-frame:focus-visible) .film-track,
-.film-reel[data-paused] .film-track {
+.film-reel[data-paused] .film-track,
+.film-reel[data-winding] .film-track {
   animation-play-state: paused;
 }
 

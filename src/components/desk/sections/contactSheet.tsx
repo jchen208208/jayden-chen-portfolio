@@ -1,8 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent as ReactDragEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { ROLL, type Shot } from "@/lib/site";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { Print } from "./print";
 import { ShotPlaceholder } from "./shared";
 
@@ -15,6 +24,10 @@ import { ShotPlaceholder } from "./shared";
  * a print (`print.tsx`). On a phone there's no hover to wait for, so each
  * frame develops as it comes into view. All of the look and the slide is CSS
  * (`.film-*` in globals.css); the frames' is off one switch, `--lit`.
+ *
+ * The film can be wound by hand, too: press on it and drag left or right and
+ * it follows, and let go mid-drag and it coasts on a little before the slow
+ * drift takes over again (`useWinding`).
  *
  * The film is drawn to a real 35mm frame's measurements: 38mm from one frame
  * to the next (8 perforations of 4.75mm), a 36mm-wide picture with 1mm of base
@@ -143,6 +156,129 @@ function Frame({
  *  repeats along the film, and that repeat's button */
 type PrintOut = { index: number; key: string; button: HTMLButtonElement };
 
+/** px a press has to move before it's winding the film rather than a click */
+const DRAG_SLOP = 6;
+/** a fling's speed left after each millisecond — it coasts a short way */
+const FRICTION = 0.995;
+/** the fastest a fling sets off, px per ms — it coasts at most ~600px */
+const MAX_FLING = 3;
+
+/**
+ * Winding the film by hand. The slide is a CSS animation (`film-run`), so
+ * dragging moves that animation's own clock: the film goes wherever the
+ * pointer takes it, the loop stays seamless, and when it's let go the drift
+ * carries on from there. A drag that ends moving keeps going and slows to a
+ * stop. While the film is being wound (`winding`) it holds still of its own
+ * accord, and the click that ends a drag doesn't print the frame it ended
+ * on. With reduced motion the film stands still and scrolls instead, so a
+ * drag scrolls it, and doesn't coast.
+ */
+function useWinding() {
+  const reelRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLUListElement>(null);
+  const reduced = usePrefersReducedMotion();
+  const [winding, setWinding] = useState(false);
+  const drag = useRef<{ id: number; startX: number; x: number; t: number; v: number; moved: boolean } | null>(
+    null,
+  );
+  // a drag just ended: the click that comes with letting go isn't a print
+  const dragged = useRef(false);
+  const fling = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(fling.current), []);
+
+  /** moves the film `dx` px — to the right if positive */
+  function wind(dx: number) {
+    const reel = reelRef.current;
+    const track = trackRef.current;
+    if (!reel || !track) return;
+    const run = track
+      .getAnimations()
+      .find((a): a is CSSAnimation => a instanceof CSSAnimation && a.animationName === "film-run");
+    if (!run) {
+      reel.scrollLeft -= dx;
+      return;
+    }
+    const span = Number(run.effect?.getComputedTiming().duration);
+    // one pass — half the track — is one run of the animation
+    const pass = track.offsetWidth / 2;
+    if (!span || !pass) return;
+    const t = Number(run.currentTime ?? 0) - (dx / pass) * span;
+    run.currentTime = ((t % span) + span) % span;
+  }
+
+  function coast(v0: number) {
+    if (reduced || Math.abs(v0) < 0.05) {
+      setWinding(false);
+      return;
+    }
+    let v = Math.max(-MAX_FLING, Math.min(MAX_FLING, v0));
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(32, now - last);
+      last = now;
+      wind(v * dt);
+      v *= FRICTION ** dt;
+      if (Math.abs(v) > 0.02) fling.current = requestAnimationFrame(step);
+      else setWinding(false);
+    };
+    fling.current = requestAnimationFrame(step);
+  }
+
+  function end(e: ReactPointerEvent, cancelled: boolean) {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (!d.moved) return;
+    if (cancelled) {
+      setWinding(false);
+      return;
+    }
+    // the click that follows, if one does, is the drag's — not a print
+    dragged.current = true;
+    window.setTimeout(() => (dragged.current = false), 0);
+    // held still before letting go: no fling
+    coast(e.timeStamp - d.t > 80 ? 0 : d.v);
+  }
+
+  const handlers = {
+    onPointerDown(e: ReactPointerEvent) {
+      if (e.button !== 0) return;
+      cancelAnimationFrame(fling.current);
+      dragged.current = false;
+      drag.current = { id: e.pointerId, startX: e.clientX, x: e.clientX, t: e.timeStamp, v: 0, moved: false };
+    },
+    onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+      const d = drag.current;
+      if (!d || d.id !== e.pointerId) return;
+      if (!d.moved) {
+        if (Math.abs(e.clientX - d.startX) < DRAG_SLOP) return;
+        d.moved = true;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setWinding(true);
+      }
+      const dx = e.clientX - d.x;
+      const dt = e.timeStamp - d.t;
+      wind(dx);
+      if (dt > 0) d.v = 0.7 * (dx / dt) + 0.3 * d.v;
+      d.x = e.clientX;
+      d.t = e.timeStamp;
+    },
+    onPointerUp: (e: ReactPointerEvent) => end(e, false),
+    onPointerCancel: (e: ReactPointerEvent) => end(e, true),
+    onClickCapture(e: ReactMouseEvent) {
+      if (!dragged.current) return;
+      dragged.current = false;
+      e.stopPropagation();
+      e.preventDefault();
+    },
+    // a picture mustn't be picked up and dragged off as an image
+    onDragStart: (e: ReactDragEvent) => e.preventDefault(),
+  };
+
+  return { reelRef, trackRef, winding, handlers };
+}
+
 export function ContactSheet({
   active,
   firstIndex,
@@ -155,10 +291,10 @@ export function ContactSheet({
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [print, setPrint] = useState<PrintOut | null>(null);
+  const { reelRef, trackRef, winding, handlers } = useWinding();
 
   // the desk view closing takes any print with it
   if (!active && print) setPrint(null);
-
 
   // no hover on a phone: a frame develops once it's mostly in view
   useEffect(() => {
@@ -188,15 +324,19 @@ export function ContactSheet({
         className="about-in film-hint text-center font-screen text-lg uppercase leading-none tracking-wide"
         style={{ "--i": firstIndex - 1 } as CSSProperties}
       >
-        <span className="film-hint-hover">▸ Hover a frame to develop it · click to print</span>
-        <span className="film-hint-touch">▸ Tap a frame to print it</span>
+        <span className="film-hint-hover">▸ Hover a frame to develop it · click to print · drag to wind</span>
+        <span className="film-hint-touch">▸ Tap a frame to print it · drag to wind</span>
       </p>
       <div
+        ref={reelRef}
+        {...handlers}
         className="about-in film-reel"
         data-paused={!active || print !== null || undefined}
+        data-winding={winding || undefined}
         style={{ "--i": firstIndex } as CSSProperties}
       >
         <ul
+          ref={trackRef}
           className="film-track"
           style={{ "--run": `${pass.length * SECONDS_PER_FRAME}s` } as CSSProperties}
         >
