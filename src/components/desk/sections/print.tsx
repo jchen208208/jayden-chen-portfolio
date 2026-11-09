@@ -13,17 +13,17 @@ import {
 import { createPortal } from "react-dom";
 import type { Shot } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { markOut, peel, type PrintParts } from "./printMotion";
+import { markOut, mount, type PrintParts } from "./printMotion";
 import { ShotPlaceholder } from "./shared";
 
 /**
  * A frame off the About roll, lifted out as a print: it comes out of its
  * frame on the film into a big print on white paper, over the page dimmed
  * nearly to black, and goes back into the frame when it's closed (Esc, the
- * close button, or a click anywhere off it). It peels off the film like a soft
- * handkerchief (`printMotion.ts`), run across the print's layers — the
- * dimming, the paper, its white sheet, its shadow, the picture — and a
- * canvas laid over them for the handkerchief itself. Until it has landed nothing else starts: the
+ * close button, or a click anywhere off it). A white border snaps on round
+ * the picture in the strip, like a slide mount, and the print glides up to
+ * the front (`printMotion.ts`) — run across the print's layers: the dimming,
+ * the paper, its white sheet, its shadow. Until it has landed nothing else starts: the
  * sharp picture isn't loaded, the waveform isn't fetched and the clip
  * doesn't play, so nothing competes with the motion. Meanwhile the picture
  * shows from the frame's own copy, already loaded.
@@ -190,7 +190,6 @@ export function Print({
 }) {
   const reduced = usePrefersReducedMotion();
   const backdropRef = useRef<HTMLDivElement>(null);
-  const overRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
@@ -227,14 +226,13 @@ export function Print({
 
   const parts = useCallback((): PrintParts | null => {
     const backdrop = backdropRef.current;
-    const over = overRef.current;
     const paper = paperRef.current;
     const sheet = sheetRef.current;
     const shadow = shadowRef.current;
     const photo = photoRef.current;
-    if (!backdrop || !over || !paper || !sheet || !shadow || !photo) return null;
+    if (!backdrop || !paper || !sheet || !shadow || !photo) return null;
     const frame = origin.querySelector<HTMLElement>(".film-window") ?? origin;
-    return { backdrop, over, paper, sheet, shadow, photo, origin, frame };
+    return { backdrop, paper, sheet, shadow, photo, origin, frame };
   }, [origin]);
 
   // the picture has left the film — unless the print is already on its way
@@ -242,11 +240,6 @@ export function Print({
   const empty = useCallback(() => {
     if (!closing.current) markOut(origin, true);
   }, [origin]);
-
-  /** the pieces a motion brought with it (shards, a loupe…), done with */
-  const clearPieces = useCallback(() => {
-    rootRef.current?.querySelectorAll("[data-fx]").forEach((el) => el.remove());
-  }, []);
 
   // come out of the frame
   useLayoutEffect(() => {
@@ -259,7 +252,7 @@ export function Print({
         ? [p.backdrop, p.paper].map((el) =>
             el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: "ease-out", fill: "both" }),
           )
-        : peel({ ...p, from, to: p.photo.getBoundingClientRect(), back: false, empty });
+        : mount({ ...p, from, to: p.photo.getBoundingClientRect(), back: false, empty });
     opening.current = anims;
     started.current = [...anims];
     let live = true;
@@ -267,7 +260,6 @@ export function Print({
       () => {
         // closed before it landed: its way back is under way instead
         if (!live || closing.current) return;
-        clearPieces();
         setOpened(true);
       },
       () => {},
@@ -275,10 +267,9 @@ export function Print({
     return () => {
       live = false;
       for (const a of started.current) a.cancel();
-      clearPieces();
       markOut(origin, false);
     };
-  }, [clearPieces, empty, origin, parts, reduced]);
+  }, [empty, origin, parts, reduced]);
 
   // only once it's landed does the clip start
   useEffect(() => {
@@ -312,7 +303,7 @@ export function Print({
         ? [p.backdrop, p.paper].map((el) =>
             el.animate([{ opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" }),
           )
-        : peel({ ...p, from, to: p.photo.getBoundingClientRect(), back: true, empty });
+        : mount({ ...p, from, to: p.photo.getBoundingClientRect(), back: true, empty });
     started.current.push(...anims);
     void settle(anims);
   }, [empty, onClosed, origin, parts, reduced, voiceMedia]);
@@ -536,8 +527,6 @@ export function Print({
           )}
         </div>
       </div>
-      {/* the peel's own pieces, over the print (`printMotion.ts`) */}
-      <div ref={overRef} aria-hidden className="print-fx fixed inset-0" />
     </div>,
     document.body,
   );

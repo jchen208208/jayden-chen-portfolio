@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ROLL, type Shot } from "@/lib/site";
-import { warmCloth } from "./cloth";
 import { Print } from "./print";
 import { ShotPlaceholder } from "./shared";
 
@@ -193,9 +192,6 @@ export function ContactSheet({
         <span className="film-hint-touch">▸ Tap a frame to print it</span>
       </p>
       <div
-        // the first time the pointer comes onto the film, get the peel's
-        // WebGL ready, so the first click doesn't wait on it
-        onPointerEnter={warmCloth}
         className="about-in film-reel"
         data-paused={!active || print !== null || undefined}
         style={{ "--i": firstIndex } as CSSProperties}

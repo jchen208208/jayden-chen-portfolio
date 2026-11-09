@@ -1158,7 +1158,7 @@ body {
 
 /* a print (`sections/print.tsx`): white paper over the page dimmed nearly to
    black, sized to leave room under it for the voice note and caption. How it
-   comes and goes is the motion's (`printMotion.ts`), which fades the dimming
+   comes and goes is Mount's (`printMotion.ts`), which fades the dimming
    in itself; the caption fades in once the print has landed, and out as it
    leaves. */
 .print-root {
@@ -1167,10 +1167,6 @@ body {
 
 .print-backdrop {
   background: rgb(0 0 0 / 0.86);
-}
-
-.print-fx {
-  pointer-events: none;
 }
 
 .print-close {
@@ -1233,42 +1229,6 @@ body {
 
 .film-frame[data-out] .film-window > * {
   visibility: hidden;
-}
-
-/* Peel: the handkerchief, drawn on a canvas over the whole view
-   (`cloth.ts`) */
-.fx-cloth {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* Peel without WebGL: the sheet and its strips, each hung from the one above
-   by its top edge, all in one 3D space so the curl reads with depth; each
-   strip's shade darkens it as it turns from the light. Nothing on the sheet may group it
-   (opacity, will-change: opacity, filter…), or it flattens and the curl
-   loses its perspective. */
-.fx-peel {
-  position: fixed;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.fx-peel-strip {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  transform-origin: 50% 0;
-  transform-style: preserve-3d;
-  background-repeat: no-repeat;
-}
-
-.fx-peel-shade {
-  position: absolute;
-  inset: 0;
-  background: #000;
-  opacity: 0;
 }
 
 /* the caption following its voice note */
