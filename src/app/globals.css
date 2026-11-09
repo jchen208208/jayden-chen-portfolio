@@ -333,82 +333,6 @@ body {
   opacity: 1;
 }
 
-/* the PC's RGB fans (`PcFanLights`): they come on with a quick fade, then
-   run one of three effects, each a seamless loop.
-   `pc-spin` turns the glowing comet round each fan's centre (it rotates
-   about its own origin); `pc-side-spin` moves the side-on fans' light up and
-   down their edge in step with it — a circling light seen edge-on rides a
-   sine, so it eases out at each end and is quickest through the middle.
-   `pc-wave` slides the repeating bands in the wave's mask one whole period
-   (`WAVE_PERIOD`) to the right, so the end of the loop is the start.
-   `pc-breathe` glows all the fans up slowly and dims them away again. */
-@keyframes pc-lights-in {
-  from {
-    opacity: 0;
-  }
-}
-
-.pc-lights {
-  animation: pc-lights-in 300ms ease-out both;
-}
-
-@keyframes pc-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.pc-spin {
-  transform-origin: 0 0;
-  animation: pc-spin 3.6s linear infinite;
-}
-
-@keyframes pc-side-spin {
-  0% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
-  }
-  25% {
-    transform: translateY(22px);
-    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
-  }
-  75% {
-    transform: translateY(-22px);
-    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
-  }
-  100% {
-    transform: translateY(0);
-  }
-}
-
-.pc-side-band {
-  animation: pc-side-spin 3.6s linear infinite;
-}
-
-@keyframes pc-wave {
-  to {
-    transform: translateX(110px);
-  }
-}
-
-.pc-wave-band {
-  animation: pc-wave 4.8s linear infinite;
-}
-
-@keyframes pc-breathe {
-  0%,
-  100% {
-    opacity: 0.1;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.pc-breathe {
-  animation: pc-breathe 5s ease-in-out infinite;
-}
-
 /* the music notes off the speaker (`SPEAKER_NOTES` in DeskSvg): each fades
    in just above it, rises a short way on an arc bending off to the right —
    mostly up at first, then out along its drift (`--note-dx`), rocking as it
@@ -443,10 +367,11 @@ body {
 }
 
 /* a section open over the desk (`data-covered`, or a section's own page —
-   `data-section-open`) holds the fans still: animating the SVG repaints it
-   on the main thread every frame, under a view no one can see it through */
+   `data-section-open`) holds the fans' LEDs (`PcFanLights`, which writes
+   their keyframes) still: animating the SVG repaints it on the main thread,
+   under a view no one can see it through */
 :is([data-desk][data-covered], html[data-section-open] [data-desk])
-  :is(.pc-lights, .pc-spin, .pc-side-band, .pc-wave-band, .pc-breathe, .speaker-note) {
+  :is(.pc-led, .speaker-note) {
   animation-play-state: paused;
 }
 
@@ -1513,11 +1438,7 @@ body {
   .pcb-trace,
   .pcb-pad,
   .pcb-silk,
-  .pc-lights,
-  .pc-spin,
-  .pc-side-band,
-  .pc-wave-band,
-  .pc-breathe,
+  .pc-led,
   .speaker-note {
     animation: none !important;
   }

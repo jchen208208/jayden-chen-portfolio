@@ -25,7 +25,6 @@ import type { Track } from "@/lib/playlist";
 import { SECTIONS, type SectionId } from "@/lib/site";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import DeskSvg from "./DeskSvg";
-import type { PcFanMode } from "./PcFanLights";
 import DeskCardList from "./DeskCardList";
 import ScreenCard from "./ScreenCard";
 import ScreenLabel from "./ScreenLabel";
@@ -210,10 +209,8 @@ const LAMP_IDLE_OFF_MS: [number, number] = [6_000, 10_000];
 /** the PC's power button (DeskSvg's PC tower, translated −100), with a
  *  generous hit box — it's only 8 units across */
 const PC_BUTTON_HIT: Rect = { x: 540, y: 464, w: 24, h: 24 };
-/** the fans' light effects, in the order the power button steps through them */
-const PC_FAN_MODES: Exclude<PcFanMode, "off">[] = ["spin", "wave", "breathe"];
-/** left alone, the fans light up now and then with an effect of their own
- *  choosing (a random wait in this range, ms)… */
+/** left alone, the fans light up now and then (a random wait in this range,
+ *  ms)… */
 const PC_IDLE_ON_MS: [number, number] = [12_000, 28_000];
 /** …and go dark again a while later */
 const PC_IDLE_OFF_MS: [number, number] = [8_000, 14_000];
@@ -254,7 +251,7 @@ export default function DeskScene({
   const [openId, setOpenId] = useState<SectionId | null>(null);
   const [lampOn, setLampOn] = useState(false);
   const [chainPulled, setChainPulled] = useState(false);
-  const [pcFans, setPcFans] = useState<PcFanMode>("off");
+  const [pcFans, setPcFans] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
   // How big the clicked screen's glass was on screen, as a fraction of the
   // viewport — the fullscreen content starts at this scale (roughly the
@@ -434,36 +431,24 @@ export default function DeskScene({
   }, [lampOn, reduced, pullChain, openId]);
 
   // The PC's fans work like the lamp: the power button toggles them, and left
-  // alone they light up now and then and go dark again. Each switch-on is a
-  // different effect — the button steps through them in turn, the idle timer
-  // picks one of the other two at random.
-  const lastPcMode = useRef<PcFanMode>(PC_FAN_MODES[PC_FAN_MODES.length - 1]);
+  // alone they light up now and then and go dark again.
   const pcOnByIdle = useRef(false);
-  const nextPcMode = useCallback((random: boolean) => {
-    const i = PC_FAN_MODES.indexOf(lastPcMode.current as (typeof PC_FAN_MODES)[number]);
-    const step = random ? 1 + Math.floor(Math.random() * (PC_FAN_MODES.length - 1)) : 1;
-    const next = PC_FAN_MODES[(i + step) % PC_FAN_MODES.length];
-    lastPcMode.current = next;
-    return next;
-  }, []);
   const togglePcFans = useCallback(() => {
     pcOnByIdle.current = false;
-    // reduced motion has no effects to step through: just the steady glow
-    // (`breathe`, with its animation off)
-    setPcFans(pcFans === "off" ? (reduced ? "breathe" : nextPcMode(false)) : "off");
-  }, [pcFans, nextPcMode, reduced]);
+    setPcFans((v) => !v);
+  }, []);
   // As with the lamp, fans the visitor switched on stay on until they switch
   // them off, and reduced motion never lights them unbidden — nor does a
   // section open over the desk.
   useEffect(() => {
-    if (reduced || openId !== null || (pcFans !== "off" && !pcOnByIdle.current)) return;
-    const [min, max] = pcFans === "off" ? PC_IDLE_ON_MS : PC_IDLE_OFF_MS;
+    if (reduced || openId !== null || (pcFans && !pcOnByIdle.current)) return;
+    const [min, max] = pcFans ? PC_IDLE_OFF_MS : PC_IDLE_ON_MS;
     const id = window.setTimeout(() => {
       pcOnByIdle.current = true;
-      setPcFans(pcFans === "off" ? nextPcMode(true) : "off");
+      setPcFans(!pcFans);
     }, min + Math.random() * (max - min));
     return () => window.clearTimeout(id);
-  }, [pcFans, reduced, nextPcMode, openId]);
+  }, [pcFans, reduced, openId]);
 
   const zoomed = openId !== null;
   // Experience and About run past the screen's bottom, so their overlay
@@ -698,8 +683,8 @@ export default function DeskScene({
           />
           <button
             type="button"
-            aria-label={pcFans === "off" ? "Turn the PC's lights on" : "Turn the PC's lights off"}
-            aria-pressed={pcFans !== "off"}
+            aria-label={pcFans ? "Turn the PC's lights off" : "Turn the PC's lights on"}
+            aria-pressed={pcFans}
             onClick={togglePcFans}
             onMouseDown={(e) => e.preventDefault()}
             className="absolute cursor-pointer rounded-full outline-none"

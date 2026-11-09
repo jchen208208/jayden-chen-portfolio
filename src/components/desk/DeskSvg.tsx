@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { DESK_FLOOR_INSET, DESK_VIEWBOX, LAPTOP1_TRANSFORM, SPEAKER } from "@/lib/desk";
 import SolderingStation, { SOLDERING_FEET_Y } from "./SolderingStation";
-import PcFanLights, { type PcFanMode } from "./PcFanLights";
+import PcFanLights from "./PcFanLights";
 
 /**
  * "The Desk" — a clean-line trace of Jayden's setup, in the flat style of
@@ -210,11 +210,11 @@ export default function DeskSvg({
   className,
   lampOn = false,
   chainPulled = false,
-  pcFans = "off",
+  pcFans = false,
 }: {
   className?: string;
-  /** the PC's RGB fans: off, or which light effect they're running */
-  pcFans?: PcFanMode;
+  /** the PC's RGB fans are lit (`PcFanLights`) */
+  pcFans?: boolean;
   /** lit, the bulb fills with the glow */
   lampOn?: boolean;
   /** mid-pull: the chain is yanked down (the light flips at the bottom of the
@@ -823,12 +823,12 @@ export default function DeskSvg({
             />
           ))}
           {/* the fans' RGB, when it's on — see `PcFanLights` */}
-          <PcFanLights mode={pcFans} />
+          <PcFanLights on={pcFans} />
           {/* front panel: top vent, the power button — amber, the fans'
               switch (DeskScene), lit while they're on — two USB ports */}
           <line x1={642} y1={450} x2={662} y2={450} />
           <line x1={642} y1={458} x2={662} y2={458} />
-          {pcFans !== "off" && (
+          {pcFans && (
             <circle cx={652} cy={476} r={8} fill={GLOW} fillOpacity={0.3} stroke="none" />
           )}
           <circle
@@ -836,7 +836,7 @@ export default function DeskSvg({
             cy={476}
             r={4}
             stroke={GLOW}
-            fill={pcFans !== "off" ? "var(--neon-core, #fff4e2)" : PAPER}
+            fill={pcFans ? "var(--neon-core, #fff4e2)" : PAPER}
           />
           <rect x={646} y={490} width={12} height={5} rx={1} />
           <rect x={646} y={500} width={12} height={5} rx={1} />
