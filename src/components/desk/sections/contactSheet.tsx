@@ -18,8 +18,9 @@ import { ShotPlaceholder } from "./shared";
  * (`.film-*` in globals.css); the frames' is off one switch, `--lit`.
  *
  * The film is drawn to a real 35mm frame's measurements: 38mm from one frame
- * to the next (8 perforations of 4.75mm), a 36 × 24mm picture with 1mm of base
- * either side of it. Its edge printing carries each frame's number and label.
+ * to the next (8 perforations of 4.75mm), a 36mm-wide picture with 1mm of base
+ * either side of it — cut 4:3 rather than 35mm's 3:2, to fit the photos whole.
+ * Its edge printing carries each frame's number and label.
  */
 
 /** mm from one perforation to the next — eight to a frame */

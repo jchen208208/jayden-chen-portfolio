@@ -8,6 +8,21 @@
 import type { StaticImageData } from "next/image";
 import findverDiagram from "@/assets/experience/findver-diagram.webp";
 import hitWithLukeShot from "@/assets/experience/hitwithluke.webp";
+import breakfastPhoto from "@/assets/about/breakfast!.jpeg";
+import canolaFlowersPhoto from "@/assets/about/canola flowers.jpeg";
+import championsPhoto from "@/assets/about/champions!.jpeg";
+import chongchingPhoto from "@/assets/about/Chongching 26.jpeg";
+import floridaPhoto from "@/assets/about/Florida 25.jpeg";
+import gymSeshPhoto from "@/assets/about/gym sesh.jpeg";
+import htvPhoto from "@/assets/about/HTV 26.jpeg";
+import hunaglongPhoto from "@/assets/about/Hunaglong 26.jpeg";
+import jcInActionPhoto from "@/assets/about/jc in action.jpeg";
+import metaPhoto from "@/assets/about/Meta.jpeg";
+import pbCookiesPhoto from "@/assets/about/PB cookies.jpeg";
+import pineappleBunsPhoto from "@/assets/about/pineapple buns.jpeg";
+import shanghaiPhoto from "@/assets/about/Shanghai 26.jpeg";
+import sunsetPhoto from "@/assets/about/sunset.jpeg";
+import whatAViewPhoto from "@/assets/about/what a view.jpeg";
 
 /** the tagline's parts — the hero highlights the school on its own */
 const STUDY = {
@@ -299,12 +314,13 @@ export const EXPERIENCE: Role[] = [
  *  it shows as an unexposed one. */
 export type Shot = {
   slug: string;
-  /** printed on the film's edge under the frame */
+  /** the photo's caption: printed on the film's edge under the frame, and
+   *  over the print */
   label: string;
   /** what the voice note says, word for word — shown under the print, and
    *  followed along as it plays */
-  caption: string;
-  /** the frame's picture, 3:2 — and the clip's first frame, if it has one */
+  caption?: string;
+  /** the frame's picture, 4:3 — and the clip's first frame, if it has one */
   image?: StaticImageData;
   /** `/about/{slug}.mp4`: a few seconds that loop silently in the print */
   clip?: string;
@@ -315,38 +331,23 @@ export type Shot = {
   cues?: number[];
 };
 
-/** In the roll's order. TODO — user: photos, clips and voice notes for each
- *  frame; these captions are drafts for you to rewrite in your own words. */
+/** In the roll's order. Each label is the photo's file name. */
 export const ROLL: Shot[] = [
-  {
-    slug: "hello",
-    label: "Hello",
-    caption:
-      "Hi, I'm Jayden. I study Computer Engineering at Waterloo, and most of what I make sits somewhere between a circuit board and a screen. Away from the desk, I'm on a tennis court, training MMA, or in the kitchen.",
-  },
-  {
-    slug: "tennis",
-    label: "On court",
-    caption:
-      "Tennis is the one thing I'll always make time for. A long rally clears my head better than anything else.",
-  },
-  {
-    slug: "mma",
-    label: "MMA",
-    caption:
-      "MMA keeps me honest. You can't fake a sparring round: either you've put the hours in or you find out.",
-  },
-  {
-    slug: "baking",
-    label: "Baking",
-    caption:
-      "Baking is engineering you can eat. Exact measurements, careful timing, and the oven tells you straight away if you got it wrong.",
-  },
-  {
-    slug: "cooking",
-    label: "Cooking",
-    caption: "Cooking is the opposite: taste as you go and adjust. I like having both.",
-  },
+  { slug: "breakfast", label: "breakfast!", image: breakfastPhoto },
+  { slug: "canola-flowers", label: "canola flowers", image: canolaFlowersPhoto },
+  { slug: "champions", label: "champions!", image: championsPhoto },
+  { slug: "chongching-26", label: "Chongching 26", image: chongchingPhoto },
+  { slug: "florida-25", label: "Florida 25", image: floridaPhoto },
+  { slug: "gym-sesh", label: "gym sesh", image: gymSeshPhoto },
+  { slug: "htv-26", label: "HTV 26", image: htvPhoto },
+  { slug: "hunaglong-26", label: "Hunaglong 26", image: hunaglongPhoto },
+  { slug: "jc-in-action", label: "jc in action", image: jcInActionPhoto },
+  { slug: "meta", label: "Meta", image: metaPhoto },
+  { slug: "pb-cookies", label: "PB cookies", image: pbCookiesPhoto },
+  { slug: "pineapple-buns", label: "pineapple buns", image: pineappleBunsPhoto },
+  { slug: "shanghai-26", label: "Shanghai 26", image: shanghaiPhoto },
+  { slug: "sunset", label: "sunset", image: sunsetPhoto },
+  { slug: "what-a-view", label: "what a view", image: whatAViewPhoto },
 ];
 
 /* ── awards ──────────────────────────────────────────────────────────────────── */

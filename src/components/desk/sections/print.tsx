@@ -453,7 +453,7 @@ export function Print({
         <div ref={paperRef} className="print-paper cursor-auto">
           <div ref={shadowRef} aria-hidden className="print-shadow" />
           <div ref={sheetRef} aria-hidden className="print-sheet" />
-          <div ref={photoRef} className="print-photo relative aspect-[3/2] w-full overflow-hidden bg-black">
+          <div ref={photoRef} className="print-photo relative aspect-[4/3] w-full overflow-hidden bg-black">
             {shot.image ? (
               <>
                 {/* the frame's own copy, already loaded — there from the very
@@ -525,13 +525,15 @@ export function Print({
               </span>
             </div>
           )}
-          <Caption
-            text={shot.caption}
-            time={time}
-            duration={duration}
-            cues={shot.cues}
-            following={following && !!voiceSrc}
-          />
+          {shot.caption && (
+            <Caption
+              text={shot.caption}
+              time={time}
+              duration={duration}
+              cues={shot.cues}
+              following={following && !!voiceSrc}
+            />
+          )}
         </div>
       </div>
       {/* the peel's own pieces, over the print (`printMotion.ts`) */}
