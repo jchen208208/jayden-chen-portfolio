@@ -407,6 +407,41 @@ body {
     visibility 0s;
 }
 
+/* the popup's card (`SpeakerPopup`), pixel art like the desk it stands
+   over, on the desk's own pixel (`--px`): a solid body in the lotus's greys
+   (`pixel/palette.ts`), its one-pixel rim lit along the top and left and
+   shaded along the bottom and right */
+.speaker-card {
+  background: #26262b;
+  border: var(--px) solid;
+  border-color: #9c9ca2 #5a5a60 #5a5a60 #9c9ca2;
+}
+
+/* corners cut a pixel square (`--px`), as the desk's are */
+.pixel-corners {
+  clip-path: polygon(
+    var(--px) 0,
+    calc(100% - var(--px)) 0,
+    calc(100% - var(--px)) var(--px),
+    100% var(--px),
+    100% calc(100% - var(--px)),
+    calc(100% - var(--px)) calc(100% - var(--px)),
+    calc(100% - var(--px)) 100%,
+    var(--px) 100%,
+    var(--px) calc(100% - var(--px)),
+    0 calc(100% - var(--px)),
+    0 var(--px),
+    var(--px) var(--px)
+  );
+}
+
+/* the song's progress (`--p`, 0–1), filling a whole pixel at a time — where
+   `round()` isn't supported, it just fills smoothly */
+.speaker-fill {
+  width: calc(var(--p) * 100%);
+  width: round(down, calc(var(--p) * 100%), var(--px));
+}
+
 /* the title face is Chakra Petch (loaded in 500/600/700); titles are semibold */
 .font-title {
   font-weight: 600;

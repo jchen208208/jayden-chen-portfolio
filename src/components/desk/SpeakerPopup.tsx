@@ -1,16 +1,21 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
-import { deskUnits } from "@/lib/desk";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { getImageProps } from "next/image";
+import { DESK_PX, deskUnits } from "@/lib/desk";
 import { ARTWORK_PX, type Track } from "@/lib/playlist";
-import { Icon } from "@/components/site/icons";
 import ScreenMosaic from "./ScreenMosaic";
 
 /**
  * The speaker's popup: a now-playing card in the shape of the phone's
  * lock-screen player or Spotify's — the album cover beside the song and its
  * artist, a progress bar with the time played and the song's length, and
- * previous / play / next — on frosted glass, so the desk behind it blurs
- * through.
+ * previous / play / next.
+ *
+ * It's pixel art like the desk it stands over, on the desk's own pixel (a
+ * quarter of an em in here, `--px`): a solid body with a one-pixel rim lit
+ * along its top and left, its corners cut a pixel square (`.speaker-card`);
+ * the cover shrunk to 14 × 14 pixels and drawn back up crisp; the words in
+ * the screens' pixel face; a one-pixel progress bar that fills a pixel at a
+ * time; and pixel icons on the buttons.
  *
  * It plays the playlist (`lib/playlist`) as Apple's 30-second previews, one
  * after another, round and round. The `<audio>` lives here, and the popup is
@@ -28,9 +33,13 @@ import ScreenMosaic from "./ScreenMosaic";
 /** 1em inside the card, in desk units */
 const EM = 16;
 /** the cover's side, in desk units (3.5em) — the stand-in mosaic is laid
- *  out in these */
+ *  out in these — and in the desk's pixels */
 const COVER = 56;
+const COVER_PX = COVER / DESK_PX;
 const COVER_SEED = 5;
+/** the cover as the image optimizer serves it, before it's shrunk to
+ *  pixels: comfortably more than `COVER_PX`, so the shrink can average */
+const COVER_SOURCE = 48;
 /** a preview's length, in s, until its audio says exactly */
 const PREVIEW_S = 30;
 /** previous, pressed more than this far into a song, restarts it — as on a
@@ -42,6 +51,117 @@ const clock = (s: number) => {
   const whole = Math.floor(s);
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 };
+
+/** the skip icons, a pixel each letter (5 × 5) */
+const ICONS = {
+  next: ["x...x", "xx..x", "xxx.x", "xx..x", "x...x"],
+  previous: ["x...x", "x..xx", "x.xxx", "x..xx", "x...x"],
+} as const;
+const ICON_PATHS = Object.fromEntries(
+  Object.entries(ICONS).map(([name, rows]) => [
+    name,
+    rows
+      .flatMap((row, y) => [...row].map((c, x) => (c === "x" ? `M${x} ${y}h1v1h-1z` : "")))
+      .join(""),
+  ]),
+) as Record<keyof typeof ICONS, string>;
+
+/**
+ * The play button is drawn finer than the rest — at half the desk's pixel,
+ * so its round face and its ▶ / ❚❚ read as pixel art without turning to big
+ * steps: a white disc with the symbol cut in dark. The disc's right half is
+ * drawn a pixel further out (19 × 18), and the ▶ sits right of centre,
+ * which reads as centred.
+ */
+const PLAY_W = 19;
+const PLAY_H = 18;
+/** a path of rows, one rectangle per run of set cells */
+const rowsPath = (cells: (x: number, y: number) => boolean) => {
+  let d = "";
+  for (let y = 0; y < PLAY_H; y++) {
+    let x = 0;
+    while (x < PLAY_W) {
+      if (!cells(x, y)) {
+        x++;
+        continue;
+      }
+      let n = 1;
+      while (x + n < PLAY_W && cells(x + n, y)) n++;
+      d += `M${x} ${y}h${n}v1h-${n}z`;
+      x += n;
+    }
+  }
+  return d;
+};
+/** a circle of radius 9 round (9, 9), its right half pushed out a pixel */
+const PLAY_DISC = rowsPath((x, y) => {
+  const cx = x + 0.5;
+  const dx = cx < 9 ? cx - 9 : cx > 10 ? cx - 10 : 0;
+  return dx ** 2 + (y + 0.5 - 9) ** 2 <= 8.9 ** 2;
+});
+/** ▶: ten rows tall from row 4, eight across from column 7; ❚❚: two bars
+ *  three wide with three between, centred in the disc */
+const PLAY_WIDTHS = [1, 2, 4, 6, 8, 8, 6, 4, 2, 1];
+const PLAY_SYMBOL = {
+  play: rowsPath((x, y) => y >= 4 && y < 14 && x >= 7 && x < 7 + PLAY_WIDTHS[y - 4]),
+  pause: rowsPath((x, y) => y >= 4 && y < 14 && ((x >= 5 && x < 8) || (x >= 11 && x < 14))),
+};
+/** …and the ▶ nudged back half a pixel, between columns 6 and 7 */
+const PLAY_NUDGE = "translate(-0.5 0)";
+
+function PlayFace({ playing }: { playing: boolean }) {
+  return (
+    <svg aria-hidden viewBox={`0 0 ${PLAY_W} ${PLAY_H}`} shapeRendering="crispEdges" className="size-full">
+      <path d={PLAY_DISC} fill="currentColor" />
+      <path
+        d={PLAY_SYMBOL[playing ? "pause" : "play"]}
+        transform={playing ? undefined : PLAY_NUDGE}
+        fill="var(--paper, #000)"
+      />
+    </svg>
+  );
+}
+
+function PixelIcon({ name, className }: { name: keyof typeof ICONS; className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 5 5" shapeRendering="crispEdges" className={className}>
+      <path d={ICON_PATHS[name]} fill="currentColor" />
+    </svg>
+  );
+}
+
+/** the album cover as pixels: it comes through the image optimizer as ever
+ *  (so no visitor's browser asks Apple for it), is shrunk to `COVER_PX`
+ *  square on a canvas, and the canvas is drawn back up with every pixel
+ *  kept square — the desk's own pixel size */
+function PixelCover({ src }: { src: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const url = getImageProps({ src, alt: "", width: COVER_SOURCE, height: COVER_SOURCE }).props.src;
+  useEffect(() => {
+    const ctx = ref.current?.getContext("2d");
+    if (!ctx) return;
+    const img = new window.Image();
+    img.onload = () => {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.clearRect(0, 0, COVER_PX, COVER_PX);
+      ctx.drawImage(img, 0, 0, COVER_PX, COVER_PX);
+    };
+    img.src = url;
+    return () => {
+      img.onload = null;
+    };
+  }, [url]);
+  return (
+    <canvas
+      ref={ref}
+      width={COVER_PX}
+      height={COVER_PX}
+      aria-hidden
+      className="absolute inset-0 size-full [image-rendering:pixelated]"
+    />
+  );
+}
 
 /** one transport button. Like the desk's other controls, a press doesn't
  *  take focus — focusing inside the sticky, transformed desk can make some
@@ -169,8 +289,8 @@ export default function SpeakerPopup({ tracks }: { tracks: Track[] }) {
 
   return (
     <div
-      className="rounded-[1em] border border-white/10 bg-white/8 px-[0.875em] pb-[0.625em] pt-[0.875em] text-white backdrop-blur-md"
-      style={{ fontSize: deskUnits(EM) }}
+      className="speaker-card pixel-corners px-[0.75em] pb-[0.5em] pt-[0.75em] text-white"
+      style={{ fontSize: deskUnits(EM), "--px": deskUnits(DESK_PX) } as CSSProperties}
     >
       <audio
         ref={audioRef}
@@ -189,11 +309,11 @@ export default function SpeakerPopup({ tracks }: { tracks: Track[] }) {
       {/* the song: its cover beside its title and artist. The title links
           to the song on Apple Music, whose previews these are. */}
       <div className="flex items-center gap-[0.75em]">
-        <div className="relative size-[3.5em] shrink-0 overflow-hidden rounded-[0.375em] bg-white/10">
+        <div className="relative size-[3.5em] shrink-0 overflow-hidden bg-[#3a3a40]">
           {track ? (
-            <Image src={track.artworkUrl} alt="" fill sizes="96px" className="object-cover" />
+            <PixelCover src={track.artworkUrl} />
           ) : (
-            <ScreenMosaic w={COVER} h={COVER} seed={COVER_SEED} burst={null} />
+            <ScreenMosaic w={COVER} h={COVER} seed={COVER_SEED} burst={null} cell={DESK_PX} />
           )}
         </div>
         <div className="min-w-0">
@@ -204,14 +324,14 @@ export default function SpeakerPopup({ tracks }: { tracks: Track[] }) {
               rel="noopener noreferrer"
               aria-label={`${track.title} on Apple Music`}
               onMouseDown={(e) => e.preventDefault()}
-              className="block truncate text-[1.0625em] font-semibold leading-snug outline-none hover:underline"
+              className="block truncate font-screen text-[1.5em] leading-none outline-none hover:underline"
             >
               {track.title}
             </a>
           ) : (
-            <p className="truncate text-[1.0625em] font-semibold leading-snug">Nothing playing</p>
+            <p className="truncate font-screen text-[1.5em] leading-none">Nothing playing</p>
           )}
-          <p className="truncate text-[0.9375em] leading-snug text-white/60">
+          <p className="mt-[0.25em] truncate font-screen text-[1.25em] leading-none text-white/60">
             {track ? track.artist : "Songs couldn't load"}
           </p>
         </div>
@@ -225,19 +345,12 @@ export default function SpeakerPopup({ tracks }: { tracks: Track[] }) {
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
           aria-valuenow={Math.floor(elapsed)}
-          className="h-[0.25em] overflow-hidden rounded-full bg-white/20"
+          className="h-(--px) bg-[#3a3a40]"
         >
-          {/* `timeupdate` only fires every ~¼s, so while playing the fill
-              glides between updates instead of stepping */}
-          <div
-            className="h-full rounded-full bg-white"
-            style={{
-              width: `${progress * 100}%`,
-              transition: playing ? "width 250ms linear" : "none",
-            }}
-          />
+          {/* fills a whole pixel at a time (`.speaker-fill`) */}
+          <div className="speaker-fill h-full bg-white" style={{ "--p": progress } as CSSProperties} />
         </div>
-        <div className="mt-[0.25em] flex justify-between text-[0.6875em] tabular-nums text-white/50">
+        <div className="mt-[0.25em] flex justify-between font-screen text-[1.125em] leading-none text-white/50">
           <span>{clock(elapsed)}</span>
           <span>{clock(duration)}</span>
         </div>
@@ -251,25 +364,25 @@ export default function SpeakerPopup({ tracks }: { tracks: Track[] }) {
           label="Previous song"
           disabled={empty}
           onClick={previous}
-          className="size-[1.5em] hover:text-white/70"
+          className="size-[1.25em] hover:text-white/70"
         >
-          <Icon name="skipPrevious" className="size-full" />
+          <PixelIcon name="previous" className="size-full" />
         </Control>
         <Control
           label={playing ? "Pause" : "Play"}
           disabled={empty}
           onClick={toggle}
-          className="size-[2.25em] rounded-full bg-white text-paper enabled:hover:scale-105"
+          className="h-[2.25em] w-[2.375em] text-white enabled:hover:text-[#c8c8ce]"
         >
-          <Icon name={playing ? "pause" : "play"} className="size-[1.25em]" />
+          <PlayFace playing={playing} />
         </Control>
         <Control
           label="Next song"
           disabled={empty}
           onClick={next}
-          className="size-[1.5em] hover:text-white/70"
+          className="size-[1.25em] hover:text-white/70"
         >
-          <Icon name="skipNext" className="size-full" />
+          <PixelIcon name="next" className="size-full" />
         </Control>
       </div>
     </div>
