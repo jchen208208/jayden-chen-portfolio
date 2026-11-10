@@ -525,34 +525,103 @@ body {
   outline-offset: 4px;
 }
 
+/* the picture with its border and its creature (`RoleShot`) — what hops and
+   swings, so all three go together */
 .xp-shot {
   position: relative;
   display: block;
-}
-
-.xp-frame {
-  position: relative;
-  display: block;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border-radius: var(--xp-radius, 14px);
-  background: var(--card);
+  isolation: isolate;
   transition:
     translate 220ms var(--xp-ease, ease-out),
     rotate 220ms var(--xp-ease, ease-out);
 }
 
-/* the frame's edge, drawn over the picture so it reads on a dark one too —
-   faint at rest, brighter once lit */
-.xp-frame::after {
-  content: "";
+/* the picture itself, its corners cut a pixel square to sit inside the
+   border's stepped corners */
+.xp-frame {
+  position: relative;
+  z-index: 1;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--card);
+  clip-path: polygon(
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px),
+    0 4px,
+    4px 4px
+  );
+}
+
+/* The pixel-art border and the creature behind the picture (`PixelFrame`,
+   art in `critters.ts`), all in the theme's light. The head sits behind the
+   picture, so whatever of it is below the top edge is hidden; the border
+   lies over the picture's edge, and the paws over the border.
+
+   At rest just the creature's ears and eyes show. Lit, its head comes up
+   one art pixel at a time (`steps`, `--rise` of them) and, once it's up,
+   its paws appear a pixel high and drop onto the edge. Unlit, the paws let
+   go at once and the head sinks back a beat later. Every few seconds it
+   blinks, each card out of step with the next (`--i`). */
+.px-border {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / calc(0.26 + var(--lit, 0) * 0.24));
-  transition: box-shadow 300ms ease-out;
+  z-index: 2;
   pointer-events: none;
+}
+
+.px-border svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.px-head,
+.px-paws {
+  position: absolute;
+  left: calc(var(--x) * 100%);
+  overflow: visible;
+}
+
+.px-head {
+  top: 0;
+  z-index: 0;
+  translate: 0 calc((var(--rest) + (var(--up) - var(--rest)) * var(--lit, 0)) * -4px);
+  transition: translate calc(150ms + var(--lit, 0) * 90ms) steps(var(--rise), end)
+    calc((1 - var(--lit, 0)) * 60ms);
+}
+
+.px-paws {
+  top: -4px;
+  z-index: 3;
+  opacity: var(--lit, 0);
+  translate: 0 calc((1 - var(--lit, 0)) * -4px);
+  transition:
+    opacity 0s linear calc(var(--lit, 0) * 240ms),
+    translate 0s linear calc(var(--lit, 0) * 330ms);
+}
+
+.px-blink {
+  opacity: 0;
+  animation: px-blink 5.2s step-end infinite;
+  animation-delay: calc(var(--i, 0) * -1.9s - 1.2s);
+}
+
+@keyframes px-blink {
+  93% {
+    opacity: 1;
+  }
+  96% {
+    opacity: 0;
+  }
 }
 
 .xp-photo {
@@ -567,7 +636,7 @@ body {
 }
 
 /* the hop and the swing — a card's picture, not a role page's */
-.xp-card:focus-visible .xp-frame {
+.xp-card:focus-visible .xp-shot {
   translate: -1.5% -2.5%;
   rotate: -3deg;
   transition:
@@ -576,7 +645,7 @@ body {
 }
 
 @media (hover: hover) {
-  .xp-card:hover .xp-frame {
+  .xp-card:hover .xp-shot {
     translate: -1.5% -2.5%;
     rotate: -3deg;
     transition:
@@ -1462,13 +1531,22 @@ body {
   }
   /* an Experience picture still comes up into colour, but stays where it
      is, and the panorama is simply there rather than rising in */
-  .xp-frame,
+  .xp-shot,
   .xp-photo,
   .xp-title,
   .xp-go {
     scale: none !important;
     translate: none !important;
     rotate: none !important;
+  }
+  /* its creature still peeks and comes up, but in one jump, and doesn't
+     blink (its head's place is a translate, so that one stays) */
+  .px-head,
+  .px-paws {
+    transition: none !important;
+  }
+  .px-blink {
+    animation: none !important;
   }
   .panorama {
     clip-path: none !important;

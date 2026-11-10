@@ -6,6 +6,8 @@ import { useState, type CSSProperties } from "react";
 import { EXPERIENCE, type Role } from "@/lib/site";
 import { markFromList } from "@/lib/experienceNav";
 import { useSlotReel, type ReelTiming } from "@/hooks/useSlotReel";
+import { castFor } from "./critters";
+import { Peeker, PixelBorder } from "./PixelFrame";
 import { ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
@@ -17,6 +19,10 @@ import { ShotPlaceholder, type SectionCard } from "./shared";
  * colour, and it hops and swings on an elastic overshoot like a Projects
  * window; the title slides a little right and the dates spin like the desk screens' slot reels before landing in
  * amber. All of it is CSS (`.xp-*` in globals.css); only the reel is script.
+ *
+ * Each picture has its own pixel-art border, and a little creature hiding
+ * behind it (`PixelFrame`, art in `critters.ts`): ears and eyes over the top
+ * edge at rest, popping up to hook its paws over the border when lit.
  *
  * Either side of the column, the panorama (`panorama.tsx`) fills the black.
  */
@@ -53,18 +59,23 @@ export function roleWhen(role: Role) {
 }
 
 /** a role's picture in its frame — in colour whenever an ancestor is lit
- *  (`.xp-card` hovered, or `.xp-lit`) */
+ *  (`.xp-card` hovered, or `.xp-lit`) — with its border and its creature,
+ *  which are picked by the role's place in the list */
 export function RoleShot({
   role,
+  index,
   sizes,
   eager = false,
 }: {
   role: Role;
+  index: number;
   sizes: string;
   eager?: boolean;
 }) {
+  const cast = castFor(index);
   return (
     <span className="xp-shot">
+      <Peeker cast={cast} />
       <span className="xp-frame">
         <span className="xp-photo">
           {role.image ? (
@@ -81,6 +92,7 @@ export function RoleShot({
           )}
         </span>
       </span>
+      <PixelBorder frame={cast.frame} />
     </span>
   );
 }
@@ -103,7 +115,12 @@ function RoleCard({ role, index }: { role: Role; index: number }) {
         }}
         className="xp-card flex flex-col gap-2.5 px-5 py-2.5"
       >
-        <RoleShot role={role} sizes="(min-width: 640px) 34rem, 100vw" eager={index === 0} />
+        <RoleShot
+          role={role}
+          index={index}
+          sizes="(min-width: 640px) 34rem, 100vw"
+          eager={index === 0}
+        />
         <span className="flex min-w-0 flex-col gap-2.5">
           <span className="xp-title font-title text-2xl uppercase leading-tight tracking-wide">
             {role.role}

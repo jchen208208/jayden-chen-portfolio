@@ -63,8 +63,9 @@ export function RolePage({ slug }: { slug: string }) {
       }
     >
       <article className="xp-role flex flex-col gap-7 pb-6 font-mono text-white">
-        <div className={lit ? "xp-lit" : undefined}>
-          <RoleShot role={role} sizes="(min-width: 768px) 46rem, 100vw" eager />
+        {/* room above for the creature, which is all the way up here */}
+        <div className={`pt-10 ${lit ? "xp-lit" : ""}`}>
+          <RoleShot role={role} index={index} sizes="(min-width: 768px) 46rem, 100vw" eager />
         </div>
 
         <header className="flex flex-col gap-3">
