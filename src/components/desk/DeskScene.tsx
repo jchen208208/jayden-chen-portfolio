@@ -12,6 +12,7 @@ import { createPortal, flushSync } from "react-dom";
 import Lenis from "lenis";
 import { getFontEmbedCSS, toCanvas } from "html-to-image";
 import {
+  DESK_PX,
   DESK_VIEWBOX,
   PLANT_TOP,
   SCREENS,
@@ -45,12 +46,13 @@ import {
  * Every screen follows the same grammar, so the four sections read as one
  * system with four different contents:
  *
- *   on the desk — the section's route (`/projects`) glowing amber on the
- *                 glass in the screen face (VT323), its letters spinning in
- *                 like slot reels on load (`ScreenLabel`), over a mosaic of
- *                 umber shards (`ScreenMosaic`); on hover the shards draw
- *                 slightly apart, and a spotlight keeps that screen lit
- *                 while the other three dim (globals.css)
+ *   on the desk — the section's route (`/projects`) on the glass in the
+ *                 screen face (VT323), its letters spinning in like slot
+ *                 reels on load (`ScreenLabel`), over a mosaic of umber
+ *                 shards laid in the pixel desk's pixels (`ScreenMosaic`);
+ *                 on hover the shards step a pixel apart, and a spotlight
+ *                 keeps that screen lit while the other three dim
+ *                 (globals.css)
  *   on click    — the mosaic bursts off the glass from where it was hit,
  *                 then one smooth zoom from the click point to a centred
  *                 fullscreen title, a quick glide up into a header, then the
@@ -59,7 +61,7 @@ import {
  *                 per section (see `sections/`)
  *
  * This is an illusion, not a literal camera zoom: continuously scaling the
- * whole hand-drawn desk SVG up to fill the viewport would crop it unevenly
+ * whole pixel desk up to fill the viewport would crop it unevenly
  * (its aspect ratio rarely matches the viewport's) and drag along whatever
  * scroll-driven transform `DeskStage` has applied to an ancestor. Instead, a
  * separate, purpose-built fullscreen view fades/scales in from the click
@@ -189,16 +191,13 @@ function drawGenieFrame(
   }
 }
 
-/** the lamp's pull-chain handle, in desk viewBox units — a generous hit box
- *  around the chain of beads drawn in `DeskSvg`. The chain's own attach point
- *  is (1017,169) local to the tilted head group, which — carried through that
- *  group's 15° rotation and the lamp group's translate(-5,0) — lands around
- *  (998,172) on screen; the chain then hangs straight down from there to the
- *  handle at dy 20–24. */
+/** the lamp's pull chain, in desk viewBox units — a generous hit box round
+ *  the chain of beads `DeskSvg` draws: one pixel column (x 996–1000) hanging
+ *  from the shade's rim at y 172 to its handle at y 188–196, 204 pulled. */
 const LAMP_CHAIN_HIT: Rect = { x: 988, y: 165, w: 22, h: 42 };
 
-/** how long a pull yanks the chain down before the light flips and the chain
- *  springs back — matches `CHAIN_DOWN` in DeskSvg */
+/** how long a pull holds the chain down (`DeskSvg` spreads its beads and
+ *  drops the handle two pixels) before the light flips and it snaps back */
 const CHAIN_PULL_MS = 150;
 /** left alone, the lamp switches itself on now and then (a random wait in
  *  this range, ms)… */
@@ -206,8 +205,8 @@ const LAMP_IDLE_ON_MS: [number, number] = [20_000, 40_000];
 /** …and back off a little later */
 const LAMP_IDLE_OFF_MS: [number, number] = [6_000, 10_000];
 
-/** the PC's power button (DeskSvg's PC tower, translated −100), with a
- *  generous hit box — it's only 8 units across */
+/** the PC's power button (`DeskSvg`'s 2 × 2 pixels at 548–556, 472–480),
+ *  with a generous hit box — it's only 8 units across */
 const PC_BUTTON_HIT: Rect = { x: 540, y: 464, w: 24, h: 24 };
 /** left alone, the fans light up now and then (a random wait in this range,
  *  ms)… */
@@ -224,15 +223,19 @@ const SPEAKER_POPUP_CLEAR = 12;
 const SPEAKER_POPUP_GAP = Math.max(10, SPEAKER_RECT.y - (PLANT_TOP - SPEAKER_POPUP_CLEAR));
 /** the section route on each glass, in desk units — one size for all four.
  *  VT323 is 0.4em a letter, so "/experience" (the longest) runs ~177 across
- *  the 202-wide glass with the tracking below. */
+ *  the 200-wide glass with the tracking below. */
 const SCREEN_LABEL_SIZE = 34;
 const SCREEN_LABEL_TRACKING = "0.08em";
-/** the label and mosaic sit this far inside the glass rect: past the inner
- *  half of its 2.4 stroke, so nothing draws over the bezel line */
-const GLASS_INSET = 2;
-const GLASS_RADIUS = 3;
-/** the glass's inner box — what the label and mosaic fill */
-const innerGlass = ({ w, h }: Rect) => ({ w: w - GLASS_INSET * 2, h: h - GLASS_INSET * 2 });
+/** the glass's outline: its rect less a pixel at each corner, which the
+ *  bezel keeps (the pixel desk's openings are cut that way), so nothing on
+ *  the glass ever covers the bezel */
+function glassClip({ w, h }: Rect) {
+  const x = `${(DESK_PX / w) * 100}%`;
+  const y = `${(DESK_PX / h) * 100}%`;
+  const rx = `calc(100% - ${x})`;
+  const by = `calc(100% - ${y})`;
+  return `polygon(${x} 0, ${rx} 0, ${rx} ${y}, 100% ${y}, 100% ${by}, ${rx} ${by}, ${rx} 100%, ${x} 100%, ${x} ${by}, 0 ${by}, 0 ${y}, ${x} ${y})`;
+}
 /** each screen's own mosaic layout */
 const MOSAIC_SEED: Record<SectionId, number> = { projects: 7, skills: 19, experience: 31, about: 43 };
 /** a click bursts the mosaic, and the section only starts zooming open this
@@ -367,11 +370,7 @@ export default function DeskScene({
       // a keyboard press has no pointer (`detail` 0): burst from the centre
       const fx = e.detail === 0 ? 0.5 : (e.clientX - box.left) / box.width;
       const fy = e.detail === 0 ? 0.5 : (e.clientY - box.top) / box.height;
-      setBurst({
-        id: s.id,
-        x: fx * s.glass.w - GLASS_INSET,
-        y: fy * s.glass.h - GLASS_INSET,
-      });
+      setBurst({ id: s.id, x: fx * s.glass.w, y: fy * s.glass.h });
       stageTimers.current.push(window.setTimeout(() => openScreen(s), BURST_LEAD_MS));
     },
     [burst, reduced, openScreen],
@@ -745,17 +744,19 @@ export default function DeskScene({
               style={percentBox(s.glass)}
             >
               {/* what the screen shows: its section's route over the
-                  mosaic, which draws apart on hover and bursts on click
-                  (the `[data-screen]` rules in globals.css). The route sits
-                  above the mosaic (z 2); `isolate` keeps that z-index
-                  inside the glass. */}
+                  mosaic, laid in the desk's pixels, which draws apart on
+                  hover and bursts on click (the `[data-screen]` rules in
+                  globals.css). The route sits above the mosaic (z 2);
+                  `isolate` keeps that z-index inside the glass. */}
               <span
                 data-light={s.id}
-                className="screen-light absolute isolate flex items-center justify-center overflow-hidden"
-                style={{ inset: deskUnits(GLASS_INSET), borderRadius: deskUnits(GLASS_RADIUS) }}
+                className="screen-light absolute inset-0 isolate flex items-center justify-center overflow-hidden"
+                style={{ clipPath: glassClip(s.glass) }}
               >
                 <ScreenMosaic
-                  {...innerGlass(s.glass)}
+                  w={s.glass.w}
+                  h={s.glass.h}
+                  cell={DESK_PX}
                   seed={MOSAIC_SEED[s.id]}
                   burst={burst?.id === s.id ? burst : null}
                 />

@@ -1,6 +1,9 @@
+import { FANS } from "./pixel/deskArt";
+
 /**
- * The PC's RGB fans, lit — in the PC tower's own coordinates (`DeskSvg` draws
- * it inside the tower's group), laid over the ink fans drawn there.
+ * The PC's RGB fans, lit — laid over the pixel desk's fans. `DeskSvg` draws
+ * this inside its art-pixel group, so every coordinate here is a pixel, and
+ * each LED is a block of whole pixels (`FANS`, from the desk's generator).
  *
  * Each round fan's blade band is a ring of eight solid LEDs with dark gaps
  * between them, and the side-on fan beside it is four LEDs stacked up its
@@ -20,28 +23,16 @@
  * `DeskScene` switches them on and off — the case's power button, and now and
  * then by themselves, like the lamp. Only rendered while on, so off means no
  * light at all.
- *
- * Every attribute is explicit because this sits inside `DeskSvg`'s outer
- * `<g stroke={INK} strokeWidth={2.4}>`.
  */
 
-/** the fans as `DeskSvg` draws them: round ones facing us (ring r 26, hub
- *  r 7), and the side-on ones beside each */
-const FAN_CX = 573;
-const FAN_ROWS = [482, 548, 614];
-const SIDE = { x: 613, w: 19, h: 48 };
-
-/** the ring: LEDs per fan, the dark gap between neighbours (degrees), and
- *  the band they fill — well clear of the fan's ring and hub lines */
-const LEDS = 8;
-const LED_GAP_DEG = 9;
-const LED_IN = 10;
-const LED_OUT = 23;
-/** the side fan's stack: LEDs, the gap between them, and how far inside the
- *  fan's outline (its 2.4 line, plus a hair) */
-const STACK = 4;
-const STACK_GAP = 2;
-const STACK_INSET = 3;
+/** LEDs per ring, and stacked up each side-on fan */
+const LEDS = FANS.ring.length;
+const STACK = FANS.stack.length;
+/** the stack, in pixels: half its height, each LED's height, the gap
+ *  between them */
+const STACK_HALF = 5.5;
+const STACK_H = 2;
+const STACK_GAP = 1;
 /** how long the light rests on each LED */
 const TICK_MS = 220;
 
@@ -58,29 +49,6 @@ const TRAIL = [4, 3, 2, 1];
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 const f = (n: number) => n.toFixed(2);
-const at = (r: number, deg: number) => {
-  const a = (deg * Math.PI) / 180;
-  return `${f(r * Math.cos(a))} ${f(r * Math.sin(a))}`;
-};
-
-/** ring LED `k` (clockwise from 3 o'clock), centred on the origin */
-const LED_PATHS = Array.from({ length: LEDS }, (_, k) => {
-  const step = 360 / LEDS;
-  const a0 = k * step + LED_GAP_DEG / 2;
-  const a1 = (k + 1) * step - LED_GAP_DEG / 2;
-  return `M${at(LED_OUT, a0)} A${LED_OUT} ${LED_OUT} 0 0 1 ${at(LED_OUT, a1)}
-    L${at(LED_IN, a1)} A${LED_IN} ${LED_IN} 0 0 0 ${at(LED_IN, a0)} Z`;
-});
-
-/** the stack's box inside the side fan (y from its row's centre line), and
- *  each stacked LED's height */
-const STACK_BOX = {
-  x: SIDE.x + STACK_INSET,
-  y: -SIDE.h / 2 + STACK_INSET,
-  w: SIDE.w - STACK_INSET * 2,
-  h: SIDE.h - STACK_INSET * 2,
-};
-const STACK_H = (STACK_BOX.h - STACK_GAP * (STACK - 1)) / STACK;
 
 /** ring LED `k`'s shade while the light is on LED `head` */
 const ringShade = (k: number, head: number) => TRAIL[mod(head - k, LEDS)] ?? 0;
@@ -88,8 +56,8 @@ const ringShade = (k: number, head: number) => TRAIL[mod(head - k, LEDS)] ?? 0;
 /** which stacked LED each ring LED is level with, seen edge-on — by the
  *  height of its middle */
 const LEVEL_OF = Array.from({ length: LEDS }, (_, k) => {
-  const y = Math.sin(((k + 0.5) * 2 * Math.PI) / LEDS) * (STACK_BOX.h / 2);
-  const level = Math.floor((y + STACK_BOX.h / 2 + STACK_GAP / 2) / (STACK_H + STACK_GAP));
+  const y = Math.sin(((k + 0.5) * 2 * Math.PI) / LEDS) * STACK_HALF;
+  const level = Math.floor((y + STACK_HALF + STACK_GAP / 2) / (STACK_H + STACK_GAP));
   return Math.min(STACK - 1, Math.max(0, level));
 });
 
@@ -117,33 +85,27 @@ const CSS = [
 export default function PcFanLights({ on }: { on: boolean }) {
   if (!on) return null;
   return (
-    <g stroke="none">
+    <g>
       <style>{CSS}</style>
-      {FAN_ROWS.map((cy, row) => {
+      {FANS.at.map(([cx, cy], row) => {
         // where this fan's light starts — a tick behind the fan above
         const head = mod(-row, LEDS);
         return (
-          <g key={cy}>
-            <g transform={`translate(${FAN_CX} ${cy})`}>
-              {LED_PATHS.map((d, k) => (
-                <path
-                  key={k}
-                  className="pc-led"
-                  d={d}
-                  fill={SHADES[ringShade(k, head)]}
-                  style={{ animationDelay: `${-mod(head - k, LEDS) * TICK_MS}ms` }}
-                />
-              ))}
-            </g>
-            {Array.from({ length: STACK }, (_, s) => (
-              <rect
-                key={s}
+          <g key={cy} transform={`translate(${cx} ${cy})`}>
+            {FANS.ring.map((d, k) => (
+              <path
+                key={k}
                 className="pc-led"
-                x={STACK_BOX.x}
-                y={f(cy + STACK_BOX.y + s * (STACK_H + STACK_GAP))}
-                width={STACK_BOX.w}
-                height={f(STACK_H)}
-                rx={1.5}
+                d={d}
+                fill={SHADES[ringShade(k, head)]}
+                style={{ animationDelay: `${-mod(head - k, LEDS) * TICK_MS}ms` }}
+              />
+            ))}
+            {FANS.stack.map((d, s) => (
+              <path
+                key={`stack-${s}`}
+                className="pc-led"
+                d={d}
                 fill={SHADES[stackShade(s, head)]}
                 style={{ animationName: `pc-led-stack-${s}`, animationDelay: `${-head * TICK_MS}ms` }}
               />

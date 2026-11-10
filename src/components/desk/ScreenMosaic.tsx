@@ -23,6 +23,12 @@ import { mulberry32 } from "@/lib/svg";
  * clearing `burst` brings them back. All of that motion is CSS
  * (`.mosaic-tile` in globals.css); this only lays the pieces and hands each
  * its moves.
+ *
+ * On the pixel desk (`cell`, the desk's art pixel) the same pieces are laid
+ * in whole pixels, like the desk around them: each pixel of the glass takes
+ * the piece its middle falls in, and one where the piece to its right or
+ * below is another is left as grout, a pixel wide. Hovering then moves each
+ * piece out by exactly one pixel, with no tilt, so the grout opens a pixel.
  */
 
 /** a cell's rough size, in desk units — only a few big pieces per screen.
@@ -60,6 +66,8 @@ type Point = { x: number; y: number };
 
 type Piece = {
   points: string;
+  /** its corners */
+  shape: Point[];
   /** the piece's centre */
   c: Point;
   fill: string;
@@ -119,6 +127,7 @@ function layPieces(w: number, h: number, seed: number): Piece[] {
     };
     pieces.push({
       points: shape.map((p) => `${r2(p.x)},${r2(p.y)}`).join(" "),
+      shape,
       c: { x: r2(c.x), y: r2(c.y) },
       fill: `color-mix(in srgb, ${rampColour(shade)} ${100 - DIM}%, #000)`,
       part: { x: r2((c.x - centre.x) * SPREAD), y: r2((c.y - centre.y) * SPREAD) },
@@ -164,10 +173,63 @@ function layPieces(w: number, h: number, seed: number): Piece[] {
   return pieces;
 }
 
+/** whether `p` is inside the polygon `shape` (even–odd) */
+function inside(p: Point, shape: Point[]) {
+  let hit = false;
+  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+    const a = shape[i];
+    const b = shape[j];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit;
+  }
+  return hit;
+}
+
+/** the pieces laid in whole `cell`-sized pixels over a `w`×`h` glass: each
+ *  piece's pixels as one path (in pixels), with a pixel of grout wherever
+ *  the piece to the right or below is another */
+function pixelate(pieces: Piece[], w: number, h: number, cell: number) {
+  const cols = Math.round(w / cell);
+  const rows = Math.round(h / cell);
+  const owner = new Int16Array(cols * rows);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const c = { x: (x + 0.5) * cell, y: (y + 0.5) * cell };
+      let k = pieces.findIndex((piece) => inside(c, piece.shape));
+      if (k < 0) {
+        // right on an edge between pieces: the nearest piece's
+        let best = Infinity;
+        pieces.forEach((piece, i) => {
+          const d = Math.hypot(piece.c.x - c.x, piece.c.y - c.y);
+          if (d < best) [best, k] = [d, i];
+        });
+      }
+      owner[y * cols + x] = k;
+    }
+  }
+  const paths = pieces.map(() => "");
+  for (let y = 0; y < rows; y++) {
+    let x = 0;
+    while (x < cols) {
+      const k = owner[y * cols + x];
+      const grout = (i: number) =>
+        (i + 1 < cols && owner[y * cols + i + 1] !== k) || (y + 1 < rows && owner[(y + 1) * cols + i] !== k);
+      if (grout(x)) {
+        x++;
+        continue;
+      }
+      let n = 1;
+      while (x + n < cols && owner[y * cols + x + n] === k && !grout(x + n)) n++;
+      paths[k] += `M${x} ${y}h${n}v1h-${n}z`;
+      x += n;
+    }
+  }
+  return { cols, rows, paths };
+}
+
 /** where `piece` flies when the glass is hit at `burst`: straight away from
  *  that point, far enough that even a piece crossing the whole glass is past
  *  its far edge */
-function flight(piece: Piece, burst: Point, w: number, h: number): CSSProperties {
+function flight(piece: Piece, burst: Point, w: number, h: number, unit = 1): CSSProperties {
   const diag = Math.hypot(w, h);
   const dx = piece.c.x - burst.x;
   const dy = piece.c.y - burst.y;
@@ -176,18 +238,23 @@ function flight(piece: Piece, burst: Point, w: number, h: number): CSSProperties
     dist > 0.5 ? [dx / dist, dy / dist] : [Math.cos(piece.heading), Math.sin(piece.heading)];
   const reach = diag + CELL * 1.5 + piece.reach * diag * 0.5;
   return {
-    "--fly-x": `${r2(ux * reach)}px`,
-    "--fly-y": `${r2(uy * reach)}px`,
+    "--fly-x": `${r2((ux * reach) / unit)}px`,
+    "--fly-y": `${r2((uy * reach) / unit)}px`,
     "--fly-r": `${piece.spin}deg`,
     "--fly-delay": `${Math.round((dist / diag) * RIPPLE_MS)}ms`,
   } as CSSProperties;
 }
+
+/** a pixel piece's hover move: one pixel out from the glass's middle along
+ *  each way it's clearly off it */
+const PIXEL_PART_DEADZONE = 0.12;
 
 export default function ScreenMosaic({
   w,
   h,
   seed,
   burst,
+  cell,
 }: {
   /** the glass's inner size, in desk units */
   w: number;
@@ -195,8 +262,45 @@ export default function ScreenMosaic({
   seed: number;
   /** where the glass was hit, in the same units — set, the pieces fly off */
   burst: Point | null;
+  /** lay it in whole pixels this many desk units across (the pixel desk's) */
+  cell?: number;
 }) {
   const pieces = useMemo(() => layPieces(w, h, seed), [w, h, seed]);
+  const pixels = useMemo(() => (cell ? pixelate(pieces, w, h, cell) : null), [pieces, w, h, cell]);
+
+  if (pixels && cell) {
+    const away = (d: number, size: number) => (Math.abs(d) < size * PIXEL_PART_DEADZONE ? 0 : Math.sign(d));
+    return (
+      <svg
+        aria-hidden
+        viewBox={`0 0 ${pixels.cols} ${pixels.rows}`}
+        preserveAspectRatio="none"
+        shapeRendering="crispEdges"
+        className="mosaic-px pointer-events-none absolute inset-0 h-full w-full"
+      >
+        {pieces.map((piece, i) =>
+          pixels.paths[i] ? (
+            <path
+              key={piece.points}
+              d={pixels.paths[i]}
+              className="mosaic-tile"
+              style={
+                {
+                  fill: piece.fill,
+                  "--part-x": `${away(piece.c.x - w / 2, w)}px`,
+                  "--part-y": `${away(piece.c.y - h / 2, h)}px`,
+                  "--part-r": "0deg",
+                  "--tile-delay": `${piece.delay}ms`,
+                  ...(burst && flight(piece, burst, w, h, cell)),
+                } as CSSProperties
+              }
+            />
+          ) : null,
+        )}
+      </svg>
+    );
+  }
+
   return (
     <svg
       aria-hidden

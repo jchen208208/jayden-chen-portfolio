@@ -28,7 +28,7 @@ function About({ layout, active }: CardOptions) {
         style={{ "--i": 0 } as CSSProperties}
       >
         <p>
-          I&apos;m Jayden, a {PROFILE.program} student at{" "}
+          Hey there! I&apos;m Jayden, a {PROFILE.program} student at the{" "}
           <a href={PROFILE.schoolUrl} target="_blank" rel="noreferrer" className="school-mark whitespace-nowrap">
             {PROFILE.school}
             <Image src={crest} alt="" className="school-crest ml-1.5" />

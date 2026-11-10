@@ -3,11 +3,12 @@
 /*
   "The Desk" — a black room, a desk, four screens.
 
-  The colour rule: white and one light. The room and everything in it is
-  white line art on black — screen content included. The only colour is
-  `--glow`, a warm amber: the light itself. The lamp's bulb, the PC's fans,
-  the desk screens' phosphor-lit names (on glass of the same amber run down
-  to a dark umber), and the sweep that runs across a button on hover.
+  The colour rule: greys and one light. The room and everything in it is
+  pixel art in the lotus's greys on black (`DeskSvg`), lit from the upper
+  left. The only colour is `--glow`, a warm amber: the light itself. The
+  lamp's bulb, the PC's fans, the desk screens' names (on a mosaic of the
+  same amber run down to a dark umber), and the sweep that runs across a
+  button on hover.
   Nothing else gets a hue of its own — not brand logos, not a court — so
   the scene reads as one room lit one way. Chrome (bezels, card frames,
   tile borders) is always ink.
@@ -313,6 +314,13 @@ body {
   transition: transform 650ms cubic-bezier(0.4, 0, 0.9, 0.55) var(--fly-delay, 0ms);
 }
 
+/* laid in the pixel desk's pixels (`.mosaic-px`), a piece doesn't glide on
+   hover: it steps its one pixel out in a single tick, each a beat apart, so
+   the grout opens a pixel at a time across the glass */
+.mosaic-px .mosaic-tile {
+  transition: transform 1ms steps(1, end) var(--tile-delay, 0ms);
+}
+
 /* desk screens: the hover spotlight. Hovering (or keyboard-focusing) a
    screen keeps that screen's light on and dims the other three, which is
    what says "these are separate things you can pick". Only the light dims:
@@ -333,37 +341,50 @@ body {
   opacity: 1;
 }
 
-/* the music notes off the speaker (`SPEAKER_NOTES` in DeskSvg): each fades
-   in just above it, rises a short way on an arc bending off to the right —
-   mostly up at first, then out along its drift (`--note-dx`), rocking as it
-   goes — and is gone by half way through the
-   loop, resting unseen until its turn comes round again. Staggered by
-   negative delays, so there's no first frame with every note showing.
-   Without motion they just sit, faint, over the speaker. */
+/* the music notes off the speaker (`NOTES`, DeskSvg): pixel sprites inside
+   the desk's art-pixel group, so a px here is one art pixel. Each blinks on
+   just above the speaker, steps up a pixel at a time, drifting off to the
+   right, and blinks out by half way through the loop, resting unseen until
+   its turn comes round again — hard ticks, like the fans' LEDs, never a
+   slide or a fade. Staggered by negative delays, so there's no first frame
+   with every note showing. Without motion they just sit, faint, over the
+   speaker. */
 @keyframes speaker-note {
   0% {
     opacity: 0;
-    transform: translate(0, 0) rotate(-8deg);
+    transform: translate(0, 0);
   }
-  10%,
-  22% {
-    opacity: 0.7;
+  4% {
+    opacity: 0.75;
+    transform: translate(0, -1px);
+  }
+  12% {
+    transform: translate(1px, -2px);
+  }
+  20% {
+    transform: translate(1px, -3px);
   }
   28% {
-    transform: translate(calc(var(--note-dx) * 0.3), -12px) rotate(6deg);
+    transform: translate(2px, -4px);
+  }
+  36% {
+    opacity: 0.75;
+    transform: translate(2px, -5px);
+  }
+  44% {
+    opacity: 0.4;
+    transform: translate(3px, -6px);
   }
   50%,
   100% {
     opacity: 0;
-    transform: translate(var(--note-dx), -24px) rotate(-4deg);
+    transform: translate(3px, -6px);
   }
 }
 
 .speaker-note {
   opacity: 0.5;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: speaker-note 6s ease-in-out infinite;
+  animation: speaker-note 6s step-end infinite;
 }
 
 /* a section open over the desk (`data-covered`, or a section's own page —

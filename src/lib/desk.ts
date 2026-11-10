@@ -1,9 +1,11 @@
 /**
- * Desk scene geometry shared by the SVG (`DeskSvg`) and the HTML layers that
- * sit over it (`DeskScene`'s click targets and screen labels).
+ * Desk scene geometry shared by the pixel desk (`DeskSvg`, drawn by
+ * `scripts/desk-pixels.mjs`, which reads these) and the HTML layers that sit
+ * over it (`DeskScene`'s click targets and screen labels).
  *
  * Coordinate space is `DESK_VIEWBOX`. Positions are converted to `%` of the
  * viewBox so the HTML overlay layer stays glued to the SVG at every width.
+ * This file imports only types, so the generator (plain Node) can load it.
  */
 
 import type { SectionId } from "./site";
@@ -12,6 +14,20 @@ import type { SectionId } from "./site";
  *  speaker, so the view shifts right by half that to keep it centred */
 export const DESK_VIEWBOX = { x: 12, w: 1600, h: 740 } as const;
 
+/** The desk is pixel art, like the lotus under it: one art pixel is this
+ *  many desk units (≈3 screen px with the desk at rest, ≈4 at its framed
+ *  beat mid-scroll) */
+export const DESK_PX = 4;
+
+/** the pixel grid over the view, from its top-left corner — which puts the
+ *  desktop's top (y 396) on a pixel edge. 400 × 185 art pixels. */
+export const DESK_GRID = {
+  x: DESK_VIEWBOX.x,
+  y: 0,
+  cols: DESK_VIEWBOX.w / DESK_PX,
+  rows: Math.ceil(DESK_VIEWBOX.h / DESK_PX),
+} as const;
+
 /** how far in from each end of the view the floor line stops, in desk
  *  units — the sign-off under the desk (`DeskStage`) starts where it does */
 export const DESK_FLOOR_INSET = 40;
@@ -19,8 +35,8 @@ export const DESK_FLOOR_INSET = 40;
 export type Rect = { x: number; y: number; w: number; h: number };
 
 /**
- * Screen 2 — the smaller laptop — is drawn at its original coordinates in
- * `DeskSvg` and then scaled up in place.
+ * Screen 2 — the smaller laptop — is drawn at its original coordinates (in
+ * the pixel desk's generator) and then scaled up in place.
  *
  * Anchored at (`ax`, `ay`): `ay` is the desk surface, so the laptop grows
  * upward and stays planted on it rather than floating or sinking, and `ax` is
@@ -35,21 +51,8 @@ export const LAPTOP1_TRANSFORM =
   `translate(${LAPTOP1.dx} 0) translate(${LAPTOP1.ax} ${LAPTOP1.ay}) ` +
   `scale(${LAPTOP1.scale}) translate(${-LAPTOP1.ax} ${-LAPTOP1.ay})`;
 
-/** Maps a rect drawn inside that group to where it actually lands on the
- *  desk. The click target and zoom origin live outside the SVG and so don't
- *  inherit the transform. */
-export function laptop1Rect(r: Rect): Rect {
-  const { scale, dx, ax, ay } = LAPTOP1;
-  return {
-    x: dx + ax + (r.x - ax) * scale,
-    y: ay + (r.y - ay) * scale,
-    w: r.w * scale,
-    h: r.h * scale,
-  };
-}
-
 /** the cylindrical portable speaker standing upright right of the portrait
- *  monitor (`DeskSvg`): its centreline, its width, the crest of its domed
+ *  monitor (the pixel desk): its centreline, its width, the crest of its domed
  *  top, and the bottom of its body at the sides — it stands on a rubber
  *  base `base` tall, on the desk */
 export const SPEAKER = {
@@ -70,44 +73,43 @@ export const SPEAKER_RECT: Rect = {
 };
 
 /** the tip of the tallest leaf of the snake plant beside the speaker
- *  (`DeskSvg`) — the speaker's popup stands clear above it, so it never
- *  covers the plant */
+ *  (the pixel desk) — the speaker's popup stands clear above it, so it
+ *  never covers the plant */
 export const PLANT_TOP = 288;
 
 export type ScreenSpec = {
   id: SectionId;
-  /** the glass rectangle in desk units, as it lands on screen — must track the
-   *  inset rect `DeskSvg` draws for that screen */
+  /** the glass in desk units: the opening inside the screen's bezel, on
+   *  whole art pixels (`DESK_PX`), so what's shown on it — an HTML layer
+   *  over the desk (`DeskScene`) — lines up with the pixels round it. The
+   *  pixel desk (`scripts/desk-pixels.mjs`) cuts each opening from here. */
   glass: Rect;
 };
 
-/** Screen 2's glass at its ORIGINAL, unscaled coordinates, as `DeskSvg`
- *  draws it inside the `LAPTOP1_TRANSFORM` group. */
-const SKILLS_GLASS_LOCAL: Rect = { x: 611, y: 309, w: 132, h: 72 };
-
 /**
- * In reading order, left to right across the desk:
- *   projects   — screen 1, landscape monitor   `Screen x={382} y={239} w={202} h={138}` (inset 10)
- *   skills     — screen 2, small laptop        `Screen x={602} y={300} w={150} h={90} inset={9}`, scaled by `LAPTOP1`
- *   experience — screen 3, larger laptop       `Screen x={802} y={268} w={222} h={120} inset={10}`
- *   about      — screen 4, portrait monitor    `Screen x={1062} y={128} w={182} h={252} inset={12}`
+ * In reading order, left to right across the desk — each glass three art
+ * pixels inside its screen's outer edge, all round:
+ *   projects   — screen 1, landscape monitor   `Screen x={382} y={239} w={202} h={138}`
+ *   skills     — screen 2, small laptop        `Screen x={602} y={300} w={150} h={90}`, scaled by `LAPTOP1`
+ *   experience — screen 3, larger laptop       `Screen x={802} y={268} w={222} h={120}`
+ *   about      — screen 4, portrait monitor    `Screen x={1062} y={128} w={182} h={252}`
  */
 export const SCREENS: ScreenSpec[] = [
   {
     id: "projects",
-    glass: { x: 392, y: 249, w: 182, h: 118 },
+    glass: { x: 392, y: 248, w: 180, h: 120 },
   },
   {
     id: "skills",
-    glass: laptop1Rect(SKILLS_GLASS_LOCAL),
+    glass: { x: 616, y: 300, w: 148, h: 80 },
   },
   {
     id: "experience",
-    glass: { x: 812, y: 278, w: 202, h: 100 },
+    glass: { x: 812, y: 280, w: 200, h: 96 },
   },
   {
     id: "about",
-    glass: { x: 1074, y: 140, w: 158, h: 228 },
+    glass: { x: 1072, y: 140, w: 160, h: 228 },
   },
 ];
 

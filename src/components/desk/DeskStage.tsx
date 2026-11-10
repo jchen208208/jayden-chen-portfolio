@@ -118,8 +118,21 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       next.style.transform = `translate3d(0, ${((1 - n) * 56).toFixed(1)}px, 0)`;
       next.style.pointerEvents = n > 0.5 ? "auto" : "none";
     };
+    // The desk is pixel art, so it must stay sharp at whatever size the move
+    // leaves it. While it moves it's a promoted layer (`will-change`), which
+    // the browser scales as a picture drawn at the size it started at — fine
+    // in motion, but soft once it stops at another size. So once the scroll
+    // settles the hint comes off and the desk is drawn afresh at its new
+    // size, crisp; the next scroll puts it back.
+    let settle = 0;
+    const SETTLE_MS = 150;
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(apply);
+      desk.style.willChange = "transform";
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => {
+        desk.style.willChange = "auto";
+      }, SETTLE_MS);
     };
 
     apply();
@@ -129,6 +142,8 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(raf);
+      window.clearTimeout(settle);
+      desk.style.willChange = "";
     };
   }, [reduced]);
 
@@ -148,11 +163,9 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       style={{ height: `${DESK_RUNWAY_VH}vh`, marginBottom: `-${FOOTER_TUCK_VH}vh` }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* desk — visible from the first frame, the scroll only reframes it */}
-        <div
-          ref={deskRef}
-          className="absolute inset-0 flex items-center justify-center will-change-transform"
-        >
+        {/* desk — visible from the first frame, the scroll only reframes it
+            (promoted only while it moves — see the effect above) */}
+        <div ref={deskRef} className="absolute inset-0 flex items-center justify-center">
           <DeskScene className="w-full" tracks={tracks} />
         </div>
         {/* title — sits over the desk, lifts away on scroll */}
