@@ -3,251 +3,206 @@ import { rampColour, rampPosition } from "@/lib/goldRamp";
 import { mulberry32 } from "@/lib/svg";
 
 /**
- * The ground behind a desk screen's name: a shard mosaic in the amber
- * shades of the hero name's squares — the gold stretch of its ramp
- * (`lib/goldRamp`), none of the greys — laid with thin black grout.
+ * The ground behind a desk screen's name: a mosaic of rectangular tiles in
+ * the amber shades of the hero name's squares — the gold stretch of its ramp
+ * (`lib/goldRamp`), none of the greys — laid in the pixel desk's pixels
+ * (`cell`) with a pixel of black grout between them.
  *
- * The same recipe as the shard mosaic on the tennis site
- * (client-website-1 `Mosaic.tsx`): a coarse grid whose inner corners wander
- * a long way, so every cell is an irregular quad, and some cells are split
- * corner to corner into two triangles. Each piece takes a shade from that
- * ramp, never too close to the piece before it or the one above, so
- * neighbours always read apart. Corners on the glass's edge only slide along it, so the
- * mosaic still fills the glass. The grout is each piece's own black stroke:
- * neighbours share their edges, so it's one even line wherever they meet.
+ * Only flat and upright cuts, so every edge and every line of grout is clean
+ * in pixels; the old shards' slanted cracks came out as ragged staircases.
+ * The glass is cut like a Mondrian: a piece is picked — the bigger, the
+ * likelier — and cut across somewhere between a quarter and three quarters
+ * along, until there are about as many pieces as the glass's size calls for.
+ * So pieces vary a lot in size, and a few big ones survive among small ones.
+ * A cut never leaves a piece thinner than `MIN_SIDE` or more stretched than
+ * `MAX_ASPECT`, and never lines up (or nearly) with a line across the grout
+ * at its ends, so lines meet as Ts rather than running on through as a grid.
+ * Each piece takes a shade never too close to its neighbours', so they
+ * always read apart. The glass's own edge has no grout.
  *
- * Hovering the screen draws the pieces slightly apart — each drifts out from
- * the glass's centre with a faint tilt, like an exploded view, so the grout
- * widens a little. Clicking it (`burst`) throws them all outward from the point that
- * was hit, spinning, nearest first, until they've slid off the glass;
- * clearing `burst` brings them back. All of that motion is CSS
- * (`.mosaic-tile` in globals.css); this only lays the pieces and hands each
- * its moves.
- *
- * On the pixel desk (`cell`, the desk's art pixel) the same pieces are laid
- * in whole pixels, like the desk around them: each pixel of the glass takes
- * the piece its middle falls in, and one where the piece to its right or
- * below is another is left as grout, a pixel wide. Hovering then moves each
- * piece out by exactly one pixel, with no tilt, so the grout opens a pixel.
+ * Hovering the screen moves each piece a pixel out from the glass's middle,
+ * so the grout opens a pixel. Clicking it (`burst`) draws each piece
+ * straight into the edge of the glass it's closest to, until it's gone in
+ * under the bezel — those nearest the point that was hit first; clearing
+ * `burst` brings them back. All of that motion is CSS (`.mosaic-tile` in
+ * globals.css); this only lays the pieces and hands each its moves.
  */
 
-/** a cell's rough size, in desk units — only a few big pieces per screen.
- *  Never fewer than two cells each way, so even the small laptop's short
- *  glass is a mosaic rather than a row of strips. */
-const CELL = 56;
-/** how far an inner corner may wander, either way, as a share of a cell */
-const JITTER = 0.35;
-/** the share of cells split corner to corner into two triangles */
-const SPLIT = 0.3;
-/** the grout's width, in desk units */
-const GROUT = 1.6;
-/** neighbouring pieces sit at least this far apart along the ramp (0–1),
- *  so they always read apart. The gold stretch they're drawn from is 0.45
- *  wide, and a piece steers clear of two neighbours, so this has to stay
- *  under a quarter of that or a piece could be left nothing to pick. */
+/** the glass's area per piece, in pixels — so 4–12 pieces a screen */
+const TILE_AREA = 150;
+const MIN_TILES = 4;
+const MAX_TILES = 12;
+/** no piece thinner than this, in pixels */
+const MIN_SIDE = 4;
+/** …or longer than this many times its width — longer, and runs of them
+ *  side by side read as a barcode */
+const MAX_ASPECT = 2.5;
+/** which piece is cut next: the odds go with its area to this power, so big
+ *  pieces are usually cut but now and then one is left whole */
+const SIZE_BIAS = 1.5;
+/** a cut whose line would meet a parallel line across the grout at its ends
+ *  (or come within this many pixels of it) is tried elsewhere */
+const LINE_OFFSET = 2;
+/** where along a piece a cut can fall, either side of the middle */
+const CUT_RANGE = 0.25;
+/** neighbouring pieces sit at least this far apart along the ramp (0–1), so
+ *  they always read apart — where a piece has too many neighbours for that,
+ *  it takes the shade farthest from them of `SHADE_TRIES` */
 const MIN_STEP = 0.08;
+const SHADE_TRIES = 24;
 /** the share of black mixed into every piece — the glass turned down a
  *  touch from the name's own shades, so the route's white lettering
  *  (`.screen-label`) stands off it */
 const DIM = 20;
-/** hovering moves each piece out from the glass's centre by this share of
- *  its distance from it — so neighbours a cell apart part by only ~2.5
- *  units, a slight widening of the grout */
-const SPREAD = 0.05;
-/** …and tilts it by up to this many degrees either way */
-const TILT = 1;
 /** hovering staggers each piece's move by up to this, so they don't shift in
  *  lockstep */
 const STAGGER_MS = 80;
-/** a burst reaches the farthest piece this long after the nearest */
-const RIPPLE_MS = 120;
+/** a click sets the farthest piece retracting this long after the nearest */
+const RIPPLE_MS = 60;
+/** on hover a piece moves a pixel out along each way it's clearly off the
+ *  glass's middle — not along one it's within this share of the glass of */
+const PART_DEADZONE = 0.12;
 
 type Point = { x: number; y: number };
 
-type Piece = {
-  points: string;
-  /** its corners */
-  shape: Point[];
-  /** the piece's centre */
-  c: Point;
+/** a piece, in pixels */
+type Tile = { x: number; y: number; w: number; h: number };
+
+type Piece = Tile & {
   fill: string;
-  /** its hover move */
-  part: Point;
-  tilt: number;
   delay: number;
-  /** its spin when thrown, in degrees */
-  spin: number;
-  /** how much farther than the minimum it flies, 0–1 */
-  reach: number;
-  /** the way it flies if the burst lands right on it */
-  heading: number;
 };
 
-const r2 = (v: number) => Math.round(v * 100) / 100;
+const stretched = (a: number, b: number) => Math.max(a, b) / Math.min(a, b) > MAX_ASPECT;
 
-/** the same mosaic for a `w`×`h` glass every render, server and client */
-function layPieces(w: number, h: number, seed: number): Piece[] {
-  const rnd = mulberry32(seed);
-  const cols = Math.max(2, Math.round(w / CELL));
-  const rows = Math.max(2, Math.round(h / CELL));
-  const cw = w / cols;
-  const ch = h / rows;
+/** the glass, `cols`×`rows` pixels, cut into pieces — the same ones every
+ *  render, server and client */
+function cutGlass(cols: number, rows: number, rnd: () => number): Tile[] {
+  const grout = new Uint8Array(cols * rows);
+  const isGrout = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < cols && y < rows && grout[y * cols + x] === 1;
 
-  const corners: Point[][] = [];
-  for (let r = 0; r <= rows; r++) {
-    const row: Point[] = [];
-    for (let c = 0; c <= cols; c++) {
-      const dx = (rnd() * 2 - 1) * JITTER * cw;
-      const dy = (rnd() * 2 - 1) * JITTER * ch;
-      row.push({
-        x: c * cw + (c > 0 && c < cols ? dx : 0),
-        y: r * ch + (r > 0 && r < rows ? dy : 0),
-      });
+  /** `t` cut in two, or null if no cut fits */
+  const cut = (t: Tile): [Tile, Tile] | null => {
+    const canX = t.w >= MIN_SIDE * 2 + 1;
+    const canY = t.h >= MIN_SIDE * 2 + 1;
+    if (!canX && !canY) return null;
+    // across its longer side, unless it's near square
+    const aspect = Math.max(t.w, t.h) / Math.min(t.w, t.h);
+    const first = !canX ? false : !canY ? true : aspect < 1.3 ? rnd() < 0.5 : t.w > t.h;
+    for (const upright of [first, !first]) {
+      if (upright ? !canX : !canY) continue;
+      const side = upright ? t.w : t.h;
+      for (let tries = 0; tries < 8; tries++) {
+        const at = Math.min(
+          side - MIN_SIDE - 1,
+          Math.max(MIN_SIDE, Math.round(side * (0.5 - CUT_RANGE + 2 * CUT_RANGE * rnd()))),
+        );
+        // the line of grout, and whether one runs on from it (near enough)
+        // across the grout at either of its ends
+        const line = (upright ? t.x : t.y) + at;
+        let meets = false;
+        for (let d = 1 - LINE_OFFSET; d < LINE_OFFSET; d++) {
+          if (
+            upright
+              ? isGrout(line + d, t.y - 2) || isGrout(line + d, t.y + t.h + 1)
+              : isGrout(t.x - 2, line + d) || isGrout(t.x + t.w + 1, line + d)
+          )
+            meets = true;
+        }
+        if (meets) continue;
+        const rest = side - at - 1;
+        if (upright ? stretched(at, t.h) || stretched(rest, t.h) : stretched(t.w, at) || stretched(t.w, rest)) {
+          continue;
+        }
+        if (upright) {
+          for (let y = t.y; y < t.y + t.h; y++) grout[y * cols + line] = 1;
+          return [
+            { x: t.x, y: t.y, w: at, h: t.h },
+            { x: line + 1, y: t.y, w: rest, h: t.h },
+          ];
+        }
+        for (let x = t.x; x < t.x + t.w; x++) grout[line * cols + x] = 1;
+        return [
+          { x: t.x, y: t.y, w: t.w, h: at },
+          { x: t.x, y: line + 1, w: t.w, h: rest },
+        ];
+      }
     }
-    corners.push(row);
+    return null;
+  };
+
+  const tiles: Tile[] = [{ x: 0, y: 0, w: cols, h: rows }];
+  const target = Math.min(MAX_TILES, Math.max(MIN_TILES, Math.round((cols * rows) / TILE_AREA)));
+  const whole = new Set<Tile>();
+  while (tiles.length < target) {
+    const open = tiles.filter((t) => !whole.has(t));
+    if (!open.length) break;
+    const odds = open.map((t) => (t.w * t.h) ** SIZE_BIAS);
+    let r = rnd() * odds.reduce((a, b) => a + b, 0);
+    let i = 0;
+    while (i < open.length - 1 && r > odds[i]) r -= odds[i++];
+    const halves = cut(open[i]);
+    if (halves) tiles.splice(tiles.indexOf(open[i]), 1, ...halves);
+    else whole.add(open[i]);
   }
+  return tiles;
+}
+
+/** whether `a` and `b` face each other across a pixel of grout */
+const overlaps = (a0: number, a1: number, b0: number, b1: number) => a0 < b1 && b0 < a1;
+function touching(a: Tile, b: Tile) {
+  if (a.x + a.w + 1 === b.x || b.x + b.w + 1 === a.x) return overlaps(a.y, a.y + a.h, b.y, b.y + b.h);
+  if (a.y + a.h + 1 === b.y || b.y + b.h + 1 === a.y) return overlaps(a.x, a.x + a.w, b.x, b.x + b.w);
+  return false;
+}
+
+/** the glass's pieces, shaded and given their moves */
+function layPieces(cols: number, rows: number, seed: number): Piece[] {
+  const rnd = mulberry32(seed);
+  const tiles = cutGlass(cols, rows, rnd);
 
   // a shade unlike its neighbours', landing on the ramp just as one of the
   // name's gold squares does — never on its grey stretch
-  const above = new Array<number>(cols).fill(-1);
-  let last = -1;
-  const pickShade = (avoid: number[]) => {
-    let t: number;
-    do t = rampPosition(rnd, true);
-    while (avoid.some((a) => Math.abs(a - t) < MIN_STEP));
-    return t;
-  };
-
-  const pieces: Piece[] = [];
-  const centre = { x: w / 2, y: h / 2 };
-  const add = (shape: Point[], shade: number) => {
-    const c = {
-      x: shape.reduce((s, p) => s + p.x, 0) / shape.length,
-      y: shape.reduce((s, p) => s + p.y, 0) / shape.length,
-    };
-    pieces.push({
-      points: shape.map((p) => `${r2(p.x)},${r2(p.y)}`).join(" "),
-      shape,
-      c: { x: r2(c.x), y: r2(c.y) },
-      fill: `color-mix(in srgb, ${rampColour(shade)} ${100 - DIM}%, #000)`,
-      part: { x: r2((c.x - centre.x) * SPREAD), y: r2((c.y - centre.y) * SPREAD) },
-      tilt: r2((rnd() * 2 - 1) * TILT),
-      delay: Math.round(rnd() * STAGGER_MS),
-      spin: Math.round((40 + rnd() * 120) * (rnd() < 0.5 ? -1 : 1)),
-      reach: rnd(),
-      heading: rnd() * Math.PI * 2,
-    });
-  };
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const tl = corners[r][c];
-      const tr = corners[r][c + 1];
-      const br = corners[r + 1][c + 1];
-      const bl = corners[r + 1][c];
-      if (rnd() < SPLIT) {
-        const [a, b] =
-          rnd() < 0.5
-            ? [
-                [tl, tr, bl],
-                [tr, br, bl],
-              ]
-            : [
-                [tl, tr, br],
-                [tl, br, bl],
-              ];
-        const t1 = pickShade([last, above[c]]);
-        const t2 = pickShade([t1]);
-        add(a, t1);
-        add(b, t2);
-        above[c] = t2;
-        last = t2;
-      } else {
-        const t = pickShade([last, above[c]]);
-        add([tl, tr, br, bl], t);
-        above[c] = t;
-        last = t;
-      }
+  const shades: number[] = [];
+  tiles.forEach((tile, i) => {
+    const avoid = shades.filter((_, j) => touching(tile, tiles[j]));
+    let best = rampPosition(rnd, true);
+    const clearance = (t: number) => Math.min(1, ...avoid.map((a) => Math.abs(a - t)));
+    for (let k = 1; k < SHADE_TRIES && clearance(best) < MIN_STEP; k++) {
+      const t = rampPosition(rnd, true);
+      if (clearance(t) > clearance(best)) best = t;
     }
-  }
-  return pieces;
+    shades[i] = best;
+  });
+
+  return tiles.map((tile, i) => ({
+    ...tile,
+    fill: `color-mix(in srgb, ${rampColour(shades[i])} ${100 - DIM}%, #000)`,
+    delay: Math.round(rnd() * STAGGER_MS),
+  }));
 }
 
-/** whether `p` is inside the polygon `shape` (even–odd) */
-function inside(p: Point, shape: Point[]) {
-  let hit = false;
-  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
-    const a = shape[i];
-    const b = shape[j];
-    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit;
-  }
-  return hit;
-}
-
-/** the pieces laid in whole `cell`-sized pixels over a `w`×`h` glass: each
- *  piece's pixels as one path (in pixels), with a pixel of grout wherever
- *  the piece to the right or below is another */
-function pixelate(pieces: Piece[], w: number, h: number, cell: number) {
-  const cols = Math.round(w / cell);
-  const rows = Math.round(h / cell);
-  const owner = new Int16Array(cols * rows);
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const c = { x: (x + 0.5) * cell, y: (y + 0.5) * cell };
-      let k = pieces.findIndex((piece) => inside(c, piece.shape));
-      if (k < 0) {
-        // right on an edge between pieces: the nearest piece's
-        let best = Infinity;
-        pieces.forEach((piece, i) => {
-          const d = Math.hypot(piece.c.x - c.x, piece.c.y - c.y);
-          if (d < best) [best, k] = [d, i];
-        });
-      }
-      owner[y * cols + x] = k;
-    }
-  }
-  const paths = pieces.map(() => "");
-  for (let y = 0; y < rows; y++) {
-    let x = 0;
-    while (x < cols) {
-      const k = owner[y * cols + x];
-      const grout = (i: number) =>
-        (i + 1 < cols && owner[y * cols + i + 1] !== k) || (y + 1 < rows && owner[(y + 1) * cols + i] !== k);
-      if (grout(x)) {
-        x++;
-        continue;
-      }
-      let n = 1;
-      while (x + n < cols && owner[y * cols + x + n] === k && !grout(x + n)) n++;
-      paths[k] += `M${x} ${y}h${n}v1h-${n}z`;
-      x += n;
-    }
-  }
-  return { cols, rows, paths };
-}
-
-/** where `piece` flies when the glass is hit at `burst`: straight away from
- *  that point, far enough that even a piece crossing the whole glass is past
- *  its far edge */
-function flight(piece: Piece, burst: Point, w: number, h: number, unit = 1): CSSProperties {
-  const diag = Math.hypot(w, h);
-  const dx = piece.c.x - burst.x;
-  const dy = piece.c.y - burst.y;
-  const dist = Math.hypot(dx, dy);
-  const [ux, uy] =
-    dist > 0.5 ? [dx / dist, dy / dist] : [Math.cos(piece.heading), Math.sin(piece.heading)];
-  const reach = diag + CELL * 1.5 + piece.reach * diag * 0.5;
+/** where `piece` goes when the glass, `cols`×`rows` pixels, is clicked at
+ *  `burst` (in desk units, `cell` to a pixel): straight into the edge it's
+ *  closest to — the one it touches, or across the narrowest gap; on a tie,
+ *  the shorter way out — and a pixel past it, so it's gone entirely. It
+ *  sets off a beat after the pieces nearer the click. */
+function retract(piece: Piece, burst: Point, cols: number, rows: number, cell: number): CSSProperties {
+  const ways = [
+    { gap: piece.x, out: piece.x + piece.w, dx: -1, dy: 0 },
+    { gap: cols - piece.x - piece.w, out: cols - piece.x, dx: 1, dy: 0 },
+    { gap: piece.y, out: piece.y + piece.h, dx: 0, dy: -1 },
+    { gap: rows - piece.y - piece.h, out: rows - piece.y, dx: 0, dy: 1 },
+  ];
+  const way = ways.reduce((a, b) => (b.gap < a.gap || (b.gap === a.gap && b.out < a.out) ? b : a));
+  const dist = Math.hypot((piece.x + piece.w / 2) * cell - burst.x, (piece.y + piece.h / 2) * cell - burst.y);
   return {
-    "--fly-x": `${r2((ux * reach) / unit)}px`,
-    "--fly-y": `${r2((uy * reach) / unit)}px`,
-    "--fly-r": `${piece.spin}deg`,
-    "--fly-delay": `${Math.round((dist / diag) * RIPPLE_MS)}ms`,
+    "--fly-x": `${way.dx * (way.out + 1)}px`,
+    "--fly-y": `${way.dy * (way.out + 1)}px`,
+    "--fly-delay": `${Math.round((dist / Math.hypot(cols * cell, rows * cell)) * RIPPLE_MS)}ms`,
   } as CSSProperties;
 }
-
-/** a pixel piece's hover move: one pixel out from the glass's middle along
- *  each way it's clearly off it */
-const PIXEL_PART_DEADZONE = 0.12;
 
 export default function ScreenMosaic({
   w,
@@ -262,71 +217,42 @@ export default function ScreenMosaic({
   seed: number;
   /** where the glass was hit, in the same units — set, the pieces fly off */
   burst: Point | null;
-  /** lay it in whole pixels this many desk units across (the pixel desk's) */
-  cell?: number;
+  /** the desk's pixel, in desk units — the mosaic is laid in these */
+  cell: number;
 }) {
-  const pieces = useMemo(() => layPieces(w, h, seed), [w, h, seed]);
-  const pixels = useMemo(() => (cell ? pixelate(pieces, w, h, cell) : null), [pieces, w, h, cell]);
-
-  if (pixels && cell) {
-    const away = (d: number, size: number) => (Math.abs(d) < size * PIXEL_PART_DEADZONE ? 0 : Math.sign(d));
-    return (
-      <svg
-        aria-hidden
-        viewBox={`0 0 ${pixels.cols} ${pixels.rows}`}
-        preserveAspectRatio="none"
-        shapeRendering="crispEdges"
-        className="mosaic-px pointer-events-none absolute inset-0 h-full w-full"
-      >
-        {pieces.map((piece, i) =>
-          pixels.paths[i] ? (
-            <path
-              key={piece.points}
-              d={pixels.paths[i]}
-              className="mosaic-tile"
-              style={
-                {
-                  fill: piece.fill,
-                  "--part-x": `${away(piece.c.x - w / 2, w)}px`,
-                  "--part-y": `${away(piece.c.y - h / 2, h)}px`,
-                  "--part-r": "0deg",
-                  "--tile-delay": `${piece.delay}ms`,
-                  ...(burst && flight(piece, burst, w, h, cell)),
-                } as CSSProperties
-              }
-            />
-          ) : null,
-        )}
-      </svg>
-    );
-  }
+  const cols = Math.round(w / cell);
+  const rows = Math.round(h / cell);
+  const pieces = useMemo(() => layPieces(cols, rows, seed), [cols, rows, seed]);
+  const away = (d: number, size: number) => (Math.abs(d) < size * PART_DEADZONE ? 0 : Math.sign(d));
 
   return (
     <svg
       aria-hidden
-      viewBox={`0 0 ${r2(w)} ${r2(h)}`}
+      viewBox={`0 0 ${cols} ${rows}`}
       preserveAspectRatio="none"
-      className="pointer-events-none absolute inset-0 h-full w-full"
+      shapeRendering="crispEdges"
+      className="mosaic-px pointer-events-none absolute inset-0 h-full w-full"
     >
-      <g style={{ stroke: "var(--paper, #000)" }} strokeWidth={GROUT} strokeLinejoin="round">
-        {pieces.map((piece) => (
-          <polygon
-            key={piece.points}
-            points={piece.points}
-            className="mosaic-tile"
-            style={
-              {
-                fill: piece.fill,
-                "--part-x": `${piece.part.x}px`,
-                "--part-y": `${piece.part.y}px`,
-                "--part-r": `${piece.tilt}deg`,
-                "--tile-delay": `${piece.delay}ms`,
-                ...(burst && flight(piece, burst, w, h)),
-              } as CSSProperties
-            }
-          />
-        ))}
-      </g>
+      {pieces.map((piece) => (
+        <rect
+          key={`${piece.x},${piece.y}`}
+          x={piece.x}
+          y={piece.y}
+          width={piece.w}
+          height={piece.h}
+          className="mosaic-tile"
+          style={
+            {
+              fill: piece.fill,
+              "--part-x": `${away(piece.x + piece.w / 2 - cols / 2, cols)}px`,
+              "--part-y": `${away(piece.y + piece.h / 2 - rows / 2, rows)}px`,
+              "--part-r": "0deg",
+              "--tile-delay": `${piece.delay}ms`,
+              ...(burst && retract(piece, burst, cols, rows, cell)),
+            } as CSSProperties
+          }
+        />
+      ))}
     </svg>
   );
 }

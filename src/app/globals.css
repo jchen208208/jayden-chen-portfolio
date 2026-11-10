@@ -290,15 +290,14 @@ body {
 }
 
 /* the mosaic behind it (`ScreenMosaic`) — a desk screen's hover and click.
-   Each piece turns about its own centre. Hovering draws them slightly
-   apart, a beat apart from each other (`--tile-delay`): each drifts out
-   from the glass's centre with a slight tilt (`--part-*`), so the grout
-   widens; this same transition flies them back in once a burst is cleared.
-   The three states list the same functions in the same order, so a piece's
-   spin interpolates as a turn. A burst throws each one along its own
-   flight (`--fly-*`, set inline from where the glass was hit), nearest
-   first: it eases away so the pieces are seen parting, then picks up speed,
-   spinning, until it's off the glass. */
+   Hovering draws them slightly apart, a beat apart from each other
+   (`--tile-delay`): each moves out from the glass's centre (`--part-*`),
+   so the grout widens; this same transition brings them back once a burst
+   is cleared.
+   A click draws each one straight into the edge of the glass it's closest
+   to (`--fly-*`, set inline), those nearest the click first: it eases off
+   so the pieces are seen parting, then picks up speed until it's gone in
+   under the bezel. */
 .mosaic-tile {
   transform-box: fill-box;
   transform-origin: center;
@@ -310,8 +309,8 @@ body {
 }
 
 [data-screen][data-shattered] .mosaic-tile {
-  transform: translate(var(--fly-x), var(--fly-y)) rotate(var(--fly-r)) scale(0.7);
-  transition: transform 650ms cubic-bezier(0.4, 0, 0.9, 0.55) var(--fly-delay, 0ms);
+  transform: translate(var(--fly-x), var(--fly-y));
+  transition: transform 240ms cubic-bezier(0.4, 0, 1, 1) var(--fly-delay, 0ms);
 }
 
 /* laid in the pixel desk's pixels (`.mosaic-px`), a piece doesn't glide on

@@ -48,12 +48,13 @@ import {
  *
  *   on the desk — the section's route (`/projects`) on the glass in the
  *                 screen face (VT323), its letters spinning in like slot
- *                 reels on load (`ScreenLabel`), over a mosaic of umber
- *                 shards laid in the pixel desk's pixels (`ScreenMosaic`);
- *                 on hover the shards step a pixel apart, and a spotlight
- *                 keeps that screen lit while the other three dim
- *                 (globals.css)
- *   on click    — the mosaic bursts off the glass from where it was hit,
+ *                 reels on load (`ScreenLabel`), over a mosaic of amber
+ *                 rectangular tiles laid in the pixel desk's pixels
+ *                 (`ScreenMosaic`); on hover the tiles step a pixel apart,
+ *                 and a spotlight keeps that screen lit while the other
+ *                 three dim (globals.css)
+ *   on click    — the mosaic's tiles retract into the glass's nearest
+ *                 edges, starting from where it was hit,
  *                 then one smooth zoom from the click point to a centred
  *                 fullscreen title, a quick glide up into a header, then the
  *                 section's cards unfurl beneath it with a macOS genie warp
@@ -238,10 +239,11 @@ function glassClip({ w, h }: Rect) {
 }
 /** each screen's own mosaic layout */
 const MOSAIC_SEED: Record<SectionId, number> = { projects: 7, skills: 19, experience: 31, about: 43 };
-/** a click bursts the mosaic, and the section only starts zooming open this
- *  long after — once most pieces are off the glass (the burst runs 650ms,
- *  `.mosaic-tile`), so they're seen flying before the view covers them */
-const BURST_LEAD_MS = 520;
+/** a click retracts the mosaic's tiles into the glass's edges, and the
+ *  section only starts zooming open this long after — as the last are going
+ *  in (the retraction runs 240ms, `.mosaic-tile`, the farthest setting off
+ *  up to 60ms late), so they're seen going before the view covers them */
+const BURST_LEAD_MS = 280;
 
 export default function DeskScene({
   className,
@@ -745,8 +747,8 @@ export default function DeskScene({
             >
               {/* what the screen shows: its section's route over the
                   mosaic, laid in the desk's pixels, which draws apart on
-                  hover and bursts on click (the `[data-screen]` rules in
-                  globals.css). The route sits above the mosaic (z 2);
+                  hover and retracts into the glass's edges on click (the
+                  `[data-screen]` rules in globals.css). The route sits above the mosaic (z 2);
                   `isolate` keeps that z-index inside the glass. */}
               <span
                 data-light={s.id}
