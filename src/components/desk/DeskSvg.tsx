@@ -84,9 +84,9 @@ export default function DeskSvg({
         <PcFanLights on={pcFans} />
         {/* the fans' switch, in the light, lit while they're on */}
         <Pixels cells={pcFans ? POWER_ON : POWER_OFF} />
-        {/* a couple of notes drifting up off the speaker a pixel at a time
-            and blinking out (`.speaker-note`, globals.css) — it's playing,
-            and there to be played with */}
+        {/* a couple of notes gliding up off the speaker and fading
+            (`.speaker-note`, globals.css) — it's playing, and there to be
+            played with */}
         {NOTES.map((n) => (
           <g key={`${n.x}-${n.delay}`} transform={`translate(${n.x} ${n.y})`}>
             <g className="speaker-note" style={{ animationDelay: `${n.delay}s` } as CSSProperties}>

@@ -342,38 +342,24 @@ body {
 }
 
 /* the music notes off the speaker (`NOTES`, DeskSvg): pixel sprites inside
-   the desk's art-pixel group, so a px here is one art pixel. Each blinks on
-   just above the speaker, steps up a pixel at a time, drifting off to the
-   right, and blinks out by half way through the loop, resting unseen until
-   its turn comes round again — hard ticks, like the fans' LEDs, never a
-   slide or a fade. Staggered by negative delays, so there's no first frame
-   with every note showing. Without motion they just sit, faint, over the
-   speaker. */
+   the desk's art-pixel group, so a px here is one art pixel. Each fades in
+   just above the speaker and glides up a short way on an arc bending off to
+   the right — mostly up at first, then out — and is gone by half way
+   through the loop, resting unseen until its turn comes round again. (They
+   once stepped a whole pixel at a time, which read as lag.) Staggered by
+   negative delays, so there's no first frame with every note showing.
+   Without motion they just sit, faint, over the speaker. */
 @keyframes speaker-note {
   0% {
     opacity: 0;
     transform: translate(0, 0);
   }
-  4% {
+  10%,
+  22% {
     opacity: 0.75;
-    transform: translate(0, -1px);
-  }
-  12% {
-    transform: translate(1px, -2px);
-  }
-  20% {
-    transform: translate(1px, -3px);
   }
   28% {
-    transform: translate(2px, -4px);
-  }
-  36% {
-    opacity: 0.75;
-    transform: translate(2px, -5px);
-  }
-  44% {
-    opacity: 0.4;
-    transform: translate(3px, -6px);
+    transform: translate(1px, -3px);
   }
   50%,
   100% {
@@ -384,7 +370,7 @@ body {
 
 .speaker-note {
   opacity: 0.5;
-  animation: speaker-note 6s step-end infinite;
+  animation: speaker-note 6s ease-in-out infinite;
 }
 
 /* a section open over the desk (`data-covered`, or a section's own page —

@@ -13,8 +13,13 @@
 export const DESK_GREYS = {
   /** a lit rim: an edge facing the light */
   a: "#9c9ca2",
+  /** between the two rims: a mark meant to show without shouting (the
+   *  bin's recycling sign) */
+  m: "#7b7b81",
   /** a shadow rim, and the stronger details */
   b: "#5a5a60",
+  /** between a shadow rim and a faint detail (the speaker's grille holes) */
+  d: "#4a4a50",
   /** faint details */
   c: "#3a3a40",
   /** bodies */
