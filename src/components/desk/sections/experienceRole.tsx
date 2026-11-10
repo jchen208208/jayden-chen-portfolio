@@ -87,10 +87,12 @@ export function RolePage({ slug }: { slug: string }) {
           </p>
         ))}
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xs uppercase tracking-wide text-white/50">What I did</h2>
-          <Bullets items={role.bullets} large />
-        </section>
+        {role.bullets.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xs uppercase tracking-wide text-white/50">What I did</h2>
+            <Bullets items={role.bullets} large />
+          </section>
+        )}
 
         {role.stack && (
           <section className="flex flex-col gap-2">

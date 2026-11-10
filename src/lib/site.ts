@@ -297,6 +297,17 @@ export const EXPERIENCE: Role[] = [
     ],
   },
   {
+    slug: "uw-spais",
+    project: "UW SPAIS",
+    blurb: "Software engineering on the Sustainable Physical AI Society, a University of Waterloo design team",
+    role: "Software Engineer",
+    place: "Sustainable Physical AI Society, University of Waterloo design team",
+    // TODO — user: confirm the start date, and add the stack and bullets
+    start: "Sept 2026",
+    end: "Present",
+    bullets: [],
+  },
+  {
     slug: "it-technician",
     image: itTechnicianPhoto,
     blurb: "Hardware and software support for a ~2,000-student school",
