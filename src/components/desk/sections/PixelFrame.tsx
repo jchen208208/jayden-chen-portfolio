@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Cast, Critter } from "./critters";
-import { INK, PX, frameGrid, toPaths, type FrameStyle, type Stroke } from "./pixelArt";
+import { BUMPINESS, INK, MARGIN, PX, bumpyFrame, toPaths, type Stroke } from "./pixelArt";
 
 /**
- * An Experience picture's pixel-art border, and the creature hiding behind
- * the picture with its ears over the top edge (art in `critters.ts`). Both
+ * An Experience picture's pixel-art border — the same little-bumps border
+ * round every picture (`bumpyFrame`) — and the creature hiding behind the
+ * picture with its ears over the top edge (art in `critters.ts`). Both
  * sit in `RoleShot`'s `.xp-shot` beside the picture's own frame, so they hop
  * and swing with it; CSS layers them (`.px-*` in globals.css): the head
  * behind the picture, the border over it, the paws over the border.
@@ -25,8 +26,10 @@ function Strokes({ strokes }: { strokes: Stroke[] }) {
   return strokes.map(({ letter, d }) => <path key={letter} d={d} fill={INK[letter]} />);
 }
 
-/** the border, redrawn to the picture's size so its pixels stay square */
-export function PixelBorder({ frame }: { frame: FrameStyle }) {
+/** the border, redrawn to the picture's size so its pixels stay square. Its
+ *  bumps stand just outside the picture (the SVG draws past its own box),
+ *  and none on the stretch of the top edge where `cast`'s creature peeks. */
+export function PixelBorder({ cast }: { cast: Cast }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState(DEFAULT_SIZE);
 
@@ -42,17 +45,19 @@ export function PixelBorder({ frame }: { frame: FrameStyle }) {
     return () => ro.disconnect();
   }, []);
 
-  const strokes = useMemo(
-    () => toPaths(frameGrid(size.cols, size.rows, frame)),
-    [size, frame],
-  );
+  const strokes = useMemo(() => {
+    const from = Math.floor(cast.x * size.cols);
+    const clear = [from - 1, from + cast.critter.head[0].length] as const;
+    return toPaths(bumpyFrame(size.cols, size.rows, BUMPINESS, clear));
+  }, [size, cast]);
 
   return (
     <span ref={ref} aria-hidden className="px-border">
       <svg
-        viewBox={`0 0 ${size.cols} ${size.rows}`}
+        viewBox={`${MARGIN} ${MARGIN} ${size.cols} ${size.rows}`}
         preserveAspectRatio="none"
         shapeRendering="crispEdges"
+        overflow="visible"
       >
         <Strokes strokes={strokes} />
       </svg>

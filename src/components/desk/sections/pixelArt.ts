@@ -1,7 +1,8 @@
 /**
- * Pixel art drawn as letter grids — the Experience pictures' borders and the
- * creatures peeking over them (`critters.ts`, `PixelFrame.tsx`). One letter
- * a pixel, one string a row, as the lotus's frames are (`lotusFrames.ts`).
+ * Pixel art drawn as letter grids — the Experience pictures' bumpy border
+ * and the creatures peeking over it (`critters.ts`, `PixelFrame.tsx`). One
+ * letter a pixel, one string a row, as the lotus's frames are
+ * (`lotusFrames.ts`).
  *
  * It's drawn as inline SVG with each letter's fill a CSS variable, so the
  * art takes the theme's light in its own shades and follows the theme bar
@@ -47,55 +48,103 @@ export function toPaths(rows: readonly string[]): Stroke[] {
   return [...byLetter].map(([letter, d]) => ({ letter, d }));
 }
 
-/** a border's pattern: one tile of its top edge, which turns to run down the
- *  sides and along the bottom, and its top-left corner, which mirrors into
- *  the other three. Both list their outermost row first; the corner is as
- *  many pixels square as the edge is rows deep. */
-export type FrameStyle = {
-  edge: readonly string[];
-  corner: readonly string[];
+/* ── the border ────────────────────────────────────────────────────────────── */
+
+/** how bumpy the border is */
+export type Bumpiness = {
+  /** the chance each step along the outside edge starts a bump */
+  bumps: number;
+  /** the widest a bump gets, in art pixels */
+  size: number;
+  /** the chance each pixel inside the band is a darker one */
+  texture: number;
+  /** which arrangement — another seed, other bumps */
+  seed: number;
 };
 
-/** the whole border round a picture `cols` × `rows` art pixels, as a grid —
- *  empty inside. Each edge's tiles are centred on it, so the pattern meets
- *  both of its corners the same way. */
-export function frameGrid(cols: number, rows: number, { edge, corner }: FrameStyle): string[] {
-  const depth = edge.length;
-  const tile = edge[0].length;
-  const grid = Array.from({ length: rows }, () => Array<string>(cols).fill("."));
+/** the Experience pictures' border, as Jayden picked it on a dev slider */
+export const BUMPINESS: Bumpiness = { bumps: 0.09, size: 2, texture: 0.16, seed: 5 };
+
+/** art pixels drawn outside the picture's box on every side, for the bumps */
+export const MARGIN = 2;
+
+/** the band's depth, art pixels: a deep outer row, then two in the glow */
+const DEPTH = 3;
+
+/** no bumps this close to a corner, art pixels */
+const CORNER_CLEAR = 3;
+
+/** a number in [0, 1) from integers — always the same for the same ones, so
+ *  the bumps land in the same places on the server and in every render */
+function rand(...keys: number[]) {
+  let h = 0x2545f491;
+  for (const k of keys) {
+    h = Math.imul(h ^ (k | 0), 0x9e3779b1);
+    h = (h << 13) | (h >>> 19);
+  }
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * The border round a picture `cols` × `rows` art pixels, as a grid with
+ * `MARGIN` pixels spare on every side (grid x = picture x + `MARGIN`): a band
+ * `DEPTH` deep with its corners cut a pixel square, a few darker pixels
+ * scattered through it, and little bumps standing out from its outside edge,
+ * a pixel tall and never touching. `clear` keeps a stretch of the top edge,
+ * in picture x, free of bumps — where the creature peeks over.
+ */
+export function bumpyFrame(
+  cols: number,
+  rows: number,
+  { bumps, size, texture, seed }: Bumpiness,
+  clear?: readonly [number, number],
+): string[] {
+  const grid = Array.from({ length: rows + 2 * MARGIN }, () => Array<string>(cols + 2 * MARGIN).fill("."));
   const put = (x: number, y: number, letter: string) => {
-    if (x >= 0 && y >= 0 && x < cols && y < rows && letter !== ".") grid[y][x] = letter;
+    grid[y + MARGIN][x + MARGIN] = letter;
   };
 
-  // `i` runs along an edge between its corners; the tile starts so that the
-  // part-tile left over is split between the two ends
-  const tileAt = (length: number) => {
-    const shift = Math.floor((length % tile) / 2);
-    return (i: number) => (((i - shift) % tile) + tile) % tile;
-  };
-
-  const across = cols - 2 * depth;
-  const down = rows - 2 * depth;
-  const tx = tileAt(across);
-  const ty = tileAt(down);
-  for (let r = 0; r < depth; r++) {
-    for (let i = 0; i < across; i++) {
-      const letter = edge[r][tx(i)];
-      put(depth + i, r, letter);
-      put(depth + i, rows - 1 - r, letter);
-    }
-    for (let i = 0; i < down; i++) {
-      const letter = edge[r][ty(i)];
-      put(r, depth + i, letter);
-      put(cols - 1 - r, depth + i, letter);
-    }
-    for (let c = 0; c < depth; c++) {
-      const letter = corner[r][c];
-      put(c, r, letter);
-      put(cols - 1 - c, r, letter);
-      put(c, rows - 1 - r, letter);
-      put(cols - 1 - c, rows - 1 - r, letter);
+  // the band, by how far each pixel is in from the outside
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const depth = Math.min(x, y, cols - 1 - x, rows - 1 - y);
+      if (depth >= DEPTH) continue;
+      const corner = (x === 0 || x === cols - 1) && (y === 0 || y === rows - 1);
+      if (corner) continue;
+      put(x, y, depth === 0 || rand(seed, 1, x, y) < texture ? "d" : "g");
     }
   }
+
+  // the bumps: along each edge, a bump starts with chance `bumps`, is 1 to
+  // `size` wide, and leaves at least a pixel before the next can start
+  const edges = [
+    { length: cols, at: (t: number) => [t, -1] }, // top
+    { length: cols, at: (t: number) => [t, rows] }, // bottom
+    { length: rows, at: (t: number) => [-1, t] }, // left
+    { length: rows, at: (t: number) => [cols, t] }, // right
+  ];
+  edges.forEach(({ length, at }, edge) => {
+    const last = length - 1 - CORNER_CLEAR;
+    let t = CORNER_CLEAR;
+    while (t <= last) {
+      if (rand(seed, 2, edge, t) >= bumps) {
+        t++;
+        continue;
+      }
+      const width = Math.min(1 + Math.floor(rand(seed, 3, edge, t) * size), last - t + 1);
+      const blocked = edge === 0 && clear && t <= clear[1] && t + width - 1 >= clear[0];
+      if (!blocked) {
+        for (let i = 0; i < width; i++) {
+          const [x, y] = at(t + i);
+          put(x, y, "d");
+        }
+      }
+      t += width + 1;
+    }
+  });
+
   return grid.map((row) => row.join(""));
 }

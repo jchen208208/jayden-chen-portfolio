@@ -20,9 +20,10 @@ import { ShotPlaceholder, type SectionCard } from "./shared";
  * window; the title slides a little right and the dates spin like the desk screens' slot reels before landing in
  * amber. All of it is CSS (`.xp-*` in globals.css); only the reel is script.
  *
- * Each picture has its own pixel-art border, and a little creature hiding
- * behind it (`PixelFrame`, art in `critters.ts`): ears and eyes over the top
- * edge at rest, popping up to hook its paws over the border when lit.
+ * Each picture has a pixel-art border with little bumps, and its own little
+ * creature hiding behind it (`PixelFrame`, art in `critters.ts`): ears and
+ * eyes over the top edge at rest, popping up to hook its paws over the
+ * border when lit.
  *
  * Either side of the column, the panorama (`panorama.tsx`) fills the black.
  */
@@ -92,7 +93,7 @@ export function RoleShot({
           )}
         </span>
       </span>
-      <PixelBorder frame={cast.frame} />
+      <PixelBorder cast={cast} />
     </span>
   );
 }

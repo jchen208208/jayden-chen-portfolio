@@ -1,7 +1,7 @@
 /**
- * The creatures peeking over the Experience pictures' borders, and the
- * borders themselves — pixel art as letter grids (`pixelArt.ts` has the
- * letters). `PixelFrame.tsx` draws them.
+ * The creatures peeking over the Experience pictures' borders — pixel art as
+ * letter grids (`pixelArt.ts` has the letters, and the border, which every
+ * picture shares). `PixelFrame.tsx` draws them.
  *
  * A creature hides behind its picture. At rest just its ears and eyes show
  * over the top edge; lit (the card hovered, or its role's page open) it pops
@@ -10,8 +10,6 @@
  * This file imports nothing at runtime, so a plain Node script can load it to
  * draw the art out for a look.
  */
-
-import type { FrameStyle } from "./pixelArt";
 
 export type Critter = {
   /** ear tips to chin */
@@ -217,42 +215,26 @@ export const CRITTERS = {
   hamster: HAMSTER,
 } as const;
 
-/* ── the borders ───────────────────────────────────────────────────────────── */
-
-/** every border's corner: a pixel cut off the outside, a bevelled block in */
-const CORNER = [".dd", "dpg", "dgb"];
-
-export const FRAMES = {
-  studs: { edge: ["ddddd", "ggpgg", "ddddd"], corner: CORNER },
-  bricks: { edge: ["dddddddd", "gggbgggg", "gggggggb"], corner: CORNER },
-  checker: { edge: ["dddd", "ppgg", "ggpp"], corner: CORNER },
-  waves: { edge: ["dddd", "gppg", "pggp"], corner: CORNER },
-  crenels: { edge: ["dddd", "gggg", "gg.."], corner: CORNER },
-  stitches: { edge: ["dddd", "ppgg", "bbbb"], corner: CORNER },
-  rails: { edge: ["ddd", "ggb", "ggb"], corner: CORNER },
-} satisfies Record<string, FrameStyle>;
-
 /* ── who sits where ────────────────────────────────────────────────────────── */
 
 export type Cast = {
   critter: Critter;
-  frame: FrameStyle;
   /** where along the top edge the creature sits, as a share of the width —
    *  kept to the left half: the hover's swing lifts the right-hand side
    *  toward the card above */
   x: number;
 };
 
-/** In the Experience list's order. Reorder to move a creature or a border to
- *  another role; a role past the end starts the list again. */
+/** In the Experience list's order. Reorder to move a creature to another
+ *  role; a role past the end starts the list again. */
 export const CAST: Cast[] = [
-  { critter: CRITTERS.cat, frame: FRAMES.studs, x: 0.16 },
-  { critter: CRITTERS.frog, frame: FRAMES.waves, x: 0.38 },
-  { critter: CRITTERS.bunny, frame: FRAMES.bricks, x: 0.12 },
-  { critter: CRITTERS.bear, frame: FRAMES.stitches, x: 0.3 },
-  { critter: CRITTERS.raccoon, frame: FRAMES.checker, x: 0.44 },
-  { critter: CRITTERS.penguin, frame: FRAMES.rails, x: 0.2 },
-  { critter: CRITTERS.hamster, frame: FRAMES.crenels, x: 0.34 },
+  { critter: CRITTERS.cat, x: 0.16 },
+  { critter: CRITTERS.frog, x: 0.38 },
+  { critter: CRITTERS.bunny, x: 0.12 },
+  { critter: CRITTERS.bear, x: 0.3 },
+  { critter: CRITTERS.raccoon, x: 0.44 },
+  { critter: CRITTERS.penguin, x: 0.2 },
+  { critter: CRITTERS.hamster, x: 0.34 },
 ];
 
 export function castFor(index: number): Cast {
