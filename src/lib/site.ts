@@ -146,7 +146,7 @@ export type Project = {
    *  TODO — user: a screenshot or photo for each project */
   image?: StaticImageData;
   /** the build, in order, on the project's own page (`/projects/{slug}`).
-   *  A project with these gets that page, and its card opens it. */
+   *  Without them the page skips its build section. */
   gallery?: Figure[];
 };
 
@@ -166,6 +166,30 @@ export const PROJECTS: Project[] = [
     highlights: [
       "Developing an embedded-system device mapping hand gestures to audio playback controls using a light sensor with an ESP32 MCU.",
       "Designed a custom 2-layer PCB in KiCad and a 3D-printed enclosure in Fusion 360, advancing the project through many stages from breadboard components to now a working and tested MVP ready for production and scaling.",
+    ],
+  },
+  {
+    // TODO — user: confirm the period and bullets (written from the repo's README)
+    slug: "birdbrained",
+    name: "BirdBrained",
+    period: "November 2026",
+    tags: ["React", "TypeScript", "Three.js", "Python", "FastAPI", "OpenAI API"],
+    repo: "https://github.com/Lermonade/birdbrained",
+    highlights: [
+      "Built a 3D globe that visualizes population shifts for 160 bird species across 600 states and provinces in 84 countries, merging eBird/iNaturalist (GBIF), USGS Breeding Bird Survey and NOAA climate data from 2010 to 2025.",
+      "Corrected sighting trends for the ~10× growth in birders and flagged statistically unclear regions; an AI analyst explains each trend and anomaly as hypotheses with evidence and confidence levels.",
+    ],
+  },
+  {
+    // TODO — user: confirm the bullets (written from the repo's Devpost draft)
+    slug: "suplex",
+    name: "Suplex",
+    period: "October 2026",
+    tags: ["Python", "Shapely", "GeoPandas", "FastAPI", "React", "TypeScript", "Gemini", "TimescaleDB"],
+    repo: "https://github.com/andrewl746/suplex",
+    highlights: [
+      "Built at Hack the Valley 11: type any Toronto address and watch the City's four free pre-approved multiplex designs tested against the lot in 3D, by a rules engine citing Zoning By-law 569-2013 section by section.",
+      "Ran the engine across all 495,456 Toronto lots to map, ward by ward, where multiplexes could fit against the permits actually issued, with Gemini-written briefings whose every number is checked by a validator.",
     ],
   },
   {
@@ -210,8 +234,8 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-/** the projects that have a page of their own, in the grid's order */
-export const PROJECT_PAGES = PROJECTS.filter((p) => p.gallery?.length);
+/** every project has a page of its own, in the grid's order */
+export const PROJECT_PAGES = PROJECTS;
 
 /* ── experience ─────────────────────────────────────────────────────────────── */
 

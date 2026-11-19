@@ -5,7 +5,7 @@ import { PROJECT_PAGES } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** a page for each project with a build gallery, built ahead of time; any
+/** a page for each project, built ahead of time; any
  *  other slug is a 404 */
 export const dynamicParams = false;
 

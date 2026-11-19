@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { PROJECTS, type Project } from "@/lib/site";
 import { markFromList } from "@/lib/experienceNav";
-import { Bullets, CardLink, Meta, ShotPlaceholder, type SectionCard } from "./shared";
+import { CardLink, Meta, ShotPlaceholder, type SectionCard } from "./shared";
 
 /**
  * Projects is a grid of little program windows, one per project: a picture
@@ -16,8 +16,9 @@ import { Bullets, CardLink, Meta, ShotPlaceholder, type SectionCard } from "./sh
  * Experience it sits in the page rather than a window of its own, and its
  * cards drop in one after another (`.exp-row`).
  *
- * A project with a build gallery has its own page (`/projects/{slug}`,
- * `ProjectPage`), and its whole card opens it.
+ * The card shows only the picture, name and dates; every project has its own
+ * page (`/projects/{slug}`, `ProjectPage`) with the bullets and tools, and its
+ * whole card opens it.
  */
 
 const LIST_MAX_WIDTH = "72rem";
@@ -76,7 +77,6 @@ export function ProjectWindow({
 }
 
 function ProjectCard({ project: p, index }: { project: Project; index: number }) {
-  const opens = Boolean(p.gallery?.length);
   const face = (
     <>
       <ProjectWindow project={p} sizes="(min-width: 640px) 24rem, 100vw" />
@@ -85,26 +85,18 @@ function ProjectCard({ project: p, index }: { project: Project; index: number })
       </h3>
       <div className="mt-2 flex flex-col gap-3 font-mono text-white">
         <Meta>{p.period}</Meta>
-        <Meta>{p.tags.join(" · ")}</Meta>
-        <Bullets items={p.highlights} />
-        {opens && (
-          <span aria-hidden className="proj-go text-xs uppercase tracking-wide">
-            View →
-          </span>
-        )}
+        <span aria-hidden className="proj-go text-xs uppercase tracking-wide">
+          View →
+        </span>
       </div>
     </>
   );
 
   return (
     <li className="exp-row proj-card" style={{ "--i": index } as CSSProperties}>
-      {opens ? (
-        <Link href={`/projects/${p.slug}`} onClick={markFromList} className="proj-link block">
-          {face}
-        </Link>
-      ) : (
-        face
-      )}
+      <Link href={`/projects/${p.slug}`} onClick={markFromList} className="proj-link block">
+        {face}
+      </Link>
       {/* outside the card's own link — links can't nest */}
       {(p.repo || p.demo) && (
         <div className="mt-3 flex gap-4 font-mono text-xs uppercase tracking-wide text-white">
