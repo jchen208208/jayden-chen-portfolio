@@ -137,6 +137,9 @@ export type Project = {
   period: string;
   /** languages and tools, in résumé order */
   tags: string[];
+  /** a short paragraph at the top of the project's own page, in the user's
+   *  own words. Without it the page skips its abstract. */
+  abstract?: string;
   /** the résumé's bullets, in its own words */
   highlights: string[];
   repo?: string;
@@ -156,7 +159,10 @@ export const PROJECTS: Project[] = [
     name: "Gesture-Controlled Audio Device (SPARC)",
     period: "May 2026 – Present",
     tags: ["Embedded C++", "Python", "PCB Design", "CAD Modelling", "Soldering"],
+    repo: "https://github.com/jchen208208/SPARC",
     image: sparcHeroPhoto,
+    abstract:
+      "I'm building SPARC, a gesture-controlled audio device that lets drivers skip, pause, and control music with a wave of the hand, so they don’t have to look down at their phones. It reads gestures across calibrated sensing zones and plays a custom LED-strip animation for each gesture. I took it from an Arduino Uno jumpered on a breadboard to a working MVP with a custom PCB and a 3D-modeled enclosure, and I'm actively trying to improve and scale it right now.",
     // TODO — user: confirm the captions
     gallery: [
       { image: sparcBreadboardPhoto, caption: "Breadboard prototype on an Arduino" },

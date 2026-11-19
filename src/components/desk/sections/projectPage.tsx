@@ -71,6 +71,13 @@ export function ProjectPage({ slug }: { slug: string }) {
           </p>
         </header>
 
+        {project.abstract && (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xs uppercase tracking-wide text-white/50">Abstract</h2>
+            <p className="text-base leading-relaxed text-white/75">{project.abstract}</p>
+          </section>
+        )}
+
         <section className="flex flex-col gap-3">
           <h2 className="text-xs uppercase tracking-wide text-white/50">What I did</h2>
           <Bullets items={project.highlights} large />
