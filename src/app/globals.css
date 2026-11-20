@@ -920,6 +920,251 @@ body {
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.18);
 }
 
+/* A project's build as a timeline (`ProjectTimeline`). The signal path is a
+   row of square boxes joined by links (dashed = wireless); whatever changed
+   since the stage before flashes in the light and keeps a lit edge. Under it,
+   a scrubber of square stops, and the stage's own panel. Below 640px the path
+   stands up into a column. */
+.tl-path {
+  display: flex;
+  align-items: stretch;
+}
+.tl-step {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: stretch;
+}
+.tl-step:last-child {
+  flex: 0.75 1 0;
+}
+.tl-node {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: rgb(255 255 255 / 0.03);
+}
+.tl-node-label {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.tl-node-sub {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 0.55);
+}
+.tl-node.tl-new {
+  border-color: var(--glow);
+  animation: tl-flash 900ms ease-out;
+}
+.tl-node.tl-new .tl-node-label {
+  color: var(--glow-pale);
+}
+@keyframes tl-flash {
+  from {
+    background: color-mix(in srgb, var(--glow) 35%, transparent);
+    box-shadow: 0 0 18px var(--glow);
+  }
+}
+.tl-link {
+  display: flex;
+  flex: 0 0 4.25rem;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.3rem;
+}
+.tl-link-label {
+  font-family: var(--font-screen), monospace;
+  font-size: 0.95rem;
+  line-height: 1;
+  text-align: center;
+  color: rgb(255 255 255 / 0.6);
+}
+.tl-link-line {
+  width: 100%;
+  border-top: 2px solid rgb(255 255 255 / 0.45);
+}
+.tl-air .tl-link-line {
+  border-top-style: dashed;
+}
+.tl-link.tl-new .tl-link-label {
+  color: var(--glow);
+}
+.tl-link.tl-new .tl-link-line {
+  border-top-color: var(--glow);
+}
+@media (max-width: 639px) {
+  .tl-path {
+    flex-direction: column;
+  }
+  .tl-step,
+  .tl-step:last-child {
+    flex-direction: column;
+    flex: none;
+  }
+  .tl-link {
+    flex: none;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    height: 2.25rem;
+    padding: 0 0 0 1.25rem;
+  }
+  .tl-link-line {
+    width: 0;
+    height: 100%;
+    border-top: 0;
+    border-left: 2px solid rgb(255 255 255 / 0.45);
+  }
+  .tl-air .tl-link-line {
+    border-left-style: dashed;
+  }
+  .tl-link.tl-new .tl-link-line {
+    border-left-color: var(--glow);
+  }
+}
+.tl-gone {
+  animation: tl-fade 500ms ease-out;
+}
+
+/* the scrubber */
+.tl-track {
+  padding: 0.75rem 1.5rem 0;
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+}
+.tl-rail {
+  position: relative;
+  height: 2px;
+  margin-bottom: 2rem;
+  background: rgb(255 255 255 / 0.2);
+}
+.tl-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--glow);
+  transition: width 300ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.tl-stop {
+  position: absolute;
+  top: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  translate: -50% calc(-0.25rem - 5px);
+  outline: none;
+}
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgb(255 255 255 / 0.45);
+  background: var(--paper);
+  transition:
+    background 200ms,
+    border-color 200ms,
+    scale 200ms,
+    box-shadow 200ms;
+}
+.tl-past .tl-dot {
+  border-color: var(--glow);
+  background: var(--glow);
+}
+.tl-here .tl-dot {
+  border-color: var(--glow-pale);
+  background: var(--glow);
+  scale: 1.5;
+  box-shadow: 0 0 10px var(--glow);
+}
+.tl-stop:hover .tl-dot {
+  border-color: var(--glow-pale);
+}
+.tl-stop:focus-visible .tl-dot {
+  outline: 1px solid var(--glow-pale);
+  outline-offset: 4px;
+}
+.tl-mark {
+  font-size: 1rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.45);
+  transition: color 200ms;
+}
+.tl-past .tl-mark {
+  color: rgb(255 255 255 / 0.7);
+}
+.tl-here .tl-mark {
+  color: var(--glow);
+}
+@media (max-width: 767px) {
+  .tl-stop:not(.tl-here) .tl-mark {
+    visibility: hidden;
+  }
+}
+
+/* the stage */
+.tl-panel {
+  animation: tl-fade 350ms ease-out;
+}
+@keyframes tl-fade {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+.tl-pf {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--glow-deep);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.tl-pf dt {
+  padding-top: 0.15rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgb(255 255 255 / 0.5);
+}
+.tl-pf dd {
+  color: rgb(255 255 255 / 0.75);
+}
+.tl-step-btn {
+  color: rgb(255 255 255 / 0.75);
+  transition: color 200ms;
+}
+.tl-step-btn:hover:not(:disabled) {
+  color: var(--glow);
+}
+.tl-step-btn:disabled {
+  color: rgb(255 255 255 / 0.25);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-node.tl-new,
+  .tl-gone,
+  .tl-panel {
+    animation: none;
+  }
+  .tl-fill,
+  .tl-dot {
+    transition: none;
+  }
+}
+
 /* A title drawn as circuit-board traces (`PcbTitle`): each trace routes
    itself in once, then each of its pads lands. Resting style is the finished
    board, which is also what reduced motion shows. */

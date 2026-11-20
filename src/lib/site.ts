@@ -6,6 +6,7 @@
  */
 
 import type { StaticImageData } from "next/image";
+import { SPARC_TIMELINE, type TimelineStage } from "@/lib/sparcTimeline";
 import c3mPhoto from "@/assets/experience/c3m.jpeg";
 import findverPhoto from "@/assets/experience/findver.jpeg";
 import hitWithLukeShot from "@/assets/experience/hitwithluke.webp";
@@ -151,6 +152,9 @@ export type Project = {
   /** the build, in order, on the project's own page (`/projects/{slug}`).
    *  Without them the page skips its build section. */
   gallery?: Figure[];
+  /** how the project got here, stage by stage — on its own page it stands in
+   *  for the bullets */
+  timeline?: TimelineStage[];
 };
 
 export const PROJECTS: Project[] = [
@@ -163,6 +167,7 @@ export const PROJECTS: Project[] = [
     image: sparcHeroPhoto,
     abstract:
       "I'm building SPARC, a gesture-controlled audio device that lets drivers skip, pause, and control music with a wave of the hand, so they don’t have to look down at their phones. It reads gestures across calibrated sensing zones and plays a custom LED-strip animation for each gesture. I took it from an Arduino Uno jumpered on a breadboard to a working MVP with a custom PCB and a 3D-modeled enclosure, and I'm actively trying to improve and scale it right now.",
+    timeline: SPARC_TIMELINE,
     // TODO — user: confirm the captions
     gallery: [
       { image: sparcBreadboardPhoto, caption: "Breadboard prototype on an Arduino" },

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import FocusFrame from "@/components/focus/FocusFrame";
 import { PROJECTS } from "@/lib/site";
 import { takeFromList } from "@/lib/experienceNav";
+import { ProjectTimeline } from "./ProjectTimeline";
 import { ProjectWindow } from "./projects";
 import { Bullets, CardLink } from "./shared";
 
@@ -78,10 +79,17 @@ export function ProjectPage({ slug }: { slug: string }) {
           </section>
         )}
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xs uppercase tracking-wide text-white/50">What I did</h2>
-          <Bullets items={project.highlights} large />
-        </section>
+        {project.timeline ? (
+          <section className="flex flex-col gap-4">
+            <h2 className="text-xs uppercase tracking-wide text-white/50">How it got here</h2>
+            <ProjectTimeline stages={project.timeline} />
+          </section>
+        ) : (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xs uppercase tracking-wide text-white/50">What I did</h2>
+            <Bullets items={project.highlights} large />
+          </section>
+        )}
 
         {project.gallery && (
           <section className="flex flex-col gap-4">
