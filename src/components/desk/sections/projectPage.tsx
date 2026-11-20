@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import FocusFrame from "@/components/focus/FocusFrame";
 import { PROJECTS } from "@/lib/site";
 import { takeFromList } from "@/lib/experienceNav";
-import { ProjectTimeline } from "./ProjectTimeline";
+import { ProjectTimeline } from "./timeline/ProjectTimeline";
 import { ProjectWindow } from "./projects";
 import { Bullets, CardLink } from "./shared";
 
