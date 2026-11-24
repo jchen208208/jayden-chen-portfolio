@@ -26,7 +26,7 @@ function ledColour(i: number, n: number) {
  * SPARC itself plays for next and previous — a run of light across the whole
  * strip, rightward going later and leftward going earlier — and a pair of
  * pixel music notes bobs over the chosen LED. A row on a wide screen, a 3×3
- * block on a phone.
+ * block on a narrow one.
  */
 export function LedTimeline({ stages, s }: { stages: TimelineStage[]; s: Stages }) {
   const n = stages.length;

@@ -40,7 +40,7 @@ import type { CardLayout, CardOptions, SectionCard } from "./shared";
  * Layout is in a fixed design space scaled to the space under the header
  * (`--s`, from container query units), so it holds at any size with no
  * measuring: each group sits at a fixed share of it, its stickers on an
- * ellipse round the label. The stacked page (phones, deep links) stacks the
+ * ellipse round the label. The section's own page (`/skills`) stacks the
  * three groups down the page instead.
  */
 

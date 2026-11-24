@@ -12,8 +12,9 @@ import {
 } from "@/components/desk/sections";
 
 /**
- * A section as its own page — what a phone gets when it taps a card on the
- * stacked desk, and what a deep link (`/skills`, …) shows on any screen. The
+ * A section as its own page — what a deep link (`/skills`, …) or the
+ * footer's links show on any screen, and what a window too narrow for the
+ * desk gets when it taps a card on the stacked list (`DeskCardList`). The
  * same header and the same `ScreenCard`s as the desktop overlay in
  * `DeskScene`, just stacked one under another and scrolled normally.
  *

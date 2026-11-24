@@ -76,12 +76,12 @@ export type SectionId = "projects" | "experience" | "skills" | "about";
 export type SectionMeta = {
   id: SectionId;
   route: `/${SectionId}`;
-  /** short label on the mobile card */
+  /** short label: the footer's link, the desk screen's accessible name */
   deskLabel: string;
   /** the header the opened section grows into. Uppercase. (On the desk its
    *  screen shows `route` instead — see `ScreenLabel`.) */
   screenLabel: string;
-  /** one-line description under the mobile card */
+  /** one-line description under the narrow-window card (`DeskCardList`) */
   blurb: string;
 };
 

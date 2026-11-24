@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Chakra_Petch, Fraunces, Inter, JetBrains_Mono, Orbitron, VT323 } from "next/font/google";
 import ThemeBar from "@/components/site/ThemeBar";
 import { THEME_SCRIPT } from "@/lib/theme";
@@ -57,6 +57,19 @@ export const metadata: Metadata = {
   title: "Jayden Chen — Portfolio",
   description:
     "Jayden Chen — Computer Engineering @ Waterloo. A portfolio built around the desk: four screens, one each for projects, skills, experience, and about.",
+};
+
+/**
+ * Phones and tablets get the desktop site, zoomed out to fit, rather than a
+ * narrow layout of their own: the page is always laid out 1280px wide — the
+ * width at which every wide-screen piece (`xl:`) shows — and the browser
+ * scales that down to the screen. `initialScale` is cleared on purpose: Next's
+ * default `initial-scale=1` would open it at full size, showing only its left
+ * third. Desktop browsers ignore this tag.
+ */
+export const viewport: Viewport = {
+  width: 1280,
+  initialScale: undefined,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

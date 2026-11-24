@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
  *  - `row`: side by side in the desktop overlay, each card given a fixed
  *    height from outside (see `boxLayout` in `DeskScene`) — bodies fill it and
  *    scroll inside themselves if they have to
- *  - `stack`: one under another on the mobile / deep-link page, each card as
+ *  - `stack`: one under another on the section's own page, each card as
  *    tall as its own content */
 export type CardLayout = "row" | "stack";
 

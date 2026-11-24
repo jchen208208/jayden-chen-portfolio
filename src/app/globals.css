@@ -274,6 +274,34 @@ body {
   transform: translateX(320%) skewX(-14deg);
 }
 
+/* The frame the desk scene — title, desk, sign-off — is laid out in
+   (`DeskStage`), a size container so their spacing can be shares of its
+   height (`cqh`). On a desktop it's the whole pinned stage.
+
+   A phone or tablet lays the site out 1280px wide (the root layout's
+   viewport) and shrinks it onto the screen, which is no desktop window's
+   shape. So there the frame is one: 900px tall, the height the scene is
+   composed for. Held upright, that's a band across the middle of a much
+   taller stage, so the title and desk keep their desktop spacing instead of
+   drifting apart down its length. On its side the screen is shorter than
+   the frame, so `--fit` (set by `DeskStage`) shrinks it to fit, widening it
+   to match so it still spans the screen. */
+.desk-frame {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  container-type: size;
+}
+
+@media (hover: none) {
+  .desk-frame {
+    width: calc(100% / var(--fit, 1));
+    height: 900px;
+    scale: var(--fit, 1);
+  }
+}
+
 /* a desk screen's route (`ScreenLabel`): white letters with a near-black
    outline, so they read on every piece of the amber mosaic, pale or bronze.
    `paint-order: stroke fill` lays the stroke under the fill, as on the

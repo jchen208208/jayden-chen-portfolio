@@ -46,9 +46,12 @@ const DESK_POSE = {
  * It's the runway's negative bottom margin, so the pin still releases exactly
  * as the move finishes; the footer only comes into view over the last ~10% of
  * the move, when the desk is long clear of the stage's bottom. The next
- * section's bottom padding (`pb-[…vh]` below) must stay above this — it's
+ * section's bottom padding (`pb-[…cqh]` below — a share of the frame's
+ * height, which on a desktop is the viewport's) must stay above this — it's
  * 4–5vh above now — or the footer covers it. (It was 16 until the sign-off
- * grew to three lines under a big "Hi!" and needed the room.)
+ * grew to three lines under a big "Hi!" and needed the room.) On a phone held
+ * upright the frame is a band across the middle of the stage, well clear of
+ * the footer.
  */
 const FOOTER_TUCK_VH = 12;
 /** the "Hi!"'s shades (`ContributionWord`) — picked so the gold strokes (the
@@ -74,6 +77,8 @@ const BEATS = {
 } as const;
 
 export default function DeskStage({ tracks }: { tracks: Track[] }) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLElement>(null);
@@ -86,10 +91,20 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       }
       return;
     }
+    const stage = stageRef.current;
+    const frame = frameRef.current;
     const hero = heroRef.current;
     const desk = deskRef.current;
     const next = nextRef.current;
-    if (!hero || !desk || !next) return;
+    if (!stage || !frame || !hero || !desk || !next) return;
+
+    // A phone or tablet lays the scene out in a desktop window of its own
+    // (`.desk-frame`, globals.css), shrunk to fit a screen shorter than it —
+    // a phone on its side. On a desktop the frame is the stage, so this is 1.
+    const fit = () => {
+      const scale = Math.min(1, stage.clientHeight / frame.offsetHeight);
+      frame.style.setProperty("--fit", String(scale));
+    };
 
     let raf = 0;
     const apply = () => {
@@ -135,12 +150,18 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       }, SETTLE_MS);
     };
 
+    const onResize = () => {
+      fit();
+      onScroll();
+    };
+
+    fit();
     apply();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
       window.clearTimeout(settle);
       desk.style.willChange = "";
@@ -162,26 +183,34 @@ export default function DeskStage({ tracks }: { tracks: Track[] }) {
       className="desk-runway"
       style={{ height: `${DESK_RUNWAY_VH}vh`, marginBottom: `-${FOOTER_TUCK_VH}vh` }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden">
-        {/* desk — visible from the first frame, the scroll only reframes it
-            (promoted only while it moves — see the effect above) */}
-        <div ref={deskRef} className="absolute inset-0 flex items-center justify-center">
-          <DeskScene className="w-full" tracks={tracks} />
+      <div
+        ref={stageRef}
+        className="sticky top-0 flex h-screen items-center justify-center overflow-hidden"
+      >
+        {/* the frame it's all laid out in: the whole stage on a desktop, a
+            desktop-sized window fitted to the screen on a phone or tablet
+            (`.desk-frame`, globals.css) */}
+        <div ref={frameRef} className="desk-frame">
+          {/* desk — visible from the first frame, the scroll only reframes it
+              (promoted only while it moves — see the effect above) */}
+          <div ref={deskRef} className="absolute inset-0 flex items-center justify-center">
+            <DeskScene className="w-full" tracks={tracks} />
+          </div>
+          {/* title — sits over the desk, lifts away on scroll */}
+          <div
+            ref={heroRef}
+            className="absolute inset-x-0 top-0 flex justify-center pt-[6cqh] will-change-transform sm:pt-[7cqh]"
+          >
+            <Hero />
+          </div>
+          {/* next section — hidden under the framed desk until it zooms back
+              out. Its padding clears the footer tucked over the stage's
+              bottom (`FOOTER_TUCK_VH`) by 4–5vh. */}
+          <NextSection
+            ref={nextRef}
+            className="absolute inset-x-0 bottom-0 flex justify-center pb-[16cqh] opacity-0 will-change-transform sm:pb-[17cqh]"
+          />
         </div>
-        {/* title — sits over the desk, lifts away on scroll */}
-        <div
-          ref={heroRef}
-          className="absolute inset-x-0 top-0 flex justify-center pt-[6vh] will-change-transform sm:pt-[7vh]"
-        >
-          <Hero />
-        </div>
-        {/* next section — hidden under the framed desk until it zooms back out.
-            Its padding clears the footer tucked over the stage's bottom
-            (`FOOTER_TUCK_VH`) by 4–5vh. */}
-        <NextSection
-          ref={nextRef}
-          className="absolute inset-x-0 bottom-0 flex justify-center pb-[16vh] opacity-0 will-change-transform sm:pb-[17vh]"
-        />
       </div>
     </div>
   );

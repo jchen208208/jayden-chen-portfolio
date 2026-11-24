@@ -16,7 +16,7 @@ export type { CardLayout, CardOptions, SectionCard } from "./shared";
  * Every section is the same thing — a row of `ScreenCard`s under the
  * section's title — and only the cards' bodies differ. This is the one place
  * that says which cards each section has; the desktop overlay (`DeskScene`)
- * and the mobile / deep-link page (`SectionCardStack`) both read it.
+ * and the section's own page (`SectionCardStack`) both read it.
  */
 const BUILDERS: Record<SectionId, (opts: CardOptions) => SectionCard[]> = {
   projects: projectsCards,
@@ -62,7 +62,7 @@ export function sectionCards(id: SectionId, opts: CardOptions): SectionCard[] {
   return BUILDERS[id](opts);
 }
 
-/** a section's cards one under another — the mobile / deep-link layout */
+/** a section's cards one under another — its own page's layout */
 export function SectionCardStack({ id }: { id: SectionId }) {
   return (
     <div className="flex flex-col gap-5">

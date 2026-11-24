@@ -2,9 +2,12 @@ import Link from "next/link";
 import { SECTION_ORDER, SECTIONS } from "@/lib/site";
 
 /**
- * Mobile fallback for the desk: the four screens as a plain stacked list of
- * tappable cards, each with a white title strip naming its section. No SVG, no decor. Each opens its section as a page of stacked
- * `ScreenCard`s — the same cards the desktop overlay shows.
+ * Fallback for the desk in a window narrower than `md`: the four screens as
+ * a plain stacked list of tappable cards, each with a white title strip
+ * naming its section. No SVG, no decor. Each opens its section as a page of
+ * stacked `ScreenCard`s — the same cards the desktop overlay shows. Phones
+ * never get it: the root layout's viewport lays them out at desktop width,
+ * desk and all.
  */
 export default function DeskCardList() {
   return (
